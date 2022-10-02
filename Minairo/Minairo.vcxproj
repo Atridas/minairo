@@ -141,6 +141,10 @@
     <PostBuildEvent>
       <Message>copy the dll into the stage path</Message>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)Tools\ET3.exe quadriga /in $(SolutionDir)Spec\minairo.qua /out $(ProjectDir)Private\MinairoScanner.ixx</Command>
+      <Message>Generating Scanner</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -168,6 +172,10 @@
     <PostBuildEvent>
       <Message>copy the dll into the stage path</Message>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)Tools\ET3.exe quadriga /in $(SolutionDir)Spec\minairo.qua /out $(ProjectDir)Private\MinairoScanner.ixx</Command>
+      <Message>Generating Scanner</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

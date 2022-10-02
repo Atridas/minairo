@@ -1,0 +1,144 @@
+QUADRIGA_NAMESPACE minairo;
+QUADRIGA_MODULE MinairoScanner;
+
+// special tokens
+
+QUADRIGA_IGNORE = (' '|'\t'|'\n'|'\r')+;
+QUADRIGA_BEGIN_COMMENT = ('/' '/');
+QUADRIGA_RECURSIVE_COMMENT = '/' '*' , '*' '/';
+
+QUADRIGA_MINIMAL_SCANNER_DEPTH = 3;
+
+// -------------------------------------------------------------
+
+
+// literals
+
+> HEX_DIGIT = # | 'a' | 'A' | 'b' | 'B' | 'c' | 'C' | 'd' | 'D' | 'e' | 'E' | 'f' | 'F';
+
+> DECIMAL_LITERAL = ('1' - '9') ('\''? # )*;
+> OCTAL_LITERAL = '0' ('\''? '0' - '7' )*;
+> HEX_LITERAL = '0' ('x' | 'X') ('\''? HEX_DIGIT)+;
+> BINARY_LITERAL = '0' ('b' | 'B') ('\''? ( '0' | '1' ))+;
+> UNSIGNED_SUFIX = ( 'u' | 'U' );
+> INTEGER_SIZE_SUFIX = ( 'l' | 'L' | "ll" | "LL" | 'z' | 'Z' );
+> INTEGER_SUFIX = (UNSIGNED_SUFIX INTEGER_SIZE_SUFIX?) | (INTEGER_SIZE_SUFIX UNSIGNED_SUFIX?);
+
+INTEGER_LITERAL  = DECIMAL_LITERAL INTEGER_SUFIX?;
+INTEGER_LITERAL += OCTAL_LITERAL INTEGER_SUFIX?;
+INTEGER_LITERAL += HEX_LITERAL INTEGER_SUFIX?;
+INTEGER_LITERAL += BINARY_LITERAL INTEGER_SUFIX?;
+
+> DIGIT_SEQUENCE = # ('\''? # )*;
+> HEX_DIGIT_SEQUENCE = HEX_DIGIT ('\''? HEX_DIGIT )*;
+> DECIMAL_EXPONENT = ('e' | 'E') ('+' | '-')? DIGIT_SEQUENCE;
+> HEX_EXPONENT = ('p' | 'P') ('+' | '-')? HEX_DIGIT_SEQUENCE;
+> FLOAT_SUFFIX = 'f' | 'F' | 'l' | 'L';
+
+FLOAT_LITERAL  = DIGIT_SEQUENCE DECIMAL_EXPONENT FLOAT_SUFFIX?;
+FLOAT_LITERAL += DIGIT_SEQUENCE '.' DECIMAL_EXPONENT? FLOAT_SUFFIX?;
+FLOAT_LITERAL += DIGIT_SEQUENCE? '.' DIGIT_SEQUENCE DECIMAL_EXPONENT? FLOAT_SUFFIX?;
+FLOAT_LITERAL += '0' ('x' | 'X') HEX_DIGIT_SEQUENCE HEX_EXPONENT FLOAT_SUFFIX?;
+FLOAT_LITERAL += '0' ('x' | 'X') HEX_DIGIT_SEQUENCE '.' HEX_EXPONENT? FLOAT_SUFFIX?;
+FLOAT_LITERAL += '0' ('x' | 'X') HEX_DIGIT_SEQUENCE? '.' HEX_DIGIT_SEQUENCE HEX_EXPONENT? FLOAT_SUFFIX?;
+
+> ESCAPE_SEQUENCE  = '\\' '\'';
+> ESCAPE_SEQUENCE += '\\' '"';
+> ESCAPE_SEQUENCE += '\\' '?';
+> ESCAPE_SEQUENCE += '\\' '\\';
+> ESCAPE_SEQUENCE += '\\' 'a';
+> ESCAPE_SEQUENCE += '\\' 'b';
+> ESCAPE_SEQUENCE += '\\' 'f';
+> ESCAPE_SEQUENCE += '\\' 'n';
+> ESCAPE_SEQUENCE += '\\' 'r';
+> ESCAPE_SEQUENCE += '\\' 't';
+> ESCAPE_SEQUENCE += '\\' 'v';
+> ESCAPE_SEQUENCE += '\\' ('0' - '7') ('0' - '7') ('0' - '7');
+> ESCAPE_SEQUENCE += '\\' 'x' HEX_DIGIT HEX_DIGIT;
+> ESCAPE_SEQUENCE += '\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
+> ESCAPE_SEQUENCE += '\\' 'U' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
+
+CHAR_LITERAL = ( "u8" | 'u' | 'U' | 'L' )? '\'' (@ | ESCAPE_SEQUENCE) '\'';
+
+STRING_LITERAL = ( "u8" | 'u' | 'U' | 'L' )? '"' (@ | ESCAPE_SEQUENCE)* '"';
+
+// keywords
+
+// identifiable keywords
+WK_ASC = "asc";
+WK_BY = "by";
+WK_DESC = "desc";
+WK_EXPORT = "export";
+WK_FUNCTION = "function";
+WK_IMPORT = "import";
+WK_MODULE = "module";
+WK_PROCEDURE = "procedure";
+WK_PUBLIC = "public";
+WK_TABLE = "table";
+WK_TUPLE = "tuple";
+
+// reserved keywords
+WK_DO = "do";
+WK_ELSE = "else";
+WK_FOR = "for";
+WK_GROUP = "group";
+WK_IF = "if";
+WK_JOIN = "join";
+WK_PROJECT = "project";
+WK_RETURN = "return";
+WK_SORT = "sort";
+WK_TAKE = "take";
+WK_YIELD = "yield";
+WK_WHERE = "where";
+WK_WHILE = "while";
+
+WK_INT8 = "int8";
+WK_INT16 = "int16";
+WK_INT32 = "int32";
+WK_INT64 = "int64";
+WK_UINT8 = "uint8";
+WK_UINT16 = "uint16";
+WK_UINT32 = "uint32";
+WK_UINT64 = "uint64";
+WK_FLOAT = "float";
+WK_DOUBLE = "double";
+
+// Operators
+
+OP_DOT = '.';
+OP_COMMA = ',';
+OP_QUEST = '?';
+OP_COLON = ':';
+
+OP_MUL = '*';
+OP_DIV = '/';
+OP_MOD = '%';
+OP_ADD = '+';
+OP_SUB = '-';
+OP_NOT = '!';
+OP_bit_NOT = '~';
+OP_EQ  = "==";
+OP_NEQ = "!=";
+OP_LT  = '<';
+OP_GT  = '>';
+OP_LTE = "<=";
+OP_GTE = ">=";
+OP_AND = "&&";
+OP_OR  = "||";
+OP_BIT_AND = '&';
+OP_BIT_OR  = '|';
+OP_BIT_XOR  = '^';
+
+OP_ASSIGN  = "=";
+OP_ASSIGN_MUL = "*=";
+OP_ASSIGN_DIV = "/=";
+OP_ASSIGN_ADD = "+=";
+OP_ASSIGN_SUB = "-=";
+
+UNINITIALIZED = "---";
+
+// ids
+
+IDENTIFIER = @ (# | @ | '_')*;
+IDENTIFIER += ('_')+ (# | @) (# | @ | '_')*;
+
