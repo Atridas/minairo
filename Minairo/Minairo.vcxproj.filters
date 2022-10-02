@@ -24,5 +24,8 @@
     <ClCompile Include="Private\MinairoASTInterpreter.ixx">
       <Filter>Private</Filter>
     </ClCompile>
+    <ClCompile Include="Private\MinairoParser.ixx">
+      <Filter>Private</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

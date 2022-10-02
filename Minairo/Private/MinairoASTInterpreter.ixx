@@ -42,6 +42,54 @@ export namespace minairo
 				}
 				break;
 			}
+			case Terminal::OP_SUB:
+			{
+				if (std::holds_alternative<uint64_t>(left) && std::holds_alternative<uint64_t>(last_expression_value))
+				{
+					last_expression_value = std::get<uint64_t>(left) - std::get<uint64_t>(last_expression_value);
+				}
+				else
+				{
+					assert(false); // TODO
+				}
+				break;
+			}
+			case Terminal::OP_MUL:
+			{
+				if (std::holds_alternative<uint64_t>(left) && std::holds_alternative<uint64_t>(last_expression_value))
+				{
+					last_expression_value = std::get<uint64_t>(left) * std::get<uint64_t>(last_expression_value);
+				}
+				else
+				{
+					assert(false); // TODO
+				}
+				break;
+			}
+			case Terminal::OP_DIV:
+			{
+				if (std::holds_alternative<uint64_t>(left) && std::holds_alternative<uint64_t>(last_expression_value))
+				{
+					last_expression_value = std::get<uint64_t>(left) / std::get<uint64_t>(last_expression_value);
+				}
+				else
+				{
+					assert(false); // TODO
+				}
+				break;
+			}
+			case Terminal::OP_MOD:
+			{
+				if (std::holds_alternative<uint64_t>(left) && std::holds_alternative<uint64_t>(last_expression_value))
+				{
+					last_expression_value = std::get<uint64_t>(left) % std::get<uint64_t>(last_expression_value);
+				}
+				else
+				{
+					assert(false); // TODO
+				}
+				break;
+			}
 			default:
 				assert(false); // TODO
 			}

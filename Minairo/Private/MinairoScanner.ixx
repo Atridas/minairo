@@ -72,7 +72,7 @@ export namespace minairo
 		OP_ADD,
 		OP_SUB,
 		OP_NOT,
-		OP_bit_NOT,
+		OP_BIT_NOT,
 		OP_EQ,
 		OP_NEQ,
 		OP_LT,
@@ -93,6 +93,7 @@ export namespace minairo
 		OP_PARENTHESIS_CLOSE,
 		UNINITIALIZED,
 		IDENTIFIER,
+		COUNT
 	};
 	
 	inline const char* to_string(Terminal terminal)
@@ -150,7 +151,7 @@ export namespace minairo
 		case Terminal::OP_ADD: return "OP_ADD";
 		case Terminal::OP_SUB: return "OP_SUB";
 		case Terminal::OP_NOT: return "OP_NOT";
-		case Terminal::OP_bit_NOT: return "OP_bit_NOT";
+		case Terminal::OP_BIT_NOT: return "OP_BIT_NOT";
 		case Terminal::OP_EQ: return "OP_EQ";
 		case Terminal::OP_NEQ: return "OP_NEQ";
 		case Terminal::OP_LT: return "OP_LT";
@@ -171,6 +172,7 @@ export namespace minairo
 		case Terminal::OP_PARENTHESIS_CLOSE: return "OP_PARENTHESIS_CLOSE";
 		case Terminal::UNINITIALIZED: return "UNINITIALIZED";
 		case Terminal::IDENTIFIER: return "IDENTIFIER";
+		case Terminal::COUNT: return "COUNT";
 		default: return "UNKNOWN TERMINAL!";
 		}
 	}
@@ -1438,7 +1440,7 @@ export namespace minairo
 					break;
 				case 43:
 					{
-						return TerminalData(Terminal::OP_bit_NOT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						return TerminalData(Terminal::OP_BIT_NOT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 44:

@@ -118,7 +118,7 @@ OP_MOD = '%';
 OP_ADD = '+';
 OP_SUB = '-';
 OP_NOT = '!';
-OP_bit_NOT = '~';
+OP_BIT_NOT = '~';
 OP_EQ  = "==";
 OP_NEQ = "!=";
 OP_LT  = '<';
