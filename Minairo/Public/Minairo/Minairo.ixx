@@ -4,10 +4,7 @@ module;
 
 export module Minairo;
 
-export void API MyFunc();
-
-export void API MyFunc2()
+export namespace minairo
 {
-	std::cout << "hello world 2" << std::endl;
+	void API interpret(std::string_view code);
 }
-

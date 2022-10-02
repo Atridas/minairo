@@ -2,6 +2,5 @@ import Minairo;
 
 int main()
 {
-    MyFunc();
-    MyFunc2();
+    minairo::interpret("15 + 24");
 }

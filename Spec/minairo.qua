@@ -1,5 +1,5 @@
 QUADRIGA_NAMESPACE minairo;
-QUADRIGA_MODULE MinairoScanner;
+QUADRIGA_MODULE Minairo.Scanner;
 
 // special tokens
 
@@ -61,6 +61,8 @@ FLOAT_LITERAL += '0' ('x' | 'X') HEX_DIGIT_SEQUENCE? '.' HEX_DIGIT_SEQUENCE HEX_
 CHAR_LITERAL = ( "u8" | 'u' | 'U' | 'L' )? '\'' (@ | ESCAPE_SEQUENCE) '\'';
 
 STRING_LITERAL = ( "u8" | 'u' | 'U' | 'L' )? '"' (@ | ESCAPE_SEQUENCE)* '"';
+
+BOOL_LITERAL = "true" | "false";
 
 // keywords
 
@@ -134,6 +136,9 @@ OP_ASSIGN_MUL = "*=";
 OP_ASSIGN_DIV = "/=";
 OP_ASSIGN_ADD = "+=";
 OP_ASSIGN_SUB = "-=";
+
+OP_PARENTHESIS_OPEN = '(';
+OP_PARENTHESIS_CLOSE = ')';
 
 UNINITIALIZED = "---";
 

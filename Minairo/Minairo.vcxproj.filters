@@ -18,5 +18,11 @@
     <ClCompile Include="Private\Minairo.cpp">
       <Filter>Private</Filter>
     </ClCompile>
+    <ClCompile Include="Private\MinairoAST.ixx">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\MinairoASTInterpreter.ixx">
+      <Filter>Private</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

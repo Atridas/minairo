@@ -19,7 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Private\MinairoAST.ixx" />
     <ClCompile Include="Private\Minairo.cpp" />
+    <ClCompile Include="Private\MinairoASTInterpreter.ixx" />
     <ClCompile Include="Private\MinairoScanner.ixx" />
     <ClCompile Include="Public\Minairo\Minairo.ixx" />
   </ItemGroup>
