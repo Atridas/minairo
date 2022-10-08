@@ -10,13 +10,18 @@ module;
 export module Minairo.AST.Interpreter;
 
 import Minairo.AST;
+import Minairo.FunctionRepresentation;
 import Minairo.Scanner;
+import Minairo.TypeRepresentation;
 
 export namespace minairo
 {
 	class Interpreter : public ExpressionVisitor
 	{
 	public:
+		explicit Interpreter(FunctionMap _function_map) : function_map(std::move(_function_map)) {}
+
+
 		using Value = std::variant<int64_t, uint64_t, double, std::string, char32_t, bool>;
 
 		Value get_last_expression_value() const noexcept { return last_expression_value; }
@@ -28,71 +33,49 @@ export namespace minairo
 			Value left = last_expression_value;
 			binary.right->accept(*this);
 
+			// TODO get the actual argument types
+			TypeRepresentation argument_types[2] = { get_type_representation<uint64_t>(), get_type_representation<uint64_t>() };
+			FunctionRepresentation const* function = nullptr;
+
 			switch (binary.op)
 			{
 			case Terminal::OP_ADD:
 			{
-				if (std::holds_alternative<uint64_t>(left) && std::holds_alternative<uint64_t>(last_expression_value))
-				{
-					last_expression_value = std::get<uint64_t>(left) + std::get<uint64_t>(last_expression_value);
-				}
-				else
-				{
-					assert(false); // TODO
-				}
+				function = function_map.get("operator+", argument_types);
 				break;
 			}
 			case Terminal::OP_SUB:
 			{
-				if (std::holds_alternative<uint64_t>(left) && std::holds_alternative<uint64_t>(last_expression_value))
-				{
-					last_expression_value = std::get<uint64_t>(left) - std::get<uint64_t>(last_expression_value);
-				}
-				else
-				{
-					assert(false); // TODO
-				}
+				function = function_map.get("operator-", argument_types);
 				break;
 			}
 			case Terminal::OP_MUL:
 			{
-				if (std::holds_alternative<uint64_t>(left) && std::holds_alternative<uint64_t>(last_expression_value))
-				{
-					last_expression_value = std::get<uint64_t>(left) * std::get<uint64_t>(last_expression_value);
-				}
-				else
-				{
-					assert(false); // TODO
-				}
+				function = function_map.get("operator*", argument_types);
 				break;
 			}
 			case Terminal::OP_DIV:
 			{
-				if (std::holds_alternative<uint64_t>(left) && std::holds_alternative<uint64_t>(last_expression_value))
-				{
-					last_expression_value = std::get<uint64_t>(left) / std::get<uint64_t>(last_expression_value);
-				}
-				else
-				{
-					assert(false); // TODO
-				}
+				function = function_map.get("operator/", argument_types);
 				break;
 			}
 			case Terminal::OP_MOD:
 			{
-				if (std::holds_alternative<uint64_t>(left) && std::holds_alternative<uint64_t>(last_expression_value))
-				{
-					last_expression_value = std::get<uint64_t>(left) % std::get<uint64_t>(last_expression_value);
-				}
-				else
-				{
-					assert(false); // TODO
-				}
+				function = function_map.get("operator%", argument_types);
+				//last_expression_value = std::get<uint64_t>(left) % std::get<uint64_t>(last_expression_value);
 				break;
 			}
 			default:
 				assert(false); // TODO
 			}
+
+			// TODO get the actual argument types
+			FunctionRepresentationWithArgs<uint64_t, uint64_t> const* ft = (FunctionRepresentationWithArgs<uint64_t, uint64_t>*)function;
+			// TODO actual result type
+			uint64_t result;
+			ft->call(&result, std::get<uint64_t>(left), std::get<uint64_t>(last_expression_value));
+			last_expression_value = result;
+
 		}
 		void visit(Grouping const& grouping) override
 		{
@@ -113,6 +96,7 @@ export namespace minairo
 
 
 	private:
+		FunctionMap function_map;
 		Value last_expression_value;
 	};
 }

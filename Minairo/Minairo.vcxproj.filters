@@ -12,9 +12,6 @@
     <ClCompile Include="Private\MinairoScanner.ixx">
       <Filter>Private</Filter>
     </ClCompile>
-    <ClCompile Include="Public\Minairo\Minairo.ixx">
-      <Filter>Public</Filter>
-    </ClCompile>
     <ClCompile Include="Private\Minairo.cpp">
       <Filter>Private</Filter>
     </ClCompile>
@@ -25,6 +22,18 @@
       <Filter>Private</Filter>
     </ClCompile>
     <ClCompile Include="Private\MinairoParser.ixx">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\FunctionRepresentation.ixx">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Public\Minairo\Minairo.ixx">
+      <Filter>Public</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\TypeRepresentation.ixx">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\FunctionRepresentation.cpp">
       <Filter>Private</Filter>
     </ClCompile>
   </ItemGroup>
