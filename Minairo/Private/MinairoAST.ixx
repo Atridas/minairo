@@ -9,6 +9,7 @@ module;
 export module Minairo.AST;
 
 import Minairo.Scanner;
+import Minairo.TypeRepresentation;
 
 export namespace minairo
 {
@@ -61,6 +62,7 @@ export namespace minairo
 	{
 	public:
 		std::variant<uint64_t, double, std::string, char32_t, bool> value;
+		TypeRepresentation type_representation;
 		TerminalData terminal;
 
 		void accept(ExpressionVisitor& visitor) const override;

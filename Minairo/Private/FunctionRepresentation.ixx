@@ -1,5 +1,7 @@
 module;
 
+#include <cassert>
+
 #include <functional>
 #include <memory>
 #include <span>
@@ -21,19 +23,29 @@ export namespace minairo
 		virtual bool has_parameter_types(std::span<TypeRepresentation> _parameter_types) const noexcept = 0;
 		virtual std::span<TypeRepresentation> get_parameter_types() const noexcept = 0;
 
+		virtual void call(void* return_value, std::span<void*> _arguments) const noexcept = 0;
+
 	private:
 		friend class FunctionMap;
 	};
 
 
-	template<typename... Params>
-	class FunctionRepresentationWithArgs : public FunctionRepresentation
+
+	template<typename Ret, typename... Params>
+	class TypedFunctionRepresentation final : public FunctionRepresentation
 	{
 	public:
-		virtual ~FunctionRepresentationWithArgs() = default;
+		TypedFunctionRepresentation() = default;
 
-		// TODO return internal object representation
-		virtual void call(void* return_value, Params... params) const noexcept = 0;
+		TypeRepresentation get_return_type() const noexcept override
+		{
+			return get_type_representation<Ret>();
+		}
+
+		void set_callable(Ret(*_callable)(Params...))
+		{
+			callable = std::move(_callable);
+		}
 
 		bool has_parameter_types(std::span<TypeRepresentation> _parameter_types) const noexcept final override
 		{
@@ -57,45 +69,42 @@ export namespace minairo
 			static TypeRepresentation params[sizeof...(Params)] = { get_type_representation<Params>()... };
 			return params;
 		}
-	};
 
 
-
-	template<typename Ret, typename... Params>
-	class TypedFunctionRepresentation final : public FunctionRepresentationWithArgs<Params...>
-	{
-	public:
-		TypedFunctionRepresentation() = default;
-
-		TypeRepresentation get_return_type() const noexcept override
+		void call(void* return_value, std::span<void*> _arguments) const noexcept override
 		{
-			return get_type_representation<Ret>();
-		}
+			assert(_arguments.size() == sizeof...(Params));
 
-		void set_callable(std::function<Ret(Params...)> _callable)
-		{
-			callable = std::move(_callable);
-		}
-
-		// TODO return internal object representation
-		void call(void* return_value, Params... params) const noexcept override
-		{
 			if constexpr (std::is_same_v<Ret, void>)
 			{
-				callable(params...);
+				call_internal(_arguments);
 			}
 			else if(return_value == nullptr)
 			{
-				callable(params...);
+				call_internal(_arguments);
 			}
 			else
 			{
-				*((Ret*)return_value) = callable(params...);
+				*((Ret*)return_value) = call_internal(_arguments);
 			}
 		}
 
 	private:
-		std::function<Ret(Params...)> callable;
+		Ret(*callable)(Params...);
+
+
+		template<typename... T>
+		Ret call_internal(std::span<void*> span_arguments, T... _arguments) const noexcept
+		{
+			if constexpr (sizeof...(T) == sizeof...(Params))
+			{
+				return callable(*(Params*)_arguments...);
+			}
+			else
+			{
+				return call_internal(span_arguments, _arguments..., span_arguments[sizeof...(T)]);
+			}
+		}
 	};
 
 
@@ -109,17 +118,6 @@ export namespace minairo
 		std::vector<std::unique_ptr<FunctionRepresentation>> const* get(std::string_view name) const noexcept;
 
 		FunctionRepresentation const* get(std::string_view name, std::span<TypeRepresentation> parameter_types) const noexcept;
-
-		template<typename... Params>
-		FunctionRepresentationWithArgs<Params...> const* get(std::string_view name) const noexcept
-		{
-			TypeRepresentation params[sizeof...(Params)] = { get_type_representation<Params>()... };
-#ifdef _DEBUG
-			return dynamic_cast<FunctionRepresentationWithArgs<Params...>*>(get(name, params));
-#else
-			return static_cast<FunctionRepresentationWithArgs<Params...>*>(get(name, params));
-#endif
-		}
 
 	private:
 		static const size_t intern_block_size = 4 * 1024;

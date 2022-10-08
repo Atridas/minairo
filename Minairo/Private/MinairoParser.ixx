@@ -13,6 +13,7 @@ export module Minairo.Parser;
 
 import Minairo.AST;
 import Minairo.AST.Interpreter;
+import Minairo.TypeRepresentation;
 import Minairo.Scanner;
 
 namespace minairo
@@ -97,6 +98,7 @@ namespace minairo
 				if (result->terminal.text.size() == 1)
 				{
 					result->value = (uint64_t)0;
+					result->type_representation = BuildInType::I32;
 				}
 				else if (result->terminal.text[1] == 'x' || result->terminal.text[1] == 'X')
 				{
@@ -119,6 +121,7 @@ namespace minairo
 						}
 					}
 					result->value = value;
+					result->type_representation = BuildInType::I32;
 				}
 				else if (result->terminal.text[1] == 'b' || result->terminal.text[1] == 'B')
 				{
@@ -134,6 +137,7 @@ namespace minairo
 						}
 					}
 					result->value = value;
+					result->type_representation = BuildInType::I32;
 				}
 				else
 				{
@@ -149,6 +153,7 @@ namespace minairo
 						}
 					}
 					result->value = value;
+					result->type_representation = BuildInType::I32;
 				}
 			}
 			else
@@ -165,6 +170,7 @@ namespace minairo
 					}
 				}
 				result->value = value;
+				result->type_representation = BuildInType::I32;
 			}
 
 			return result;

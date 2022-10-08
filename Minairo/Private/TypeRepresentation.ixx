@@ -13,7 +13,8 @@ export namespace minairo
 		Void,
 		I8, I16, I32, I64,
 		U8, U16, U32, U64,
-		F32, F64
+		F32, F64,
+		Bool
 	};
 
 
@@ -108,5 +109,11 @@ export namespace minairo
 	TypeRepresentation get_type_representation<double>()
 	{
 		return BuildInType::F64;
+	}
+
+	template<>
+	TypeRepresentation get_type_representation<bool>()
+	{
+		return BuildInType::Bool;
 	}
 }
