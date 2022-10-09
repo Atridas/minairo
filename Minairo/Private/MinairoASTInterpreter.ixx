@@ -6,6 +6,7 @@ module;
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <unordered_map>
 #include <variant>
 
 export module Minairo.AST.Interpreter;
@@ -141,74 +142,31 @@ export namespace minairo
 		}
 	}
 
-	class Interpreter : public ExpressionVisitor
+	class Interpreter final : public ExpressionConstVisitor, public StatementConstVisitor
 	{
 	public:
-
-
-		explicit Interpreter(FunctionMap _function_map) : function_map(std::move(_function_map)) {}
-
 		Value get_last_expression_value() const noexcept { return last_expression_value; }
-
 
 		void visit(Binary const& binary) override
 		{
 			binary.left->accept(*this);
 			Value left = last_expression_value;
 			binary.right->accept(*this);
+			Value right = last_expression_value;
 
-			TypeRepresentation argument_types[2] = { get_type_representation(left), get_type_representation(last_expression_value) };
-			void* arguments[2] = { get_ptr(left), get_ptr(last_expression_value) };
+			void* arguments[2] = { get_ptr(left), get_ptr(right) };
 
-			FunctionRepresentation const* function = nullptr;
+			TypeRepresentation return_type = *binary.get_expression_type();
+			void* result_ptr = set_to_type(last_expression_value, return_type);
 
-			switch (binary.op)
-			{
-			case Terminal::OP_ADD:
-			{
-				function = function_map.get("operator+", argument_types);
-				break;
-			}
-			case Terminal::OP_SUB:
-			{
-				function = function_map.get("operator-", argument_types);
-				break;
-			}
-			case Terminal::OP_MUL:
-			{
-				function = function_map.get("operator*", argument_types);
-				break;
-			}
-			case Terminal::OP_DIV:
-			{
-				function = function_map.get("operator/", argument_types);
-				break;
-			}
-			case Terminal::OP_MOD:
-			{
-				function = function_map.get("operator%", argument_types);
-				//last_expression_value = std::get<uint64_t>(left) % std::get<uint64_t>(last_expression_value);
-				break;
-			}
-			default:
-				assert(false); // TODO
-			}
-
-			assert(function != nullptr);
-
-			TypeRepresentation return_type = function->get_return_type();
-			Value result;
-			void* result_ptr = set_to_type(result, return_type);
-
-			function->call(result_ptr, arguments);
-
-			last_expression_value = result;
-
+			binary.function_to_call->call(result_ptr, arguments);
 		}
+
 		void visit(Grouping const& grouping) override
 		{
 			grouping.expr->accept(*this);
 		}
+
 		void visit(Literal const& literal) override
 		{
 			if (std::holds_alternative<BuildInType>(literal.type_representation))
@@ -258,18 +216,93 @@ export namespace minairo
 				assert(false);
 			}
 		}
+
 		void visit(UnaryPre const& unary_pre) override
 		{
+			unary_pre.exp->accept(*this);
+			Value exp = last_expression_value;
 
+			void* arguments[1] = {get_ptr(exp)};
+
+			TypeRepresentation return_type = *unary_pre.get_expression_type();
+			void* result_ptr = set_to_type(last_expression_value, return_type);
+
+			unary_pre.function_to_call->call(result_ptr, arguments);
 		}
+
 		void visit(UnaryPost const& unary_post) override
 		{
+			unary_post.exp->accept(*this);
+			Value exp = last_expression_value;
 
+			void* arguments[1] = { get_ptr(exp) };
+
+			TypeRepresentation return_type = *unary_post.get_expression_type();
+			void* result_ptr = set_to_type(last_expression_value, return_type);
+
+			unary_post.function_to_call->call(result_ptr, arguments);
+		}
+
+		void visit(VariableRead const& variable_read) override
+		{
+			if (variable_read.is_gloval)
+			{
+				last_expression_value = global_variables[(std::string)variable_read.identifier.text];
+			}
+			else
+			{
+				assert(false); // TODO
+			}
+		}
+
+		// ----------------------------------------------------------------------------------------
+		// ----------------------------------------------------------------------------------------
+		// ----------------------------------------------------------------------------------------
+
+		void visit(Block const &block) override
+		{
+			for (auto& statement : block.statements)
+			{
+				statement->accept(*this);
+			}
+		}
+
+		void visit(ExpressionStatement const &expression_statement) override
+		{
+			expression_statement.exp->accept(*this);
+		}
+
+		void visit(VariableDefinition const& variable_definition) override
+		{
+			if (variable_definition.initialization)
+			{
+				variable_definition.initialization->accept(*this);
+			}
+			else if (!variable_definition.explicitly_uninitialized)
+			{
+				assert(false);
+				// TODO zero initialization
+				// last_expression_value = 0
+			}
+
+			if (!variable_definition.explicitly_uninitialized)
+			{
+				if (variable_definition.is_global)
+				{
+					global_variables[(std::string)variable_definition.variable.text] = last_expression_value;
+				}
+				else
+				{
+					assert(false); // TODO
+				}
+			}
 		}
 
 
 	private:
-		FunctionMap function_map;
 		Value last_expression_value;
+
+		// TODO not a string map please. I'm just lazy rn
+		std::unordered_map<std::string, Value> global_variables;
 	};
 }

@@ -36,5 +36,8 @@
     <ClCompile Include="Private\FunctionRepresentation.cpp">
       <Filter>Private</Filter>
     </ClCompile>
+    <ClCompile Include="Private\ASTTypePass.ixx">
+      <Filter>Private</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

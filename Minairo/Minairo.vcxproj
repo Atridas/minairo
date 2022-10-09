@@ -26,6 +26,7 @@
     <ClCompile Include="Private\MinairoParser.ixx" />
     <ClCompile Include="Private\MinairoScanner.ixx" />
     <ClCompile Include="Private\FunctionRepresentation.ixx" />
+    <ClCompile Include="Private\ASTTypePass.ixx" />
     <ClCompile Include="Private\TypeRepresentation.ixx" />
     <ClCompile Include="Public\Minairo\Minairo.ixx" />
   </ItemGroup>

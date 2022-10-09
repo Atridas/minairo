@@ -21,6 +21,7 @@ namespace minairo
 	namespace
 	{
 		using ExpressionPtr = std::unique_ptr<Expression>;
+		using StatementPtr = std::unique_ptr<Statement>;
 
 		// ------------------------------------------------------------------------------------
 		// ------------------------------------------------------------------------------------
@@ -84,6 +85,13 @@ namespace minairo
 			result->open = consume(Terminal::OP_PARENTHESIS_OPEN, scanner);
 			result->expr = expression(scanner);
 			result->close = consume(Terminal::OP_PARENTHESIS_CLOSE, scanner);
+			return result;
+		}
+
+		ExpressionPtr identifier_literal(Scanner& scanner)
+		{
+			auto result = std::make_unique<VariableRead>();
+			result->identifier = consume(Terminal::IDENTIFIER, scanner);
 			return result;
 		}
 
@@ -197,7 +205,7 @@ namespace minairo
 			result->op = scanner.get_next_symbol().type;
 			result->right = parse_precedence(scanner, current_precendence + 1);
 
-			return result; // TODO
+			return result;
 		}
 
 
@@ -220,6 +228,7 @@ namespace minairo
 			pratt_prefixes[(int)Terminal::OP_NOT] = &unary;
 			pratt_prefixes[(int)Terminal::OP_BIT_NOT] = &unary;
 			pratt_prefixes[(int)Terminal::INTEGER_LITERAL] = &integer_literal;
+			pratt_prefixes[(int)Terminal::IDENTIFIER] = &identifier_literal;
 
 			//	case Terminal::FLOAT_LITERAL: return std::make_unique<Literal>(parse_float(scanner.get_next_symbol()));
 			//	case Terminal::CHAR_LITERAL: return std::make_unique<Literal>(parse_char(scanner.get_next_symbol()));
@@ -270,11 +279,94 @@ namespace minairo
 		}
 
 		// ------------------------------------------------------------------------------------
+		// ------------------------------------------------------------------------------------
+		// ------------------------------------------------------------------------------------
+
+		StatementPtr expression_statement(Scanner& scanner)
+		{
+			auto result = std::make_unique<ExpressionStatement>();
+			result->exp = expression(scanner);
+			result->semicolon = consume(Terminal::OP_SEMICOLON, scanner);
+
+			return result;
+		}
+
+		// ------------------------------------------------------------------------------------
+
+		StatementPtr variable_definition(Scanner& scanner)
+		{
+			auto result = std::make_unique<VariableDefinition>();
+			result->variable = consume(Terminal::IDENTIFIER, scanner);
+			consume(Terminal::OP_COLON, scanner);
+
+			if (scanner.peek_next_symbol().type != Terminal::OP_COLON && scanner.peek_next_symbol().type != Terminal::OP_ASSIGN)
+			{
+				assert(false); // TODO define type
+			}
+
+			if (scanner.peek_next_symbol().type == Terminal::OP_COLON)
+			{
+				result->constant = true;
+			}
+			else
+			{
+				consume(Terminal::OP_ASSIGN, scanner);
+			}
+
+			if (scanner.peek_next_symbol().type != Terminal::OP_SEMICOLON)
+			{
+				if (scanner.peek_next_symbol().type != Terminal::UNINITIALIZED)
+				{
+					result->initialization = expression(scanner);
+				}
+				else
+				{
+					assert(result->type != BuildInType::Void);
+					consume(Terminal::UNINITIALIZED, scanner);
+					result->explicitly_uninitialized = true;
+				}
+			}
+			else
+			{
+				assert(result->type != BuildInType::Void);
+				// TODO set default value
+			}
+
+			result->semicolon = consume(Terminal::OP_SEMICOLON, scanner);
+
+			return result;
+		}
+
+		// ------------------------------------------------------------------------------------
+
+		StatementPtr statement(Scanner& scanner)
+		{
+			if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER && scanner.peek_next_symbol(1).type == Terminal::OP_COLON)
+			{
+				return variable_definition(scanner);
+			}
+			else
+			{
+				return expression_statement(scanner);
+			}
+		}
 	}
 
-	export ExpressionPtr generate_AST(Scanner code)
+	export StatementPtr generate_AST(Scanner code)
 	{
 		initialize_pratt_parser();
-		return expression(code);
+
+		StatementPtr result = statement(code);
+		if (code.peek_next_symbol().type != Terminal::END)
+		{
+			auto block = std::make_unique<Block>();
+			block->statements.push_back(std::move(result));
+			while (code.peek_next_symbol().type != Terminal::END)
+			{
+				block->statements.push_back(statement(code));
+			}
+			result = std::move(block);
+		}
+		return result;
 	}
 }

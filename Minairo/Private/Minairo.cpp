@@ -15,6 +15,7 @@ import Minairo.AST.Interpreter;
 import Minairo.FunctionRepresentation;
 import Minairo.Parser;
 import Minairo.Scanner;
+import Minairo.AST.TypePass;
 
 namespace minairo
 {
@@ -80,8 +81,11 @@ namespace minairo
 
 		auto expression = generate_AST(code);
 
+		TypePass type_pass(std::move(fm));
+		expression->accept(type_pass);
 
-		Interpreter interpreter(std::move(fm));
+
+		Interpreter interpreter;
 		expression->accept(interpreter);
 
 		std::visit([] <typename T>(T value) {
