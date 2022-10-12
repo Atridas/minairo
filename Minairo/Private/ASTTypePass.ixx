@@ -91,19 +91,21 @@ export namespace minairo
 
 		void visit(VariableRead& variable_read) override
 		{
-			// TODO local variables
+			for (int i = (int)(variable_blocks.size() - 1); i >= 0; --i)
+			{
+				auto info = variable_blocks[i].variables.find((std::string)variable_read.identifier.text);
+				if (info != variable_blocks[i].variables.end())
+				{
+					assert(info->second.index >= 0);
+					assert(info->second.index < variable_blocks[i].stack_size_at_beginning + variable_blocks[i].variables.size());
+					variable_read.index = info->second.index;
+					variable_read.type = info->second.type;
+					return;
+				}
+			}
 
-			auto global = global_variables.find((std::string)variable_read.identifier.text);
-			if (global == global_variables.end())
-			{
-				// TODO variable is yet undefined
-				throw 0;
-			}
-			else
-			{
-				variable_read.is_gloval = true;
-				variable_read.type = global->second.type;
-			}
+			// TODO variable is yet undefined
+			throw 0;
 		}
 
 		// ----------------------------------------------------------------------------------------
@@ -112,10 +114,13 @@ export namespace minairo
 
 		void visit(Block& block) override
 		{
+			push_variable_block();
 			for (auto& statement : block.statements)
 			{
 				statement->accept(*this);
 			}
+			// TODO throw(?)
+			pop_variable_block();
 		}
 		
 		void visit(ExpressionStatement& expression_statement) override
@@ -129,10 +134,11 @@ export namespace minairo
 			assert(variable_definition.initialization != nullptr);
 			assert(!variable_definition.explicitly_uninitialized);
 
-			// TODO local variables
-			variable_definition.is_global = true;
+			assert(!variable_blocks.empty());
 
-			if (global_variables.contains((std::string)variable_definition.variable.text))
+			VariableBlock& current_block = variable_blocks.back();
+
+			if (current_block.variables.contains((std::string)variable_definition.variable.text))
 			{
 				// TODO
 				throw 0;
@@ -140,23 +146,45 @@ export namespace minairo
 			else
 			{
 				variable_definition.initialization->accept(*this);
-				GlobalVariableInfo info;
+				VariableInfo info;
 				variable_definition.type = info.type = *variable_definition.initialization->get_expression_type();
+				variable_definition.index = info.index = current_block.stack_size_at_beginning + (int)current_block.variables.size();
 				info.constant = variable_definition.constant;
-				global_variables[(std::string)variable_definition.variable.text] =  info;
+				current_block.variables[(std::string)variable_definition.variable.text] =  info;
 			}
 		}
 
 	private:
 		FunctionMap function_map;
 
-		struct GlobalVariableInfo
+		struct VariableInfo
 		{
 			TypeRepresentation type;
+			int index;
 			bool constant;
 		};
 
-		// TODO not a string map please. I'm just lazy rn
-		std::unordered_map<std::string, GlobalVariableInfo> global_variables;
+		struct VariableBlock
+		{
+			int stack_size_at_beginning;
+			// TODO not a string map please. I'm just lazy rn
+			std::unordered_map<std::string, VariableInfo> variables;
+		};
+
+		std::vector<VariableBlock> variable_blocks;
+
+		void push_variable_block()
+		{
+			int stack_size_at_beginning = 0;
+			if (!variable_blocks.empty())
+				stack_size_at_beginning = variable_blocks.back().stack_size_at_beginning + (int)variable_blocks.back().variables.size();
+
+			variable_blocks.push_back({ stack_size_at_beginning });
+		}
+
+		void pop_variable_block()
+		{
+			variable_blocks.pop_back();
+		}
 	};
 }

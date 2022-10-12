@@ -245,14 +245,8 @@ export namespace minairo
 
 		void visit(VariableRead const& variable_read) override
 		{
-			if (variable_read.is_gloval)
-			{
-				last_expression_value = global_variables[(std::string)variable_read.identifier.text];
-			}
-			else
-			{
-				assert(false); // TODO
-			}
+			assert(variable_read.index < variables.size());
+			last_expression_value = variables[variable_read.index];
 		}
 
 		// ----------------------------------------------------------------------------------------
@@ -261,12 +255,14 @@ export namespace minairo
 
 		void visit(Block const &block) override
 		{
-			assert(block->is_global); // TODO prepare local variables
+			int current_stack_size = (int)variables.size();
 
 			for (auto& statement : block.statements)
 			{
 				statement->accept(*this);
 			}
+
+			variables.resize(current_stack_size);
 		}
 
 		void visit(ExpressionStatement const &expression_statement) override
@@ -287,16 +283,14 @@ export namespace minairo
 				// last_expression_value = 0
 			}
 
+			assert(variables.size() == variable_definition.index);
 			if (!variable_definition.explicitly_uninitialized)
 			{
-				if (variable_definition.is_global)
-				{
-					global_variables[(std::string)variable_definition.variable.text] = last_expression_value;
-				}
-				else
-				{
-					assert(false); // TODO
-				}
+				variables.push_back(last_expression_value);
+			}
+			else
+			{
+				variables.emplace_back();
 			}
 		}
 
@@ -304,7 +298,6 @@ export namespace minairo
 	private:
 		Value last_expression_value;
 
-		// TODO not a string map please. I'm just lazy rn
-		std::unordered_map<std::string, Value> global_variables;
+		std::vector<Value> variables;
 	};
 }

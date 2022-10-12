@@ -5,6 +5,7 @@ module;
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -164,7 +165,7 @@ export namespace minairo
 	public:
 		TerminalData identifier;
 		std::optional<TypeRepresentation> type;
-		bool is_gloval;
+		int index = -1;
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
@@ -246,7 +247,8 @@ export namespace minairo
 		TerminalData variable, semicolon;
 		TypeRepresentation type = BuildInType::Void;
 		std::unique_ptr<Expression> initialization;
-		bool constant = false, explicitly_uninitialized = false, is_global = false;
+		int index = -1;
+		bool constant = false, explicitly_uninitialized = false;
 
 		void accept(StatementVisitor& visitor) override;
 		void accept(StatementConstVisitor& visitor) const override;
