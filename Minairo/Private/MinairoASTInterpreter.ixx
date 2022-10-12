@@ -261,6 +261,8 @@ export namespace minairo
 
 		void visit(Block const &block) override
 		{
+			assert(block->is_global); // TODO prepare local variables
+
 			for (auto& statement : block.statements)
 			{
 				statement->accept(*this);

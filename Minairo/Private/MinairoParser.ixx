@@ -82,9 +82,9 @@ namespace minairo
 		ExpressionPtr grouping(Scanner& scanner)
 		{
 			auto result = std::make_unique<Grouping>();
-			result->open = consume(Terminal::OP_PARENTHESIS_OPEN, scanner);
+			result->open = consume(Terminal::BRACKET_ROUND_OPEN, scanner);
 			result->expr = expression(scanner);
-			result->close = consume(Terminal::OP_PARENTHESIS_CLOSE, scanner);
+			result->close = consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
 			return result;
 		}
 
@@ -222,7 +222,7 @@ namespace minairo
 
 		void initialize_pratt_parser()
 		{
-			pratt_prefixes[(int)Terminal::OP_PARENTHESIS_OPEN] = &grouping;
+			pratt_prefixes[(int)Terminal::BRACKET_ROUND_OPEN] = &grouping;
 			pratt_prefixes[(int)Terminal::OP_SUB] = &unary;
 			pratt_prefixes[(int)Terminal::OP_ADD] = &unary;
 			pratt_prefixes[(int)Terminal::OP_NOT] = &unary;
@@ -282,6 +282,10 @@ namespace minairo
 		// ------------------------------------------------------------------------------------
 		// ------------------------------------------------------------------------------------
 
+		StatementPtr statement(Scanner& scanner);
+
+		// ------------------------------------------------------------------------------------
+
 		StatementPtr expression_statement(Scanner& scanner)
 		{
 			auto result = std::make_unique<ExpressionStatement>();
@@ -339,11 +343,36 @@ namespace minairo
 
 		// ------------------------------------------------------------------------------------
 
+		StatementPtr block(Scanner& scanner)
+		{
+			auto block = std::make_unique<Block>();
+			block->open = consume(Terminal::BRACKET_CURLY_OPEN, scanner);
+
+			while (scanner.peek_next_symbol().type != Terminal::BRACKET_CURLY_CLOSE)
+			{
+				block->statements.emplace_back(statement(scanner));
+
+				if (scanner.peek_next_symbol().type == Terminal::END)
+				{
+					// TODO
+					throw 0;
+				}
+			}
+			block->close = consume(Terminal::BRACKET_CURLY_CLOSE, scanner);
+			return block;
+		}
+
+		// ------------------------------------------------------------------------------------
+
 		StatementPtr statement(Scanner& scanner)
 		{
 			if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER && scanner.peek_next_symbol(1).type == Terminal::OP_COLON)
 			{
 				return variable_definition(scanner);
+			}
+			else if (scanner.peek_next_symbol().type == Terminal::BRACKET_CURLY_OPEN)
+			{
+				return block(scanner);
 			}
 			else
 			{
@@ -356,16 +385,12 @@ namespace minairo
 	{
 		initialize_pratt_parser();
 
-		StatementPtr result = statement(code);
-		if (code.peek_next_symbol().type != Terminal::END)
+		auto result = std::make_unique<Block>();
+		result->is_global = true;
+
+		while (code.peek_next_symbol().type != Terminal::END)
 		{
-			auto block = std::make_unique<Block>();
-			block->statements.push_back(std::move(result));
-			while (code.peek_next_symbol().type != Terminal::END)
-			{
-				block->statements.push_back(statement(code));
-			}
-			result = std::move(block);
+			result->statements.push_back(statement(code));
 		}
 		return result;
 	}

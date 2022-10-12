@@ -201,6 +201,7 @@ export namespace minairo
 	public:
 		std::vector<std::unique_ptr<Statement>> statements;
 		std::optional<TerminalData> open, close;
+		bool is_global = false;
 
 		void accept(StatementVisitor& visitor) override;
 		void accept(StatementConstVisitor& visitor) const override;
