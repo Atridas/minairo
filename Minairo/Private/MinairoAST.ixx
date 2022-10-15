@@ -197,6 +197,7 @@ export namespace minairo
 		virtual TerminalData get_last_terminal() const = 0;
 	};
 
+	// TODO "global" block?
 	class Block final : public Statement
 	{
 	public:

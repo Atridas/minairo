@@ -6,6 +6,7 @@ module;
 #include <memory>
 #include <string_view>
 #include <type_traits>
+#include <unordered_map>
 #include <variant>
 
 module Minairo;
@@ -73,6 +74,26 @@ namespace minairo
 		return function_map;
 	}
 
+	struct StateImpl
+	{
+		FunctionMap fm;
+		TypePass::GlobalMap global_types;
+		Interpreter::GlobalStack globals;
+	};
+
+
+	StateImpl* create_repl()
+	{
+		StateImpl*state = new StateImpl();
+		state->fm = create_function_map(true);
+		return state;
+	}
+
+	void destroy_repl(StateImpl* state)
+	{
+		delete state;
+	}
+
 	void interpret(std::string_view code)
 	{
 		std::cout << "interpreting " << code << std::endl;
@@ -81,25 +102,48 @@ namespace minairo
 
 		auto expression = generate_AST(code);
 
-		TypePass type_pass(std::move(fm));
+		TypePass type_pass(fm);
 		expression->accept(type_pass);
 
 
 		Interpreter interpreter;
 		expression->accept(interpreter);
 
+	}
+
+	void interpret(StateImpl* state, std::string_view code)
+	{
+		assert(state != nullptr);
+
+		auto expression = generate_AST(code);
+
+		{
+			TypePass type_pass(state->fm);
+			type_pass.set_globals(state->global_types);
+			expression->accept(type_pass);
+			state->global_types = type_pass.get_globals();
+		}
+
+		Interpreter interpreter((int)state->global_types.size());
+		interpreter.set_globals(state->globals);
+		expression->accept(interpreter);
+		state->globals = interpreter.get_globals();
+
+
 		std::visit([] <typename T>(T value) {
 			if constexpr (std::is_same_v<T, char32_t>)
 			{
 				std::cout << "char32" << std::endl;
-			} else if constexpr (std::is_integral_v<T>)
+			}
+			else if constexpr (std::is_integral_v<T>)
 			{
 				std::cout << value << std::endl;
-			} else
+			}
+			else
 			{
 				std::cout << "unknown" << std::endl;
 			}
 		}, interpreter.get_last_expression_value());
-
 	}
+
 }

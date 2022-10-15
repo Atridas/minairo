@@ -12,6 +12,7 @@ module;
 export module Minairo.AST.Interpreter;
 
 import Minairo.AST;
+import Minairo.AST.TypePass;
 import Minairo.FunctionRepresentation;
 import Minairo.Scanner;
 import Minairo.TypeRepresentation;
@@ -145,6 +146,20 @@ export namespace minairo
 	class Interpreter final : public ExpressionConstVisitor, public StatementConstVisitor
 	{
 	public:
+		explicit Interpreter(int _number_of_globals = 0) : number_of_globals(_number_of_globals) {}
+
+		using GlobalStack = std::vector<Value>;
+
+		void set_globals(GlobalStack const& _globals)
+		{
+			globals = _globals;
+		}
+
+		GlobalStack const& get_globals() const
+		{
+			return globals;
+		}
+
 		Value get_last_expression_value() const noexcept { return last_expression_value; }
 
 		void visit(Binary const& binary) override
@@ -257,9 +272,19 @@ export namespace minairo
 		{
 			int current_stack_size = (int)variables.size();
 
+			if (block.is_global)
+			{
+				variables = std::move(globals);
+			}
+
 			for (auto& statement : block.statements)
 			{
 				statement->accept(*this);
+			}
+
+			if (block.is_global)
+			{
+				globals = std::move(variables);
 			}
 
 			variables.resize(current_stack_size);
@@ -299,5 +324,8 @@ export namespace minairo
 		Value last_expression_value;
 
 		std::vector<Value> variables;
+		std::vector<Value> globals;
+
+		int number_of_globals;
 	};
 }

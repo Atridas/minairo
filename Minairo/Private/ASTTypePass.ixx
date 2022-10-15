@@ -21,8 +21,29 @@ export namespace minairo
 {
 	class TypePass final : public ExpressionVisitor, public StatementVisitor
 	{
+		struct VariableInfo
+		{
+			TypeRepresentation type;
+			int index;
+			bool constant;
+		};
+
 	public:
-		explicit TypePass(FunctionMap _function_map) : function_map(std::move(_function_map)) {}
+		explicit TypePass(FunctionMap &_function_map) : function_map(_function_map) {}
+
+		using GlobalMap = std::unordered_map<std::string, VariableInfo>;
+
+		void set_globals(GlobalMap const& global_map)
+		{
+			globals = global_map;
+		}
+
+		GlobalMap const& get_globals() const
+		{
+			return globals;
+		}
+
+		// ----------------------------------------------------------------------------------------------
 
 		void visit(Binary& binary) override
 		{
@@ -115,11 +136,27 @@ export namespace minairo
 		void visit(Block& block) override
 		{
 			push_variable_block();
+
+			if (block.is_global)
+			{
+				assert(variable_blocks.size() == 1);
+				// set up inhereted globals
+				variable_blocks.back().variables = std::move(globals);
+			}
+
 			for (auto& statement : block.statements)
 			{
 				statement->accept(*this);
 			}
 			// TODO throw(?)
+
+			if (block.is_global)
+			{
+				assert(variable_blocks.size() == 1);
+				// store the globals back
+				globals = std::move(variable_blocks.back().variables);
+			}
+
 			pop_variable_block();
 		}
 		
@@ -155,14 +192,7 @@ export namespace minairo
 		}
 
 	private:
-		FunctionMap function_map;
-
-		struct VariableInfo
-		{
-			TypeRepresentation type;
-			int index;
-			bool constant;
-		};
+		FunctionMap &function_map;
 
 		struct VariableBlock
 		{
@@ -172,6 +202,9 @@ export namespace minairo
 		};
 
 		std::vector<VariableBlock> variable_blocks;
+
+		// TODO not a string map please. I'm just lazy rn
+		std::unordered_map<std::string, VariableInfo> globals;
 
 		void push_variable_block()
 		{
