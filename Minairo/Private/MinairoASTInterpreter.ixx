@@ -267,7 +267,19 @@ export namespace minairo
 
 		void visit(VariableOperatorAndAssign const& variable_op_assign) override
 		{
-			assert(false);
+			assert(variable_op_assign.index < variables.size());
+			variable_op_assign.exp->accept(*this);
+
+			Value right = last_expression_value;
+			Value left = variables[variable_op_assign.index];
+
+			void* arguments[2] = { get_ptr(left), get_ptr(right) };
+
+			TypeRepresentation return_type = *variable_op_assign.get_expression_type();
+			void* result_ptr = set_to_type(last_expression_value, return_type);
+
+			variable_op_assign.function_to_call->call(result_ptr, arguments);
+			variables[variable_op_assign.index] = last_expression_value;
 		}
 
 		void visit(VariableRead const& variable_read) override

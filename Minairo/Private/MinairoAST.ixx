@@ -190,6 +190,7 @@ export namespace minairo
 		TerminalData identifier;
 		TerminalData op;
 		std::unique_ptr<Expression> exp;
+		FunctionRepresentation const* function_to_call = nullptr;
 		std::optional<TypeRepresentation> type;
 		int index = -1;
 

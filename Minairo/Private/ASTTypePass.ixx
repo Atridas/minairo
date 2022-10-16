@@ -145,36 +145,34 @@ export namespace minairo
 			{
 			case Terminal::OP_ADD:
 			{
-				function = function_map.get("operator+", argument_types);
+				binary.function_to_call = function_map.get("operator+", argument_types);
 				break;
 			}
 			case Terminal::OP_SUB:
 			{
-				function = function_map.get("operator-", argument_types);
+				binary.function_to_call = function_map.get("operator-", argument_types);
 				break;
 			}
 			case Terminal::OP_MUL:
 			{
-				function = function_map.get("operator*", argument_types);
+				binary.function_to_call = function_map.get("operator*", argument_types);
 				break;
 			}
 			case Terminal::OP_DIV:
 			{
-				function = function_map.get("operator/", argument_types);
+				binary.function_to_call = function_map.get("operator/", argument_types);
 				break;
 			}
 			case Terminal::OP_MOD:
 			{
-				function = function_map.get("operator%", argument_types);
-				//last_expression_value = std::get<uint64_t>(left) % std::get<uint64_t>(last_expression_value);
+				binary.function_to_call = function_map.get("operator%", argument_types);
 				break;
 			}
 			default:
 				assert(false); // TODO
 			}
 
-			assert(function != nullptr);
-			binary.function_to_call = function;
+			assert(binary.function_to_call != nullptr);
 		}
 
 		void visit(Grouping& grouping) override
@@ -231,6 +229,41 @@ export namespace minairo
 			{
 				throw incompatible_type_exception(variable_op_assign.op);
 			}
+
+			TypeRepresentation argument_types[2] = { *variable_op_assign.type, *variable_op_assign.exp->get_expression_type() };
+			FunctionRepresentation const* function = nullptr;
+			switch (variable_op_assign.op.type)
+			{
+			case Terminal::OP_ASSIGN_ADD:
+			{
+				variable_op_assign.function_to_call = function_map.get("operator+", argument_types);
+				break;
+			}
+			case Terminal::OP_ASSIGN_SUB:
+			{
+				variable_op_assign.function_to_call = function_map.get("operator-", argument_types);
+				break;
+			}
+			case Terminal::OP_ASSIGN_MUL:
+			{
+				variable_op_assign.function_to_call = function_map.get("operator*", argument_types);
+				break;
+			}
+			case Terminal::OP_ASSIGN_DIV:
+			{
+				variable_op_assign.function_to_call = function_map.get("operator/", argument_types);
+				break;
+			}
+			case Terminal::OP_ASSIGN_MOD:
+			{
+				variable_op_assign.function_to_call = function_map.get("operator%", argument_types);
+				break;
+			}
+			default:
+				assert(false); // TODO
+			}
+
+			assert(variable_op_assign.function_to_call != nullptr);
 		}
 
 		void visit(VariableRead& variable_read) override
