@@ -115,35 +115,47 @@ namespace minairo
 	{
 		assert(vm != nullptr);
 
-		auto expression = generate_AST(code);
-
+		try
 		{
-			TypePass type_pass(vm->fm);
-			type_pass.set_globals(vm->global_types);
-			expression->accept(type_pass);
-			vm->global_types = type_pass.get_globals();
+
+			auto expression = generate_AST(code);
+
+			{
+				TypePass type_pass(vm->fm);
+				type_pass.set_globals(vm->global_types);
+				expression->accept(type_pass);
+				vm->global_types = type_pass.get_globals();
+			}
+
+			Interpreter interpreter((int)vm->global_types.size());
+			interpreter.set_globals(vm->globals);
+			expression->accept(interpreter);
+			vm->globals = interpreter.get_globals();
+
+
+			std::visit([] <typename T>(T value) {
+				if constexpr (std::is_same_v<T, char32_t>)
+				{
+					std::cout << "char32" << std::endl;
+				}
+				else if constexpr (std::is_integral_v<T>)
+				{
+					std::cout << value << std::endl;
+				}
+				else
+				{
+					std::cout << "unknown" << std::endl;
+				}
+			}, interpreter.get_last_expression_value());
 		}
-
-		Interpreter interpreter((int)vm->global_types.size());
-		interpreter.set_globals(vm->globals);
-		expression->accept(interpreter);
-		vm->globals = interpreter.get_globals();
-
-
-		std::visit([] <typename T>(T value) {
-			if constexpr (std::is_same_v<T, char32_t>)
-			{
-				std::cout << "char32" << std::endl;
-			}
-			else if constexpr (std::is_integral_v<T>)
-			{
-				std::cout << value << std::endl;
-			}
-			else
-			{
-				std::cout << "unknown" << std::endl;
-			}
-		}, interpreter.get_last_expression_value());
+		catch (ParseException pe)
+		{
+			std::cerr << pe.print_error() << std::endl;
+		}
+		catch (TypeException te)
+		{
+			std::cerr << te.print_error() << std::endl;
+		}
 	}
 
 }

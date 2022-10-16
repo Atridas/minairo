@@ -23,7 +23,6 @@ int main()
             try
             {
                 minairo::interpret(vm, line.c_str());
-
             }
             catch (...)
             {

@@ -447,7 +447,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -515,7 +515,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -565,7 +565,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -909,7 +909,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -1501,7 +1501,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 50:
@@ -1512,7 +1512,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 51:
@@ -1523,7 +1523,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 52:
@@ -1561,7 +1561,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -1574,7 +1574,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 56:
@@ -1585,7 +1585,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 57:
@@ -1596,7 +1596,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 58:
@@ -1612,7 +1612,7 @@ export namespace minairo
 						break;
 					default:
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -1642,7 +1642,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -1655,7 +1655,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 62:
@@ -1666,7 +1666,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 63:
@@ -1677,7 +1677,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 64:
@@ -1698,7 +1698,7 @@ export namespace minairo
 						break;
 					default:
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -1871,7 +1871,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -1967,7 +1967,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -1984,7 +1984,7 @@ export namespace minairo
 						break;
 					default:
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -2004,7 +2004,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -2063,7 +2063,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -2107,7 +2107,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 84:
@@ -2162,7 +2162,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 89:
@@ -2173,7 +2173,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 90:
@@ -2184,7 +2184,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 91:
@@ -3032,7 +3032,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 119:
@@ -3043,7 +3043,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 120:
@@ -3054,7 +3054,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 121:
@@ -3065,7 +3065,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 122:
@@ -3081,7 +3081,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 124:
@@ -3092,7 +3092,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 125:
@@ -3103,7 +3103,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 126:
@@ -3114,7 +3114,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 127:
@@ -3130,7 +3130,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 129:
@@ -3148,7 +3148,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -3173,7 +3173,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -3186,7 +3186,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 133:
@@ -3198,7 +3198,7 @@ export namespace minairo
 						break;
 					default:
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -3242,7 +3242,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 136:
@@ -3309,7 +3309,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 141:
@@ -3320,7 +3320,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 142:
@@ -4209,7 +4209,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 170:
@@ -4220,7 +4220,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 171:
@@ -4231,7 +4231,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 172:
@@ -4242,7 +4242,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 173:
@@ -4253,7 +4253,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 174:
@@ -4264,7 +4264,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 175:
@@ -4275,7 +4275,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 176:
@@ -4286,7 +4286,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 177:
@@ -4297,7 +4297,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 178:
@@ -4333,7 +4333,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 180:
@@ -4429,7 +4429,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 184:
@@ -4471,7 +4471,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5336,7 +5336,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 214:
@@ -5347,7 +5347,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 215:
@@ -5365,7 +5365,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5385,7 +5385,7 @@ export namespace minairo
 						}
 						else
 						{
-							return Terminal::ERROR;
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5398,7 +5398,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 218:
@@ -6135,7 +6135,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 243:
@@ -6146,7 +6146,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 244:
@@ -6157,7 +6157,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 245:
@@ -6191,7 +6191,7 @@ export namespace minairo
 					}
 					else
 					{
-						return Terminal::ERROR;
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 247:
@@ -6758,7 +6758,7 @@ export namespace minairo
 					}
 					break;
 				default:
-					return Terminal::ERROR;
+					return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 				}
 				++current_text_index;
 			}

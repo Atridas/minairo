@@ -1,17 +1,17 @@
 module;
 
 #include <cassert>
-//#include <cinttypes>
 //
 #include <memory>
-//#include <string>
-//#include <type_traits>
+#include <sstream>
+#include <string>
+#include <string_view>
 #include <unordered_map>
-//#include <variant>
 
 export module Minairo.AST.TypePass;
 
 import Minairo.AST;
+import Minairo.Exception;
 import Minairo.FunctionRepresentation;
 import Minairo.Scanner;
 import Minairo.TypeRepresentation;
@@ -19,6 +19,65 @@ import Minairo.TypeRepresentation;
 
 export namespace minairo
 {
+	struct TypeException
+	{
+		enum class Type
+		{
+			UnknownIdentifier,
+			VariableRedefinition
+		} type;
+
+		TerminalData terminal_data;
+
+		std::string print_error()
+		{
+			std::stringstream ss;
+			switch (type)
+			{
+			case Type::UnknownIdentifier:
+				ss << "Identifier '" << terminal_data.text << "' is yet undefined\n";
+				print_error_line(ss);
+				break;
+			case Type::VariableRedefinition:
+				ss << "Variable '" << terminal_data.text << "' has already been defined\n";
+				print_error_line(ss);
+				break;
+			default:
+				assert(false);
+				break;
+			}
+			return ss.str();
+		}
+
+	private:
+		void print_error_line(std::stringstream& ss)
+		{
+			minairo::print_error_line(ss, terminal_data.line, terminal_data.text, terminal_data.line_begin, terminal_data.line_end);
+		}
+	};
+
+	TypeException unknown_literal_exception(TerminalData identifier)
+	{
+		assert(identifier.type == Terminal::IDENTIFIER);
+		TypeException result;
+		result.type = TypeException::Type::UnknownIdentifier;
+		result.terminal_data = identifier;
+		return result;
+	}
+
+	TypeException variable_redefinition_exception(TerminalData identifier)
+	{
+		assert(identifier.type == Terminal::IDENTIFIER);
+		TypeException result;
+		result.type = TypeException::Type::VariableRedefinition;
+		result.terminal_data = identifier;
+		return result;
+	}
+
+	// --------------------------------------------------------------------------------------------
+	// --------------------------------------------------------------------------------------------
+	// --------------------------------------------------------------------------------------------
+
 	class TypePass final : public ExpressionVisitor, public StatementVisitor
 	{
 		struct VariableInfo
@@ -125,8 +184,7 @@ export namespace minairo
 				}
 			}
 
-			// TODO variable is yet undefined
-			throw 0;
+			throw unknown_literal_exception(variable_read.identifier);
 		}
 
 		// ----------------------------------------------------------------------------------------
@@ -177,8 +235,7 @@ export namespace minairo
 
 			if (current_block.variables.contains((std::string)variable_definition.variable.text))
 			{
-				// TODO
-				throw 0;
+				throw variable_redefinition_exception(variable_definition.variable);
 			}
 			else
 			{

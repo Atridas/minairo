@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="MinairoException.ixx" />
     <ClCompile Include="Private\FunctionRepresentation.cpp" />
     <ClCompile Include="Private\MinairoAST.ixx" />
     <ClCompile Include="Private\Minairo.cpp" />
