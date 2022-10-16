@@ -6,13 +6,13 @@ export module Minairo;
 
 namespace minairo
 {
-	struct StateImpl;
+	struct VMImpl;
 
-	export using State = StateImpl*;
+	export using VM = VMImpl*;
 
-	export API State create_repl();
-	export API void destroy_repl(State state);
+	export API VM create_VM();
+	export API void destroy_VM(VM state);
 
 	export API void interpret(std::string_view code);
-	export API void interpret(State state, std::string_view code);
+	export API void interpret(VM state, std::string_view code);
 }

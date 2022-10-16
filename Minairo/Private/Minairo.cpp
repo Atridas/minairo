@@ -74,7 +74,7 @@ namespace minairo
 		return function_map;
 	}
 
-	struct StateImpl
+	struct VMImpl
 	{
 		FunctionMap fm;
 		TypePass::GlobalMap global_types;
@@ -82,16 +82,16 @@ namespace minairo
 	};
 
 
-	StateImpl* create_repl()
+	VMImpl* create_VM()
 	{
-		StateImpl*state = new StateImpl();
-		state->fm = create_function_map(true);
-		return state;
+		VMImpl*vm = new VMImpl();
+		vm->fm = create_function_map(true);
+		return vm;
 	}
 
-	void destroy_repl(StateImpl* state)
+	void destroy_VM(VMImpl* vm)
 	{
-		delete state;
+		delete vm;
 	}
 
 	void interpret(std::string_view code)
@@ -111,23 +111,23 @@ namespace minairo
 
 	}
 
-	void interpret(StateImpl* state, std::string_view code)
+	void interpret(VMImpl* vm, std::string_view code)
 	{
-		assert(state != nullptr);
+		assert(vm != nullptr);
 
 		auto expression = generate_AST(code);
 
 		{
-			TypePass type_pass(state->fm);
-			type_pass.set_globals(state->global_types);
+			TypePass type_pass(vm->fm);
+			type_pass.set_globals(vm->global_types);
 			expression->accept(type_pass);
-			state->global_types = type_pass.get_globals();
+			vm->global_types = type_pass.get_globals();
 		}
 
-		Interpreter interpreter((int)state->global_types.size());
-		interpreter.set_globals(state->globals);
+		Interpreter interpreter((int)vm->global_types.size());
+		interpreter.set_globals(vm->globals);
 		expression->accept(interpreter);
-		state->globals = interpreter.get_globals();
+		vm->globals = interpreter.get_globals();
 
 
 		std::visit([] <typename T>(T value) {
