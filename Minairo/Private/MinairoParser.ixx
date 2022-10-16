@@ -38,6 +38,7 @@ namespace minairo
 			UnexpectedEnd,
 			ScannerError,
 			UnexpectedTerminal,
+			UnexpectedType,
 			UnexpectedPrefix
 		} type;
 
@@ -54,27 +55,25 @@ namespace minairo
 				break;
 			case Type::ScannerError:
 				ss << "Encountered an scanner error while waiting for a " << to_string(terminal) << '\n';
-				print_error_line(ss);
+				print_error_line(ss, terminal_data);
 				break;
 			case Type::UnexpectedTerminal:
 				ss << "Encountered a " << to_string(terminal_data.type) << " while waiting for a " << to_string(terminal) << '\n';
-				print_error_line(ss);
+				print_error_line(ss, terminal_data);
+				break;
+			case Type::UnexpectedType:
+				ss << "Encountered a " << to_string(terminal_data.type) << " while waiting for a type\n";
+				print_error_line(ss, terminal_data);
 				break;
 			case Type::UnexpectedPrefix:
 				ss << "Encountered a " << to_string(terminal_data.type) << " on an expression, while expecting a literal, variable, etc... \n";
-				print_error_line(ss);
+				print_error_line(ss, terminal_data);
 				break;
 			default:
 				assert(false);
 				break;
 			}
 			return ss.str();
-		}
-
-	private:
-		void print_error_line(std::stringstream &ss)
-		{
-			minairo::print_error_line(ss, terminal_data.line, terminal_data.text, terminal_data.line_begin, terminal_data.line_end);
 		}
 	};
 
@@ -111,6 +110,14 @@ namespace minairo
 			result.terminal_data = unexpected_terminal;
 			return result;
 		}
+	}
+
+	ParseException unexpected_type_exception(TerminalData unexpected_terminal)
+	{
+		ParseException result;
+		result.type = ParseException::Type::UnexpectedType;
+		result.terminal_data = unexpected_terminal;
+		return result;
 	}
 
 	ParseException unexpected_prefix(TerminalData unexpected_terminal)
@@ -193,6 +200,56 @@ namespace minairo
 		result->identifier = left->identifier;
 		result->op = scanner.get_next_symbol().type;
 		result->exp = parse_precedence(scanner, Precedence::Assignment);
+		return result;
+	}
+
+	// ------------------------------------------------------------------------------------
+
+	ExpressionPtr build_in_type_declaration(Scanner& scanner)
+	{
+		auto result = std::make_unique<BuildInTypeDeclaration>();
+		result->terminal = scanner.get_next_symbol();
+		switch (result->terminal.type)
+		{
+		case Terminal::WK_VOID:
+			result->type = BuildInType::Void;
+			break;
+		case Terminal::WK_INT8:
+			result->type = BuildInType::I8;
+			break;
+		case Terminal::WK_INT16:
+			result->type = BuildInType::I16;
+			break;
+		case Terminal::WK_INT32:
+			result->type = BuildInType::I32;
+			break;
+		case Terminal::WK_INT64:
+			result->type = BuildInType::I64;
+			break;
+		case Terminal::WK_UINT8:
+			result->type = BuildInType::U8;
+			break;
+		case Terminal::WK_UINT16:
+			result->type = BuildInType::U16;
+			break;
+		case Terminal::WK_UINT32:
+			result->type = BuildInType::U32;
+			break;
+		case Terminal::WK_UINT64:
+			result->type = BuildInType::U64;
+			break;
+		case Terminal::WK_FLOAT32:
+			result->type = BuildInType::U32;
+			break;
+		case Terminal::WK_FLOAT64:
+			result->type = BuildInType::U64;
+			break;
+		case Terminal::WK_BOOL:
+			result->type = BuildInType::Bool;
+			break;
+		default:
+			throw unexpected_type_exception(result->terminal);
+		}
 		return result;
 	}
 
@@ -337,6 +394,11 @@ namespace minairo
 		return result;
 	}
 
+	ExpressionPtr type_declaration(Scanner& scanner)
+	{
+		// TODO tuples & tables
+		return build_in_type_declaration(scanner);
+	}
 
 	// ------------------------------------------------------------------------------------
 	// ------------------------------------------------------------------------------------
@@ -363,6 +425,23 @@ namespace minairo
 		//	case Terminal::CHAR_LITERAL: return std::make_unique<Literal>(parse_char(scanner.get_next_symbol()));
 		//	case Terminal::STRING_LITERAL: return std::make_unique<Literal>(parse_string(scanner.get_next_symbol()));
 		//	case Terminal::BOOL_LITERAL: return std::make_unique<Literal>(parse_bool(scanner.get_next_symbol()));
+
+
+		pratt_prefixes[(int)Terminal::WK_VOID] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_INT8] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_INT16] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_INT32] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_INT64] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_UINT8] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_UINT16] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_UINT32] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_UINT64] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_FLOAT32] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_FLOAT64] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_BOOL] = &build_in_type_declaration;
+
+
+
 
 		pratt_infixes[(int)Terminal::OP_ADD] = &binary;
 		pratt_precedences[(int)Terminal::OP_ADD] = Precedence::Term;
@@ -433,7 +512,15 @@ namespace minairo
 
 		if (scanner.peek_next_symbol().type != Terminal::OP_COLON && scanner.peek_next_symbol().type != Terminal::OP_ASSIGN)
 		{
-			assert(false); // TODO define type
+			auto type_decl = type_declaration(scanner);
+			if (BuildInTypeDeclaration* build_in = dynamic_cast<BuildInTypeDeclaration*>(type_decl.get()))
+			{
+				result->type = build_in->type;
+			}
+			else
+			{
+				assert(false);
+			}
 		}
 
 		if (scanner.peek_next_symbol().type == Terminal::OP_COLON)
@@ -454,15 +541,14 @@ namespace minairo
 			}
 			else
 			{
-				assert(result->type != BuildInType::Void);
+				assert(result->type.has_value());
 				consume(Terminal::UNINITIALIZED, scanner);
 				result->explicitly_uninitialized = true;
 			}
 		}
 		else
 		{
-			assert(result->type != BuildInType::Void);
-			// TODO set default value
+			assert(result->type.has_value());
 		}
 
 		result->semicolon = consume(Terminal::OP_SEMICOLON, scanner);

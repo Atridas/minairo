@@ -94,6 +94,8 @@ WK_YIELD = "yield";
 WK_WHERE = "where";
 WK_WHILE = "while";
 
+WK_VOID = "void";
+WK_BOOL = "bool" | "boolean";
 WK_INT8 = "int8";
 WK_INT16 = "int16";
 WK_INT32 = "int32";
@@ -102,8 +104,8 @@ WK_UINT8 = "uint8";
 WK_UINT16 = "uint16";
 WK_UINT32 = "uint32";
 WK_UINT64 = "uint64";
-WK_FLOAT = "float";
-WK_DOUBLE = "double";
+WK_FLOAT32 = "float" | "float32" ;
+WK_FLOAT64 = "double" | "float64";
 
 // Operators
 

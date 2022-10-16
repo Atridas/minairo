@@ -39,31 +39,25 @@ export namespace minairo
 			{
 			case Type::UnknownIdentifier:
 				ss << "Identifier '" << terminal_data.text << "' is yet undefined\n";
-				print_error_line(ss);
+				print_error_line(ss, terminal_data);
 				break;
 			case Type::VariableRedefinition:
 				ss << "Variable '" << terminal_data.text << "' has already been defined\n";
-				print_error_line(ss);
+				print_error_line(ss, terminal_data);
 				break;
 			case Type::ConstWrite:
 				ss << "Variable '" << terminal_data.text << "' is constant and can't be written too\n";
-				print_error_line(ss);
+				print_error_line(ss, terminal_data);
 				break;
 			case Type::IncompatibleType:
 				ss << "Assignment of different types\n";
-				print_error_line(ss);
+				print_error_line(ss, terminal_data);
 				break;
 			default:
 				assert(false);
 				break;
 			}
 			return ss.str();
-		}
-
-	private:
-		void print_error_line(std::stringstream& ss)
-		{
-			minairo::print_error_line(ss, terminal_data.line, terminal_data.text, terminal_data.line_begin, terminal_data.line_end);
 		}
 	};
 
@@ -101,6 +95,22 @@ export namespace minairo
 		result.terminal_data = assign;
 		return result;
 	}
+
+	// --------------------------------------------------------------------------------------------
+
+	struct WrongVariableTypeException
+	{
+		TerminalData first_token, last_token;
+
+		// TODO
+		std::string print_error()
+		{
+			std::stringstream ss;
+			ss << "wrong variable type\n";
+			print_error_line(ss, first_token, last_token);
+			return ss.str();
+		}
+	};
 
 	// --------------------------------------------------------------------------------------------
 	// --------------------------------------------------------------------------------------------
@@ -173,6 +183,11 @@ export namespace minairo
 			}
 
 			assert(binary.function_to_call != nullptr);
+		}
+
+		void visit(BuildInTypeDeclaration&) override
+		{
+			// -------
 		}
 
 		void visit(Grouping& grouping) override
@@ -327,7 +342,15 @@ export namespace minairo
 			{
 				variable_definition.initialization->accept(*this);
 				VariableInfo info;
-				variable_definition.type = info.type = *variable_definition.initialization->get_expression_type();
+				info.type = *variable_definition.initialization->get_expression_type();
+				if (!variable_definition.type.has_value())
+				{
+					variable_definition.type = info.type;
+				}
+				else if(*variable_definition.type != info.type)
+				{
+					throw WrongVariableTypeException(variable_definition.get_first_terminal(), variable_definition.get_last_terminal());
+				}
 				variable_definition.index = info.index = current_block.stack_size_at_beginning + (int)current_block.variables.size();
 				info.constant = variable_definition.constant;
 				current_block.variables[(std::string)variable_definition.variable.text] =  info;

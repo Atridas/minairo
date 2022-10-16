@@ -156,6 +156,10 @@ namespace minairo
 		{
 			std::cerr << te.print_error() << std::endl;
 		}
+		catch (WrongVariableTypeException wvte)
+		{
+			std::cerr << wvte.print_error() << std::endl;
+		}
 	}
 
 }

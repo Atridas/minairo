@@ -63,6 +63,28 @@ export namespace minairo
 		}
 	};
 
+	class BuildInTypeDeclaration final : public Expression
+	{
+	public:
+		BuildInType type;
+		TerminalData terminal;
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		virtual std::optional<TypeRepresentation> get_expression_type() const override
+		{
+			return BuildInType::TypeDefinition;
+		}
+		virtual TerminalData get_first_terminal() const override
+		{
+			return terminal;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return terminal;
+		}
+	};
+
 	class Grouping final : public Expression
 	{
 	public:
@@ -296,7 +318,7 @@ export namespace minairo
 	public:
 		// TODO store precomputed hash(?)
 		TerminalData variable, semicolon;
-		TypeRepresentation type = BuildInType::Void;
+		std::optional<TypeRepresentation> type = BuildInType::Void;
 		std::unique_ptr<Expression> initialization;
 		int index = -1;
 		bool constant = false, explicitly_uninitialized = false;
@@ -322,6 +344,7 @@ export namespace minairo
 	{
 	public:
 		virtual void visit(Binary& binary) = 0;
+		virtual void visit(BuildInTypeDeclaration& binary) = 0;
 		virtual void visit(Grouping& grouping) = 0;
 		virtual void visit(Literal& literal) = 0;
 		virtual void visit(UnaryPre& unary_pre) = 0;
@@ -334,6 +357,7 @@ export namespace minairo
 	{
 	public:
 		virtual void visit(Binary const& binary) = 0;
+		virtual void visit(BuildInTypeDeclaration const& binary) = 0;
 		virtual void visit(Grouping const& grouping) = 0;
 		virtual void visit(Literal const& literal) = 0;
 		virtual void visit(UnaryPre const& unary_pre) = 0;
@@ -361,6 +385,10 @@ export namespace minairo
 
 // ------------------------------------------------------------------------------------------------
 void minairo::Binary::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+void minairo::BuildInTypeDeclaration::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
@@ -394,6 +422,10 @@ void minairo::VariableRead::accept(ExpressionVisitor& visitor)
 }
 // ------------------------------------------------------------------------------------------------
 void minairo::Binary::accept(ExpressionConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void minairo::BuildInTypeDeclaration::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

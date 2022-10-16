@@ -26,7 +26,8 @@ export namespace minairo
 		float, double,
 		std::string,
 		char32_t,
-		bool>;
+		bool,
+		TypeRepresentation>;
 
 	TypeRepresentation get_type_representation(Value value)
 	{
@@ -75,6 +76,10 @@ export namespace minairo
 			else if constexpr (std::is_same_v<T, bool>)
 			{
 				return BuildInType::Bool;
+			}
+			else if constexpr (std::is_same_v<T, TypeRepresentation>)
+			{
+				return BuildInType::TypeDefinition;
 			}
 			else
 			{
@@ -131,6 +136,9 @@ export namespace minairo
 			case BuildInType::Bool:
 				value = false;
 				return (void*)&std::get<bool>(value);
+			case BuildInType::TypeDefinition:
+				value = BuildInType::Void;
+				return (void*)&std::get<TypeRepresentation>(value);
 			default:
 				assert(false);
 				return nullptr;
@@ -175,6 +183,11 @@ export namespace minairo
 			void* result_ptr = set_to_type(last_expression_value, return_type);
 
 			binary.function_to_call->call(result_ptr, arguments);
+		}
+
+		void visit(BuildInTypeDeclaration const& build_tn_type_declaration) override
+		{
+			last_expression_value = build_tn_type_declaration.type;
 		}
 
 		void visit(Grouping const& grouping) override
