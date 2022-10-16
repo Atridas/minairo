@@ -160,6 +160,55 @@ export namespace minairo
 		}
 	};
 
+	class VariableAssign final : public Expression
+	{
+	public:
+		TerminalData identifier;
+		std::unique_ptr<Expression> exp;
+		std::optional<TypeRepresentation> type;
+		int index = -1;
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		virtual std::optional<TypeRepresentation> get_expression_type() const override
+		{
+			return type;
+		}
+		virtual TerminalData get_first_terminal() const override
+		{
+			return identifier;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return exp->get_last_terminal();
+		}
+	};
+
+	class VariableOperatorAndAssign final : public Expression
+	{
+	public:
+		TerminalData identifier;
+		TerminalData op;
+		std::unique_ptr<Expression> exp;
+		std::optional<TypeRepresentation> type;
+		int index = -1;
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		virtual std::optional<TypeRepresentation> get_expression_type() const override
+		{
+			return type;
+		}
+		virtual TerminalData get_first_terminal() const override
+		{
+			return identifier;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return exp->get_last_terminal();
+		}
+	};
+
 	class VariableRead final : public Expression
 	{
 	public:
@@ -276,6 +325,8 @@ export namespace minairo
 		virtual void visit(Literal& literal) = 0;
 		virtual void visit(UnaryPre& unary_pre) = 0;
 		virtual void visit(UnaryPost& unary_post) = 0;
+		virtual void visit(VariableAssign& unary_post) = 0;
+		virtual void visit(VariableOperatorAndAssign& unary_post) = 0;
 		virtual void visit(VariableRead& unary_post) = 0;
 	};
 	class ExpressionConstVisitor
@@ -286,6 +337,8 @@ export namespace minairo
 		virtual void visit(Literal const& literal) = 0;
 		virtual void visit(UnaryPre const& unary_pre) = 0;
 		virtual void visit(UnaryPost const& unary_post) = 0;
+		virtual void visit(VariableAssign const& unary_post) = 0;
+		virtual void visit(VariableOperatorAndAssign const& unary_post) = 0;
 		virtual void visit(VariableRead const& unary_post) = 0;
 	};
 	class StatementVisitor
@@ -326,6 +379,14 @@ void minairo::UnaryPost::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
+void minairo::VariableAssign::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+void minairo::VariableOperatorAndAssign::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
 void minairo::VariableRead::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
@@ -348,6 +409,14 @@ void minairo::UnaryPre::accept(ExpressionConstVisitor& visitor) const
 	visitor.visit(*this);
 }
 void minairo::UnaryPost::accept(ExpressionConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void minairo::VariableAssign::accept(ExpressionConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void minairo::VariableOperatorAndAssign::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

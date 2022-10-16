@@ -258,6 +258,18 @@ export namespace minairo
 			unary_post.function_to_call->call(result_ptr, arguments);
 		}
 
+		void visit(VariableAssign const& variable_assign) override
+		{
+			assert(variable_assign.index < variables.size());
+			variable_assign.exp->accept(*this);
+			variables[variable_assign.index] = last_expression_value;
+		}
+
+		void visit(VariableOperatorAndAssign const& variable_op_assign) override
+		{
+			assert(false);
+		}
+
 		void visit(VariableRead const& variable_read) override
 		{
 			assert(variable_read.index < variables.size());

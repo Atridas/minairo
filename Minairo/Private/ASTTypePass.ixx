@@ -3,6 +3,7 @@ module;
 #include <cassert>
 //
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -24,7 +25,9 @@ export namespace minairo
 		enum class Type
 		{
 			UnknownIdentifier,
-			VariableRedefinition
+			VariableRedefinition,
+			ConstWrite,
+			IncompatibleType
 		} type;
 
 		TerminalData terminal_data;
@@ -40,6 +43,14 @@ export namespace minairo
 				break;
 			case Type::VariableRedefinition:
 				ss << "Variable '" << terminal_data.text << "' has already been defined\n";
+				print_error_line(ss);
+				break;
+			case Type::ConstWrite:
+				ss << "Variable '" << terminal_data.text << "' is constant and can't be written too\n";
+				print_error_line(ss);
+				break;
+			case Type::IncompatibleType:
+				ss << "Assignment of different types\n";
 				print_error_line(ss);
 				break;
 			default:
@@ -71,6 +82,23 @@ export namespace minairo
 		TypeException result;
 		result.type = TypeException::Type::VariableRedefinition;
 		result.terminal_data = identifier;
+		return result;
+	}
+
+	TypeException const_write_exception(TerminalData identifier)
+	{
+		assert(identifier.type == Terminal::IDENTIFIER);
+		TypeException result;
+		result.type = TypeException::Type::ConstWrite;
+		result.terminal_data = identifier;
+		return result;
+	}
+
+	TypeException incompatible_type_exception(TerminalData assign)
+	{
+		TypeException result;
+		result.type = TypeException::Type::IncompatibleType;
+		result.terminal_data = assign;
 		return result;
 	}
 
@@ -169,22 +197,47 @@ export namespace minairo
 			assert(false); // TODO
 		}
 
+		void visit(VariableAssign& variable_assign) override
+		{
+			variable_assign.exp->accept(*this);
+
+			auto variable = find_variable(variable_assign.identifier);
+			if (variable.constant)
+			{
+				throw const_write_exception(variable_assign.identifier);
+			}
+			variable_assign.type = variable.type;
+			variable_assign.index = variable.index;
+
+			if (*variable_assign.type != *variable_assign.exp->get_expression_type())
+			{
+				throw incompatible_type_exception(variable_assign.identifier);
+			}
+		}
+
+		void visit(VariableOperatorAndAssign& variable_op_assign) override
+		{
+			variable_op_assign.exp->accept(*this);
+
+			auto variable = find_variable(variable_op_assign.identifier);
+			if (variable.constant)
+			{
+				throw const_write_exception(variable_op_assign.identifier);
+			}
+			variable_op_assign.type = variable.type;
+			variable_op_assign.index = variable.index;
+
+			if (*variable_op_assign.type != *variable_op_assign.exp->get_expression_type())
+			{
+				throw incompatible_type_exception(variable_op_assign.op);
+			}
+		}
+
 		void visit(VariableRead& variable_read) override
 		{
-			for (int i = (int)(variable_blocks.size() - 1); i >= 0; --i)
-			{
-				auto info = variable_blocks[i].variables.find((std::string)variable_read.identifier.text);
-				if (info != variable_blocks[i].variables.end())
-				{
-					assert(info->second.index >= 0);
-					assert(info->second.index < variable_blocks[i].stack_size_at_beginning + variable_blocks[i].variables.size());
-					variable_read.index = info->second.index;
-					variable_read.type = info->second.type;
-					return;
-				}
-			}
-
-			throw unknown_literal_exception(variable_read.identifier);
+			auto variable = find_variable(variable_read.identifier);
+			variable_read.type = variable.type;
+			variable_read.index = variable.index;
 		}
 
 		// ----------------------------------------------------------------------------------------
@@ -275,6 +328,21 @@ export namespace minairo
 		void pop_variable_block()
 		{
 			variable_blocks.pop_back();
+		}
+
+		VariableInfo find_variable(TerminalData identifier)
+		{
+			for (int i = (int)(variable_blocks.size() - 1); i >= 0; --i)
+			{
+				auto info = variable_blocks[i].variables.find((std::string)identifier.text);
+				if (info != variable_blocks[i].variables.end())
+				{
+					assert(info->second.index >= 0);
+					assert(info->second.index < variable_blocks[i].stack_size_at_beginning + variable_blocks[i].variables.size());
+					return info->second;
+				}
+			}
+			throw unknown_literal_exception(identifier);
 		}
 	};
 }

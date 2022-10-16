@@ -178,6 +178,24 @@ namespace minairo
 	// ------------------------------------------------------------------------------------
 	// ------------------------------------------------------------------------------------
 
+	ExpressionPtr assign(std::unique_ptr<VariableRead> left, Scanner& scanner)
+	{
+		consume(Terminal::OP_ASSIGN, scanner);
+		auto result = std::make_unique<VariableAssign>();
+		result->identifier = left->identifier;
+		result->exp = parse_precedence(scanner, Precedence::Assignment);
+		return result;
+	}
+
+	ExpressionPtr op_and_assign(std::unique_ptr<VariableRead> left, Scanner& scanner)
+	{
+		auto result = std::make_unique<VariableOperatorAndAssign>();
+		result->identifier = left->identifier;
+		result->op = scanner.get_next_symbol().type;
+		result->exp = parse_precedence(scanner, Precedence::Assignment);
+		return result;
+	}
+
 	ExpressionPtr grouping(Scanner& scanner)
 	{
 		auto result = std::make_unique<Grouping>();
@@ -191,7 +209,19 @@ namespace minairo
 	{
 		auto result = std::make_unique<VariableRead>();
 		result->identifier = consume(Terminal::IDENTIFIER, scanner);
-		return result;
+
+		switch (scanner.peek_next_symbol().type)
+		{
+		case Terminal::OP_ASSIGN:
+			return assign(std::move(result), scanner);
+		case Terminal::OP_ASSIGN_MUL:
+		case Terminal::OP_ASSIGN_DIV:
+		case Terminal::OP_ASSIGN_ADD:
+		case Terminal::OP_ASSIGN_SUB:
+			return op_and_assign(std::move(result), scanner);
+		default:
+			return result;
+		}
 	}
 
 	ExpressionPtr integer_literal(Scanner& scanner)
@@ -408,6 +438,7 @@ namespace minairo
 
 		if (scanner.peek_next_symbol().type == Terminal::OP_COLON)
 		{
+			consume(Terminal::OP_COLON, scanner);
 			result->constant = true;
 		}
 		else
