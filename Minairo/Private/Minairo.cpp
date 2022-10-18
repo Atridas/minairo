@@ -142,6 +142,65 @@ namespace minairo
 				{
 					std::cout << value << std::endl;
 				}
+				else if constexpr (std::is_same_v<T, TypeRepresentation>)
+				{
+					std::cout << "typedef ";
+					std::visit([] <typename Q>(Q value) {
+						if constexpr (std::is_same_v<Q, BuildInType>)
+						{
+							switch (value)
+							{
+							case BuildInType::Void:
+								std::cout << "void";
+								break;
+							case BuildInType::Bool:
+								std::cout << "bool";
+								break;
+							case BuildInType::I8:
+								std::cout << "int8";
+								break;
+							case BuildInType::I16:
+								std::cout << "int16";
+								break;
+							case BuildInType::I32:
+								std::cout << "int32";
+								break;
+							case BuildInType::I64:
+								std::cout << "int64";
+								break;
+							case BuildInType::U8:
+								std::cout << "uint8";
+								break;
+							case BuildInType::U16:
+								std::cout << "uint16";
+								break;
+							case BuildInType::U32:
+								std::cout << "uint32";
+								break;
+							case BuildInType::U64:
+								std::cout << "uint64";
+								break;
+							case BuildInType::F32:
+								std::cout << "float";
+								break;
+							case BuildInType::F64:
+								std::cout << "double";
+								break;
+							case BuildInType::Typedef:
+								std::cout << "typedef";
+								break;
+							default:
+								assert(false);
+							}
+						}
+						else
+						{
+							// TODO
+							std::cout << "????";
+						}
+					}, value);
+					std::cout << std::endl;
+				}
 				else
 				{
 					std::cout << "unknown" << std::endl;
@@ -155,10 +214,6 @@ namespace minairo
 		catch (TypeException te)
 		{
 			std::cerr << te.print_error() << std::endl;
-		}
-		catch (WrongVariableTypeException wvte)
-		{
-			std::cerr << wvte.print_error() << std::endl;
 		}
 	}
 

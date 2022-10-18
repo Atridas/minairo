@@ -106,6 +106,7 @@ WK_UINT32 = "uint32";
 WK_UINT64 = "uint64";
 WK_FLOAT32 = "float" | "float32" ;
 WK_FLOAT64 = "double" | "float64";
+WK_TYPEDEF = "typedef";
 
 // Operators
 

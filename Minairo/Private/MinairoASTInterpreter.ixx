@@ -79,7 +79,7 @@ export namespace minairo
 			}
 			else if constexpr (std::is_same_v<T, TypeRepresentation>)
 			{
-				return BuildInType::TypeDefinition;
+				return BuildInType::Typedef;
 			}
 			else
 			{
@@ -136,7 +136,7 @@ export namespace minairo
 			case BuildInType::Bool:
 				value = false;
 				return (void*)&std::get<bool>(value);
-			case BuildInType::TypeDefinition:
+			case BuildInType::Typedef:
 				value = BuildInType::Void;
 				return (void*)&std::get<TypeRepresentation>(value);
 			default:

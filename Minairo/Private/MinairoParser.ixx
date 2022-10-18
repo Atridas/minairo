@@ -247,6 +247,9 @@ namespace minairo
 		case Terminal::WK_BOOL:
 			result->type = BuildInType::Bool;
 			break;
+		case Terminal::WK_TYPEDEF:
+			result->type = BuildInType::Typedef;
+			break;
 		default:
 			throw unexpected_type_exception(result->terminal);
 		}
@@ -396,8 +399,17 @@ namespace minairo
 
 	ExpressionPtr type_declaration(Scanner& scanner)
 	{
-		// TODO tuples & tables
-		return build_in_type_declaration(scanner);
+		if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
+		{
+			auto result = std::make_unique<VariableRead>();
+			result->identifier = consume(Terminal::IDENTIFIER, scanner);
+			return result;
+		}
+		else
+		{
+			// TODO tuples & tables
+			return build_in_type_declaration(scanner);
+		}
 	}
 
 	// ------------------------------------------------------------------------------------
@@ -439,6 +451,7 @@ namespace minairo
 		pratt_prefixes[(int)Terminal::WK_FLOAT32] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::WK_FLOAT64] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::WK_BOOL] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_TYPEDEF] = &build_in_type_declaration;
 
 
 

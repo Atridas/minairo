@@ -27,10 +27,12 @@ export namespace minairo
 			UnknownIdentifier,
 			VariableRedefinition,
 			ConstWrite,
-			IncompatibleType
+			Message
 		} type;
 
+		std::string message;
 		TerminalData terminal_data;
+		TerminalData first_token, last_token;
 
 		std::string print_error()
 		{
@@ -39,19 +41,19 @@ export namespace minairo
 			{
 			case Type::UnknownIdentifier:
 				ss << "Identifier '" << terminal_data.text << "' is yet undefined\n";
-				print_error_line(ss, terminal_data);
+				print_error_line(ss, first_token, last_token);
 				break;
 			case Type::VariableRedefinition:
 				ss << "Variable '" << terminal_data.text << "' has already been defined\n";
-				print_error_line(ss, terminal_data);
+				print_error_line(ss, first_token, last_token);
 				break;
 			case Type::ConstWrite:
 				ss << "Variable '" << terminal_data.text << "' is constant and can't be written too\n";
-				print_error_line(ss, terminal_data);
+				print_error_line(ss, first_token, last_token);
 				break;
-			case Type::IncompatibleType:
-				ss << "Assignment of different types\n";
-				print_error_line(ss, terminal_data);
+			case Type::Message:
+				ss << message;
+				print_error_line(ss, first_token, last_token);
 				break;
 			default:
 				assert(false);
@@ -66,7 +68,7 @@ export namespace minairo
 		assert(identifier.type == Terminal::IDENTIFIER);
 		TypeException result;
 		result.type = TypeException::Type::UnknownIdentifier;
-		result.terminal_data = identifier;
+		result.first_token = result.last_token = result.terminal_data = identifier;
 		return result;
 	}
 
@@ -75,7 +77,7 @@ export namespace minairo
 		assert(identifier.type == Terminal::IDENTIFIER);
 		TypeException result;
 		result.type = TypeException::Type::VariableRedefinition;
-		result.terminal_data = identifier;
+		result.first_token = result.last_token = result.terminal_data = identifier;
 		return result;
 	}
 
@@ -84,33 +86,37 @@ export namespace minairo
 		assert(identifier.type == Terminal::IDENTIFIER);
 		TypeException result;
 		result.type = TypeException::Type::ConstWrite;
-		result.terminal_data = identifier;
+		result.first_token = result.last_token = result.terminal_data = identifier;
 		return result;
 	}
 
-	TypeException incompatible_type_exception(TerminalData assign)
+	TypeException message_exception(std::string_view message, TerminalData token)
 	{
 		TypeException result;
-		result.type = TypeException::Type::IncompatibleType;
-		result.terminal_data = assign;
+		result.type = TypeException::Type::Message;
+		result.first_token = result.last_token = token;
 		return result;
 	}
 
-	// --------------------------------------------------------------------------------------------
-
-	struct WrongVariableTypeException
+	TypeException message_exception(std::string_view message, TerminalData first_token, TerminalData last_token)
 	{
-		TerminalData first_token, last_token;
+		TypeException result;
+		result.type = TypeException::Type::Message;
+		result.message = message;
+		result.first_token = first_token;
+		result.last_token = last_token;
+		return result;
+	}
 
-		// TODO
-		std::string print_error()
-		{
-			std::stringstream ss;
-			ss << "wrong variable type\n";
-			print_error_line(ss, first_token, last_token);
-			return ss.str();
-		}
-	};
+	TypeException message_exception(std::string_view message, Statement const& statement)
+	{
+		return message_exception(message, statement.get_first_terminal(), statement.get_last_terminal());
+	}
+
+	TypeException message_exception(std::string_view message, Expression const& expression)
+	{
+		return message_exception(message, expression.get_first_terminal(), expression.get_last_terminal());
+	}
 
 	// --------------------------------------------------------------------------------------------
 	// --------------------------------------------------------------------------------------------
@@ -224,7 +230,7 @@ export namespace minairo
 
 			if (*variable_assign.type != *variable_assign.exp->get_expression_type())
 			{
-				throw incompatible_type_exception(variable_assign.identifier);
+				throw message_exception("Assignment of different types\n", variable_assign.identifier);
 			}
 		}
 
@@ -242,7 +248,7 @@ export namespace minairo
 
 			if (*variable_op_assign.type != *variable_op_assign.exp->get_expression_type())
 			{
-				throw incompatible_type_exception(variable_op_assign.op);
+				throw message_exception("Assignment of different types\n", variable_op_assign.op);
 			}
 
 			TypeRepresentation argument_types[2] = { *variable_op_assign.type, *variable_op_assign.exp->get_expression_type() };
@@ -349,8 +355,14 @@ export namespace minairo
 				}
 				else if(*variable_definition.type != info.type)
 				{
-					throw WrongVariableTypeException(variable_definition.get_first_terminal(), variable_definition.get_last_terminal());
+					throw message_exception("wrong variable type\n", variable_definition);
 				}
+				
+				if (variable_definition.type == BuildInType::Typedef && !variable_definition.constant)
+				{
+					throw message_exception("typedefs must be constant\n", variable_definition);
+				}
+
 				variable_definition.index = info.index = current_block.stack_size_at_beginning + (int)current_block.variables.size();
 				info.constant = variable_definition.constant;
 				current_block.variables[(std::string)variable_definition.variable.text] =  info;
