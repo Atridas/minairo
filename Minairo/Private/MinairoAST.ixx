@@ -319,6 +319,7 @@ export namespace minairo
 		// TODO store precomputed hash(?)
 		TerminalData variable, semicolon;
 		std::optional<TypeRepresentation> type;
+		std::variant<std::monostate, BuildInType, TerminalData> type_definition;
 		std::unique_ptr<Expression> initialization;
 		int index = -1;
 		bool constant = false, explicitly_uninitialized = false;

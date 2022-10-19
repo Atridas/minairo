@@ -127,7 +127,7 @@ namespace minairo
 				vm->global_types = type_pass.get_globals();
 			}
 
-			Interpreter interpreter((int)vm->global_types.size());
+			Interpreter interpreter((int)vm->global_types.variables.size());
 			interpreter.set_globals(vm->globals);
 			expression->accept(interpreter);
 			vm->globals = interpreter.get_globals();

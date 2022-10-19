@@ -528,7 +528,12 @@ namespace minairo
 			auto type_decl = type_declaration(scanner);
 			if (BuildInTypeDeclaration* build_in = dynamic_cast<BuildInTypeDeclaration*>(type_decl.get()))
 			{
-				result->type = build_in->type;
+				result->type_definition = build_in->type;
+			}
+			else if (VariableRead* variable_read = dynamic_cast<VariableRead*>(type_decl.get()))
+			{
+				// transform this to "rename"?
+				result->type_definition = variable_read->identifier;
 			}
 			else
 			{

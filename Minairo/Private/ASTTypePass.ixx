@@ -8,6 +8,7 @@ module;
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <variant>
 
 export module Minairo.AST.TypePass;
 
@@ -134,7 +135,11 @@ export namespace minairo
 	public:
 		explicit TypePass(FunctionMap &_function_map) : function_map(_function_map) {}
 
-		using GlobalMap = std::unordered_map<std::string, VariableInfo>;
+		struct GlobalMap
+		{
+			std::unordered_map<std::string, VariableInfo> variables;
+			std::unordered_map<std::string, TypeRepresentation> types;
+		};
 
 		void set_globals(GlobalMap const& global_map)
 		{
@@ -305,8 +310,10 @@ export namespace minairo
 			if (block.is_global)
 			{
 				assert(variable_blocks.size() == 1);
+
 				// set up inhereted globals
-				variable_blocks.back().variables = std::move(globals);
+				variable_blocks.back().variables = std::move(globals.variables);
+				variable_blocks.back().types = std::move(globals.types);
 			}
 
 			for (auto& statement : block.statements)
@@ -319,7 +326,8 @@ export namespace minairo
 			{
 				assert(variable_blocks.size() == 1);
 				// store the globals back
-				globals = std::move(variable_blocks.back().variables);
+				globals.variables = std::move(variable_blocks.back().variables);
+				globals.types = std::move(variable_blocks.back().types);
 			}
 
 			pop_variable_block();
@@ -349,18 +357,62 @@ export namespace minairo
 				variable_definition.initialization->accept(*this);
 				VariableInfo info;
 				info.type = *variable_definition.initialization->get_expression_type();
-				if (!variable_definition.type.has_value())
+				if (std::holds_alternative<BuildInType>(variable_definition.type_definition))
 				{
+					variable_definition.type = std::get<BuildInType>(variable_definition.type_definition);
+				}
+				else if (std::holds_alternative<TerminalData>(variable_definition.type_definition))
+				{
+					if (auto type = find_typedef(std::get<TerminalData>(variable_definition.type_definition)))
+					{
+						variable_definition.type = type;
+					}
+					else
+					{
+						throw message_exception("Typedef not found\n", std::get<TerminalData>(variable_definition.type_definition));
+					}
+				}
+				else
+				{
+					assert(std::holds_alternative<std::monostate>(variable_definition.type_definition));
 					variable_definition.type = info.type;
 				}
-				else if(*variable_definition.type != info.type)
+				
+				
+				if(*variable_definition.type != info.type)
 				{
 					throw message_exception("wrong variable type\n", variable_definition);
 				}
 				
-				if (variable_definition.type == BuildInType::Typedef && !variable_definition.constant)
+				if (variable_definition.type == BuildInType::Typedef)
 				{
-					throw message_exception("typedefs must be constant\n", variable_definition);
+					if (variable_definition.type == BuildInType::Typedef && !variable_definition.constant)
+					{
+						throw message_exception("typedefs must be constant\n", variable_definition);
+					}
+
+					// read typedef
+					if (auto build_in = dynamic_cast<BuildInTypeDeclaration*>(variable_definition.initialization.get()))
+					{
+						current_block.types[(std::string)variable_definition.variable.text] = build_in->type;
+					}
+					else if (auto variable = dynamic_cast<VariableRead*>(variable_definition.initialization.get()))
+					{
+						if (auto type = find_typedef(variable->identifier))
+						{
+							variable_definition.type = type;
+						}
+						else
+						{
+							throw message_exception("Typedef not found\n", variable->identifier);
+						}
+					}
+					else
+					{
+						assert(false); // TODO
+					}
+
+					// TODO do not add types to the stack as they're static
 				}
 
 				variable_definition.index = info.index = current_block.stack_size_at_beginning + (int)current_block.variables.size();
@@ -377,12 +429,13 @@ export namespace minairo
 			int stack_size_at_beginning;
 			// TODO not a string map please. I'm just lazy rn
 			std::unordered_map<std::string, VariableInfo> variables;
+			std::unordered_map<std::string, TypeRepresentation> types;
 		};
 
 		std::vector<VariableBlock> variable_blocks;
 
 		// TODO not a string map please. I'm just lazy rn
-		std::unordered_map<std::string, VariableInfo> globals;
+		GlobalMap globals;
 
 		void push_variable_block()
 		{
@@ -411,6 +464,19 @@ export namespace minairo
 				}
 			}
 			throw unknown_literal_exception(identifier);
+		}
+
+		std::optional<TypeRepresentation> find_typedef(TerminalData identifier)
+		{
+			for (int i = (int)(variable_blocks.size() - 1); i >= 0; --i)
+			{
+				auto info = variable_blocks[i].types.find((std::string)identifier.text);
+				if (info != variable_blocks[i].types.end())
+				{
+					return info->second;
+				}
+			}
+			return std::nullopt;
 		}
 	};
 }
