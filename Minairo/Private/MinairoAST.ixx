@@ -32,6 +32,7 @@ export namespace minairo
 		virtual void accept(ExpressionVisitor& visitor) = 0;
 		virtual void accept(ExpressionConstVisitor& visitor) const = 0;
 
+		virtual std::optional<TypeRepresentation> get_type_value() const { return std::nullopt; }
 		virtual std::optional<TypeRepresentation> get_expression_type() const = 0;
 		virtual TerminalData get_first_terminal() const = 0;
 		virtual TerminalData get_last_terminal() const = 0;
@@ -71,7 +72,11 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		virtual std::optional<TypeRepresentation> get_expression_type() const override
+		std::optional<TypeRepresentation> get_type_value() const override
+		{
+			return type;
+		}
+		std::optional<TypeRepresentation> get_expression_type() const override
 		{
 			return BuildInType::Typedef;
 		}
@@ -127,6 +132,35 @@ export namespace minairo
 		virtual TerminalData get_last_terminal() const override
 		{
 			return terminal;
+		}
+	};
+
+	class TupleDeclaration : public Expression
+	{
+	public:
+		TupleType tuple;
+		TerminalData tuple_terminal, closing_bracket;
+
+		std::vector<TerminalData> field_names;
+		std::vector<std::shared_ptr<Expression>> field_types;
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		std::optional<TypeRepresentation> get_type_value() const override
+		{
+			return tuple;
+		}
+		std::optional<TypeRepresentation> get_expression_type() const override
+		{
+			return BuildInType::Typedef;
+		}
+		virtual TerminalData get_first_terminal() const override
+		{
+			return tuple_terminal;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return closing_bracket;
 		}
 	};
 
@@ -236,11 +270,16 @@ export namespace minairo
 	{
 	public:
 		TerminalData identifier;
+		std::optional<TypeRepresentation> static_type;
 		std::optional<TypeRepresentation> type;
 		int index = -1;
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
+		std::optional<TypeRepresentation> get_type_value() const override
+		{
+			return static_type;
+		}
 		virtual std::optional<TypeRepresentation> get_expression_type() const override
 		{
 			return type;
@@ -319,7 +358,7 @@ export namespace minairo
 		// TODO store precomputed hash(?)
 		TerminalData variable, semicolon;
 		std::optional<TypeRepresentation> type;
-		std::variant<std::monostate, BuildInType, TerminalData> type_definition;
+		std::unique_ptr<Expression> type_definition;
 		std::unique_ptr<Expression> initialization;
 		int index = -1;
 		bool constant = false, explicitly_uninitialized = false;
@@ -348,6 +387,7 @@ export namespace minairo
 		virtual void visit(BuildInTypeDeclaration& binary) = 0;
 		virtual void visit(Grouping& grouping) = 0;
 		virtual void visit(Literal& literal) = 0;
+		virtual void visit(TupleDeclaration& unary_pre) = 0;
 		virtual void visit(UnaryPre& unary_pre) = 0;
 		virtual void visit(UnaryPost& unary_post) = 0;
 		virtual void visit(VariableAssign& unary_post) = 0;
@@ -361,6 +401,7 @@ export namespace minairo
 		virtual void visit(BuildInTypeDeclaration const& binary) = 0;
 		virtual void visit(Grouping const& grouping) = 0;
 		virtual void visit(Literal const& literal) = 0;
+		virtual void visit(TupleDeclaration const& unary_pre) = 0;
 		virtual void visit(UnaryPre const& unary_pre) = 0;
 		virtual void visit(UnaryPost const& unary_post) = 0;
 		virtual void visit(VariableAssign const& unary_post) = 0;
@@ -405,6 +446,10 @@ void minairo::UnaryPre::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
+void minairo::TupleDeclaration::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
 void minairo::UnaryPost::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
@@ -435,6 +480,10 @@ void minairo::Literal::accept(ExpressionConstVisitor& visitor) const
 	visitor.visit(*this);
 }
 void minairo::Grouping::accept(ExpressionConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void minairo::TupleDeclaration::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

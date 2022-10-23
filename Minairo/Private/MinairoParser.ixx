@@ -164,6 +164,7 @@ namespace minairo
 
 	ExpressionPtr parse_precedence(Scanner& scanner, Precedence precedence);
 	ExpressionPtr expression(Scanner& scanner);
+	ExpressionPtr type_declaration(Scanner& scanner);
 
 	// ------------------------------------------------------------------------------------
 
@@ -373,6 +374,49 @@ namespace minairo
 		return result;
 	}
 
+	ExpressionPtr tuple_type_declaration(Scanner& scanner)
+	{
+		auto result = std::make_unique<TupleDeclaration>();
+		result->tuple_terminal = consume(Terminal::WK_TUPLE, scanner);
+		consume(Terminal::BRACKET_CURLY_OPEN, scanner);
+
+
+		while (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
+		{
+			result->field_names.push_back(consume(Terminal::IDENTIFIER, scanner));
+
+			while (scanner.peek_next_symbol().type == Terminal::OP_COMMA)
+			{
+				consume(Terminal::OP_COMMA, scanner);
+				result->field_names.push_back(consume(Terminal::IDENTIFIER, scanner));
+			}
+
+			consume(Terminal::OP_COLON, scanner);
+
+			result->field_types.push_back(type_declaration(scanner));
+
+			while (result->field_types.size() < result->field_names.size())
+			{
+				result->field_types.push_back(result->field_types.back());
+			}
+
+			// -----------------
+
+			if (scanner.peek_next_symbol().type == Terminal::OP_COMMA)
+			{
+				consume(Terminal::OP_COMMA, scanner);
+				if (scanner.peek_next_symbol().type != Terminal::BRACKET_CURLY_CLOSE && scanner.peek_next_symbol().type != Terminal::IDENTIFIER)
+				{
+					consume(Terminal::IDENTIFIER, scanner); // little hack to produce correct error
+				}
+			}
+		}
+
+		result->closing_bracket = consume(Terminal::BRACKET_CURLY_CLOSE, scanner);
+
+		return result;
+	}
+
 	ExpressionPtr unary(Scanner& scanner)
 	{
 		TerminalData op = scanner.get_next_symbol();
@@ -404,6 +448,10 @@ namespace minairo
 			auto result = std::make_unique<VariableRead>();
 			result->identifier = consume(Terminal::IDENTIFIER, scanner);
 			return result;
+		}
+		else if (scanner.peek_next_symbol().type == Terminal::WK_TUPLE)
+		{
+			return tuple_type_declaration(scanner);
 		}
 		else
 		{
@@ -452,8 +500,7 @@ namespace minairo
 		pratt_prefixes[(int)Terminal::WK_FLOAT64] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::WK_BOOL] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::WK_TYPEDEF] = &build_in_type_declaration;
-
-
+		pratt_prefixes[(int)Terminal::WK_TUPLE] = &tuple_type_declaration;
 
 
 		pratt_infixes[(int)Terminal::OP_ADD] = &binary;
@@ -525,20 +572,7 @@ namespace minairo
 
 		if (scanner.peek_next_symbol().type != Terminal::OP_COLON && scanner.peek_next_symbol().type != Terminal::OP_ASSIGN)
 		{
-			auto type_decl = type_declaration(scanner);
-			if (BuildInTypeDeclaration* build_in = dynamic_cast<BuildInTypeDeclaration*>(type_decl.get()))
-			{
-				result->type_definition = build_in->type;
-			}
-			else if (VariableRead* variable_read = dynamic_cast<VariableRead*>(type_decl.get()))
-			{
-				// transform this to "rename"?
-				result->type_definition = variable_read->identifier;
-			}
-			else
-			{
-				assert(false);
-			}
+			result->type_definition = type_declaration(scanner);
 		}
 
 		if (scanner.peek_next_symbol().type == Terminal::OP_COLON)
@@ -546,7 +580,7 @@ namespace minairo
 			consume(Terminal::OP_COLON, scanner);
 			result->constant = true;
 		}
-		else
+		else if (scanner.peek_next_symbol().type != Terminal::OP_SEMICOLON)
 		{
 			consume(Terminal::OP_ASSIGN, scanner);
 		}
@@ -566,7 +600,7 @@ namespace minairo
 		}
 		else
 		{
-			assert(result->type.has_value());
+			assert(result->type_definition != nullptr); // TODO make proper error?
 		}
 
 		result->semicolon = consume(Terminal::OP_SEMICOLON, scanner);

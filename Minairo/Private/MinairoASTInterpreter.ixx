@@ -245,6 +245,11 @@ export namespace minairo
 			}
 		}
 
+		void visit(TupleDeclaration const& tuple_declaration) override
+		{
+			last_expression_value = tuple_declaration.tuple;
+		}
+
 		void visit(UnaryPre const& unary_pre) override
 		{
 			unary_pre.exp->accept(*this);
@@ -297,8 +302,16 @@ export namespace minairo
 
 		void visit(VariableRead const& variable_read) override
 		{
-			assert(variable_read.index < variables.size());
-			last_expression_value = variables[variable_read.index];
+			if (*variable_read.type == BuildInType::Typedef)
+			{
+				assert(variable_read.index == -1);
+				last_expression_value = *variable_read.static_type;
+			}
+			else
+			{
+				assert(variable_read.index >= 0 && variable_read.index < variables.size());
+				last_expression_value = variables[variable_read.index];
+			}
 		}
 
 		// ----------------------------------------------------------------------------------------
@@ -334,25 +347,78 @@ export namespace minairo
 
 		void visit(VariableDefinition const& variable_definition) override
 		{
-			if (variable_definition.initialization)
+			if (*variable_definition.type == BuildInType::Typedef)
 			{
-				variable_definition.initialization->accept(*this);
-			}
-			else if (!variable_definition.explicitly_uninitialized)
-			{
-				assert(false);
-				// TODO zero initialization
-				// last_expression_value = 0
-			}
-
-			assert(variables.size() == variable_definition.index);
-			if (!variable_definition.explicitly_uninitialized)
-			{
-				variables.push_back(last_expression_value);
+				assert(variable_definition.index == -1);
+				last_expression_value = *variable_definition.initialization->get_type_value();
 			}
 			else
 			{
-				variables.emplace_back();
+				if (variable_definition.initialization)
+				{
+					variable_definition.initialization->accept(*this);
+				}
+				else if (!variable_definition.explicitly_uninitialized)
+				{
+					std::visit([this]<typename T>(T type)
+						{
+							if constexpr (std::is_same_v<T, BuildInType>)
+							{
+								switch (type)
+								{
+								case BuildInType::Bool:
+									last_expression_value = false;
+									break;
+								case BuildInType::I8:
+									last_expression_value = (int8_t)0;
+									break;
+								case BuildInType::I16:
+									last_expression_value = (int16_t)0;
+									break;
+								case BuildInType::I32:
+									last_expression_value = (int32_t)0;
+									break;
+								case BuildInType::I64:
+									last_expression_value = (int64_t)0;
+									break;
+								case BuildInType::U8:
+									last_expression_value = (uint8_t)0;
+									break;
+								case BuildInType::U16:
+									last_expression_value = (uint16_t)0;
+									break;
+								case BuildInType::U32:
+									last_expression_value = (uint32_t)0;
+									break;
+								case BuildInType::U64:
+									last_expression_value = (uint64_t)0;
+									break;
+								case BuildInType::F32:
+									last_expression_value = (float)0;
+									break;
+								case BuildInType::F64:
+									last_expression_value = (double)0;
+									break;
+								default:
+									assert(false);
+								}
+							}
+							else
+							{
+								assert(false);
+							}
+						}, *variable_definition.type);
+				}
+
+				assert(variables.size() == variable_definition.index);
+				if (!variable_definition.explicitly_uninitialized)
+				{
+					variables.push_back(last_expression_value);
+				}
+				else
+				{
+					variables.emplace_back();
+				}
 			}
 		}
 

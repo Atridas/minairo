@@ -133,10 +133,11 @@ export namespace minairo
 		};
 
 	public:
-		explicit TypePass(FunctionMap &_function_map) : function_map(_function_map) {}
+		explicit TypePass(FunctionMap& _function_map) : function_map(_function_map) {}
 
 		struct GlobalMap
 		{
+			// TODO not a string map please. I'm just lazy rn
 			std::unordered_map<std::string, VariableInfo> variables;
 			std::unordered_map<std::string, TypeRepresentation> types;
 		};
@@ -159,7 +160,7 @@ export namespace minairo
 			binary.right->accept(*this);
 
 			TypeRepresentation argument_types[2] = { *binary.left->get_expression_type(), *binary.right->get_expression_type() };
-			
+
 			FunctionRepresentation const* function = nullptr;
 
 			switch (binary.op)
@@ -209,6 +210,23 @@ export namespace minairo
 		void visit(Literal& literal) override
 		{
 			// ------
+		}
+
+		void visit(TupleDeclaration& tuple_declaration) override
+		{
+			assert(tuple_declaration.field_names.size() == tuple_declaration.field_types.size());
+
+			for (int i = 0; i < tuple_declaration.field_names.size(); ++i)
+			{
+				if (tuple_declaration.tuple.has_field(tuple_declaration.field_names[i].text))
+				{
+					throw message_exception("Repeated field in tuple declaration\n", tuple_declaration.field_names[i]);
+				}
+
+				tuple_declaration.field_types[i]->accept(*this);
+
+				tuple_declaration.tuple.add_field(tuple_declaration.field_names[i].text, *tuple_declaration.field_types[i]->get_type_value());
+			}
 		}
 
 		void visit(UnaryPre& unary_pre) override
@@ -294,9 +312,17 @@ export namespace minairo
 
 		void visit(VariableRead& variable_read) override
 		{
-			auto variable = find_variable(variable_read.identifier);
-			variable_read.type = variable.type;
-			variable_read.index = variable.index;
+			if (auto type = find_typedef(variable_read.identifier))
+			{
+				variable_read.static_type = type;
+				variable_read.type = BuildInType::Typedef;
+			}
+			else
+			{
+				auto variable = find_variable(variable_read.identifier);
+				variable_read.type = variable.type;
+				variable_read.index = variable.index;
+			}
 		}
 
 		// ----------------------------------------------------------------------------------------
@@ -332,7 +358,7 @@ export namespace minairo
 
 			pop_variable_block();
 		}
-		
+
 		void visit(ExpressionStatement& expression_statement) override
 		{
 			expression_statement.exp->accept(*this);
@@ -340,10 +366,6 @@ export namespace minairo
 
 		void visit(VariableDefinition& variable_definition) override
 		{
-			// TODO change this assumptions
-			assert(variable_definition.initialization != nullptr);
-			assert(!variable_definition.explicitly_uninitialized);
-
 			assert(!variable_blocks.empty());
 
 			VariableBlock& current_block = variable_blocks.back();
@@ -352,77 +374,54 @@ export namespace minairo
 			{
 				throw variable_redefinition_exception(variable_definition.variable);
 			}
-			else
+
+			assert(variable_definition.type_definition != nullptr || variable_definition.initialization != nullptr);
+
+			if (variable_definition.type_definition != nullptr)
+			{
+				variable_definition.type_definition->accept(*this);
+
+				if (*variable_definition.type_definition->get_expression_type() != BuildInType::Typedef)
+				{
+					throw message_exception("Expected a type definition\n", *variable_definition.type_definition);
+				}
+				variable_definition.type = variable_definition.type_definition->get_type_value();
+			}
+
+			if (variable_definition.initialization != nullptr)
 			{
 				variable_definition.initialization->accept(*this);
-				VariableInfo info;
-				info.type = *variable_definition.initialization->get_expression_type();
-				if (std::holds_alternative<BuildInType>(variable_definition.type_definition))
+				if (variable_definition.type_definition == nullptr)
 				{
-					variable_definition.type = std::get<BuildInType>(variable_definition.type_definition);
+					variable_definition.type = *variable_definition.initialization->get_expression_type();
 				}
-				else if (std::holds_alternative<TerminalData>(variable_definition.type_definition))
-				{
-					if (auto type = find_typedef(std::get<TerminalData>(variable_definition.type_definition)))
-					{
-						variable_definition.type = type;
-					}
-					else
-					{
-						throw message_exception("Typedef not found\n", std::get<TerminalData>(variable_definition.type_definition));
-					}
-				}
-				else
-				{
-					assert(std::holds_alternative<std::monostate>(variable_definition.type_definition));
-					variable_definition.type = info.type;
-				}
-				
-				
-				if(*variable_definition.type != info.type)
+				else if (*variable_definition.type != *variable_definition.initialization->get_expression_type())
 				{
 					throw message_exception("wrong variable type\n", variable_definition);
 				}
-				
-				if (variable_definition.type == BuildInType::Typedef)
+			}
+
+			if (variable_definition.type == BuildInType::Typedef)
+			{
+				if (variable_definition.type == BuildInType::Typedef && !variable_definition.constant)
 				{
-					if (variable_definition.type == BuildInType::Typedef && !variable_definition.constant)
-					{
-						throw message_exception("typedefs must be constant\n", variable_definition);
-					}
-
-					// read typedef
-					if (auto build_in = dynamic_cast<BuildInTypeDeclaration*>(variable_definition.initialization.get()))
-					{
-						current_block.types[(std::string)variable_definition.variable.text] = build_in->type;
-					}
-					else if (auto variable = dynamic_cast<VariableRead*>(variable_definition.initialization.get()))
-					{
-						if (auto type = find_typedef(variable->identifier))
-						{
-							variable_definition.type = type;
-						}
-						else
-						{
-							throw message_exception("Typedef not found\n", variable->identifier);
-						}
-					}
-					else
-					{
-						assert(false); // TODO
-					}
-
-					// TODO do not add types to the stack as they're static
+					throw message_exception("typedefs must be constant\n", variable_definition);
 				}
 
+				current_block.types[(std::string)variable_definition.variable.text] = *variable_definition.initialization->get_type_value();
+			}
+			else
+			{
+				VariableInfo info;
+				info.type = *variable_definition.type;
 				variable_definition.index = info.index = current_block.stack_size_at_beginning + (int)current_block.variables.size();
 				info.constant = variable_definition.constant;
-				current_block.variables[(std::string)variable_definition.variable.text] =  info;
+				current_block.variables[(std::string)variable_definition.variable.text] = info;
 			}
 		}
 
 	private:
-		FunctionMap &function_map;
+		FunctionMap& function_map;
 
 		struct VariableBlock
 		{
@@ -434,7 +433,6 @@ export namespace minairo
 
 		std::vector<VariableBlock> variable_blocks;
 
-		// TODO not a string map please. I'm just lazy rn
 		GlobalMap globals;
 
 		void push_variable_block()
