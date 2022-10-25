@@ -5,6 +5,7 @@ module;
 #include <iostream>
 #include <memory>
 #include <string_view>
+#include <sstream>
 #include <type_traits>
 #include <unordered_map>
 #include <variant>
@@ -111,6 +112,120 @@ namespace minairo
 
 	}
 
+	std::string print_tuple(Tuple const& tuple);
+
+	std::string print_value(Value const& value)
+	{
+		return std::visit([] <typename T>(T value) -> std::string {
+			if constexpr (std::is_same_v<T, char32_t>)
+			{
+				std::stringstream ss;
+				if (value < 128)
+					ss << (char)value;
+				else
+				{
+					ss << "Ux" << (unsigned int)value;
+				}
+				return ss.str();
+			}
+			else if constexpr (std::is_same_v<T, bool>)
+			{
+				if (value)
+					return "true";
+				else
+					return "false";
+			}
+			else if constexpr (std::is_integral_v<T>)
+			{
+				std::stringstream ss;
+				ss << value;
+				return ss.str();
+			}
+			else if constexpr (std::is_same_v<T, TypeRepresentation>)
+			{
+				std::stringstream ss;
+				ss << "typedef ";
+				std::visit([&ss] <typename Q>(Q value) {
+					if constexpr (std::is_same_v<Q, BuildInType>)
+					{
+						switch (value)
+						{
+						case BuildInType::Void:
+							ss << "void";
+							break;
+						case BuildInType::Bool:
+							ss << "bool";
+							break;
+						case BuildInType::I8:
+							ss << "int8";
+							break;
+						case BuildInType::I16:
+							ss << "int16";
+							break;
+						case BuildInType::I32:
+							ss << "int32";
+							break;
+						case BuildInType::I64:
+							ss << "int64";
+							break;
+						case BuildInType::U8:
+							ss << "uint8";
+							break;
+						case BuildInType::U16:
+							ss << "uint16";
+							break;
+						case BuildInType::U32:
+							ss << "uint32";
+							break;
+						case BuildInType::U64:
+							ss << "uint64";
+							break;
+						case BuildInType::F32:
+							ss << "float";
+							break;
+						case BuildInType::F64:
+							ss << "double";
+							break;
+						case BuildInType::Typedef:
+							ss << "typedef";
+							break;
+						default:
+							assert(false);
+						}
+					}
+					else
+					{
+						// TODO
+						ss << "????";
+					}
+				}, value);
+				return ss.str();
+			}
+			else if constexpr (std::is_same_v<T, Tuple>)
+			{
+				return print_tuple(value);
+			}
+			else
+			{
+				return "unknown";
+			}
+		}, value);
+	}
+
+	std::string print_tuple(Tuple const& tuple)
+	{
+		std::stringstream ss;
+		ss << "tuple { ";
+		const char* comma = "";
+		for (int i = 0; i < tuple.type.get_num_fields(); ++i)
+		{
+			ss << comma << tuple.type.get_field_name(i) << ": " << print_value(tuple.fields[i]);
+			comma = ", ";
+		}
+		ss << " }";
+		return ss.str();
+	}
+
 	void interpret(VMImpl* vm, std::string_view code)
 	{
 		assert(vm != nullptr);
@@ -132,80 +247,8 @@ namespace minairo
 			expression->accept(interpreter);
 			vm->globals = interpreter.get_globals();
 
-
-			std::visit([] <typename T>(T value) {
-				if constexpr (std::is_same_v<T, char32_t>)
-				{
-					std::cout << "char32" << std::endl;
-				}
-				else if constexpr (std::is_integral_v<T>)
-				{
-					std::cout << value << std::endl;
-				}
-				else if constexpr (std::is_same_v<T, TypeRepresentation>)
-				{
-					std::cout << "typedef ";
-					std::visit([] <typename Q>(Q value) {
-						if constexpr (std::is_same_v<Q, BuildInType>)
-						{
-							switch (value)
-							{
-							case BuildInType::Void:
-								std::cout << "void";
-								break;
-							case BuildInType::Bool:
-								std::cout << "bool";
-								break;
-							case BuildInType::I8:
-								std::cout << "int8";
-								break;
-							case BuildInType::I16:
-								std::cout << "int16";
-								break;
-							case BuildInType::I32:
-								std::cout << "int32";
-								break;
-							case BuildInType::I64:
-								std::cout << "int64";
-								break;
-							case BuildInType::U8:
-								std::cout << "uint8";
-								break;
-							case BuildInType::U16:
-								std::cout << "uint16";
-								break;
-							case BuildInType::U32:
-								std::cout << "uint32";
-								break;
-							case BuildInType::U64:
-								std::cout << "uint64";
-								break;
-							case BuildInType::F32:
-								std::cout << "float";
-								break;
-							case BuildInType::F64:
-								std::cout << "double";
-								break;
-							case BuildInType::Typedef:
-								std::cout << "typedef";
-								break;
-							default:
-								assert(false);
-							}
-						}
-						else
-						{
-							// TODO
-							std::cout << "????";
-						}
-					}, value);
-					std::cout << std::endl;
-				}
-				else
-				{
-					std::cout << "unknown" << std::endl;
-				}
-			}, interpreter.get_last_expression_value());
+			std::cout << print_value(interpreter.get_last_expression_value()) << std::endl;
+			
 		}
 		catch (ParseException pe)
 		{

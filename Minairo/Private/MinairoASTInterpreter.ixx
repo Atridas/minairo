@@ -8,6 +8,7 @@ module;
 #include <type_traits>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 export module Minairo.AST.Interpreter;
 
@@ -20,14 +21,61 @@ import Minairo.TypeRepresentation;
 
 export namespace minairo
 {
-	using Value = std::variant<
+	class Value;
+
+	struct Tuple
+	{
+		TupleType type;
+		std::vector<Value> fields;
+	};
+
+
+	class Value : public std::variant<
 		int8_t, int16_t, int32_t, int64_t,
 		uint8_t, uint16_t, uint32_t, uint64_t,
 		float, double,
 		std::string,
 		char32_t,
 		bool,
-		TypeRepresentation>;
+		TypeRepresentation,
+		Tuple>
+	{
+		using Base = std::variant<
+			int8_t, int16_t, int32_t, int64_t,
+			uint8_t, uint16_t, uint32_t, uint64_t,
+			float, double,
+			std::string,
+			char32_t,
+			bool,
+			TypeRepresentation,
+			Tuple>;
+
+
+	public:
+		Value() = default;
+		Value(int8_t const& i) : Base{ i } {};
+		Value(int16_t const& i) : Base{ i } {};
+		Value(int32_t const& i) : Base{ i } {};
+		Value(int64_t const& i) : Base{ i } {};
+		Value(uint8_t const& i) : Base{ i } {};
+		Value(uint16_t const& i) : Base{ i } {};
+		Value(uint32_t const& i) : Base{ i } {};
+		Value(uint64_t const& i) : Base{ i } {};
+		Value(float const& i) : Base{ i } {};
+		Value(double const& i) : Base{ i } {};
+		Value(bool const& i) : Base{ i } {};
+		Value(TypeRepresentation const& i) : Base{ i } {};
+		Value(BuildInType const& i) : Base{ (TypeRepresentation)i } {};
+		Value(TupleType const& i) : Base{ (TypeRepresentation)i } {};
+		Value(Tuple const& i) : Base{ i } {};
+
+		Value(Value const&) = default;
+		Value(Value&&) = default;
+		Value& operator=(Value const&) = default;
+		Value& operator=(Value&&) = default;
+	};
+
+
 
 	TypeRepresentation get_type_representation(Value value)
 	{
@@ -87,6 +135,62 @@ export namespace minairo
 				return BuildInType::Void;
 			}
 		}, value);
+	}
+
+	Value get_default_value(BuildInType type);
+	Value get_default_value(TupleType type);
+	Value get_default_value(TypeRepresentation type);
+
+	Value get_default_value(BuildInType type)
+	{
+		switch (type)
+		{
+		case BuildInType::I8:
+			return (int8_t)0;
+		case BuildInType::I16:
+			return (int16_t)0;
+		case BuildInType::I32:
+			return (int32_t)0;
+		case BuildInType::I64:
+			return (int64_t)0;
+		case BuildInType::U8:
+			return (uint8_t)0;
+		case BuildInType::U16:
+			return (uint16_t)0;
+		case BuildInType::U32:
+			return (uint32_t)0;
+		case BuildInType::U64:
+			return (uint64_t)0;
+		case BuildInType::F32:
+			return (float)0;
+		case BuildInType::F64:
+			return (double)0;
+		case BuildInType::Bool:
+			return false;
+		case BuildInType::Typedef:
+			return BuildInType::Void;
+		default:
+			assert(false);
+			return BuildInType::Void;
+		}
+	}
+
+	Value get_default_value(TupleType type)
+	{
+		Tuple result;
+		result.type = type;
+
+		for (int i = 0; i < type.get_num_fields(); ++i)
+		{
+			result.fields.push_back(get_default_value(type.get_field_type(i)));
+		}
+
+		return result;
+	}
+
+	Value get_default_value(TypeRepresentation type)
+	{
+		return std::visit([](auto t) { return get_default_value(t); }, type);
 	}
 
 	void* get_ptr(Value &value)
@@ -354,66 +458,25 @@ export namespace minairo
 			}
 			else
 			{
+				assert(variables.size() == variable_definition.index);
+
 				if (variable_definition.initialization)
 				{
 					variable_definition.initialization->accept(*this);
+					variables.push_back(last_expression_value);
 				}
 				else if (!variable_definition.explicitly_uninitialized)
 				{
-					std::visit([this]<typename T>(T type)
-						{
-							if constexpr (std::is_same_v<T, BuildInType>)
-							{
-								switch (type)
-								{
-								case BuildInType::Bool:
-									last_expression_value = false;
-									break;
-								case BuildInType::I8:
-									last_expression_value = (int8_t)0;
-									break;
-								case BuildInType::I16:
-									last_expression_value = (int16_t)0;
-									break;
-								case BuildInType::I32:
-									last_expression_value = (int32_t)0;
-									break;
-								case BuildInType::I64:
-									last_expression_value = (int64_t)0;
-									break;
-								case BuildInType::U8:
-									last_expression_value = (uint8_t)0;
-									break;
-								case BuildInType::U16:
-									last_expression_value = (uint16_t)0;
-									break;
-								case BuildInType::U32:
-									last_expression_value = (uint32_t)0;
-									break;
-								case BuildInType::U64:
-									last_expression_value = (uint64_t)0;
-									break;
-								case BuildInType::F32:
-									last_expression_value = (float)0;
-									break;
-								case BuildInType::F64:
-									last_expression_value = (double)0;
-									break;
-								default:
-									assert(false);
-								}
-							}
-							else
-							{
-								assert(false);
-							}
-						}, *variable_definition.type);
-				}
-
-				assert(variables.size() == variable_definition.index);
-				if (!variable_definition.explicitly_uninitialized)
-				{
+					last_expression_value = get_default_value(*variable_definition.type);
 					variables.push_back(last_expression_value);
+				}
+				else if (std::holds_alternative<TupleType>(*variable_definition.type))
+				{
+					Tuple tuple;
+					tuple.type = std::get<TupleType>(*variable_definition.type); 
+					last_expression_value = std::move(tuple);
+					variables.push_back(last_expression_value);
+
 				}
 				else
 				{

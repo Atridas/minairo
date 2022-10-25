@@ -2,6 +2,7 @@ module;
 
 #include <cassert>
 
+#include <algorithm>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -28,15 +29,22 @@ export namespace minairo
 	{
 	public:
 		bool has_field(std::string_view name) const noexcept;
-		TypeRepresentation const& get_field_type(std::string_view name);
+
+		TypeRepresentation const& get_field_type(std::string_view name) const;
+		int get_field_index(std::string_view name) const;
+
+		int get_num_fields() const { return (int)fields.size(); }
+		std::string_view get_field_name(int index) const { return fields[index]; }
+		TypeRepresentation const& get_field_type(int index) const { return types[index]; }
+
 		void add_field(std::string_view name, TypeRepresentation const& type);
 		void add_field(std::string_view name, TypeRepresentation&& type);
 
 		bool operator==(TupleType const&) const noexcept;
 	private:
 
-		// TODO not a string map please. I'm just lazy rn
-		std::unordered_map<std::string, TypeRepresentation> fields;
+		std::vector<std::string> fields;
+		std::vector<TypeRepresentation> types;
 	};
 
 
@@ -77,25 +85,35 @@ export namespace minairo
 
 	bool TupleType::has_field(std::string_view name) const noexcept
 	{
-		return fields.find((std::string)name) != fields.end();
+		return std::binary_search(fields.begin(), fields.end(), name);
 	}
 
-	TypeRepresentation const& TupleType::get_field_type(std::string_view name)
+	TypeRepresentation const& TupleType::get_field_type(std::string_view name) const
 	{
 		assert(has_field(name));
-		return fields.find((std::string)name)->second;
+		//return fields.find((std::string)name)->second;
+		return types[0];
+	}
+
+	int TupleType::get_field_index(std::string_view name) const
+	{
+		assert(has_field(name));
+		//return fields.find((std::string)name)->second;
+		return 0;
 	}
 
 	void TupleType::add_field(std::string_view name, TypeRepresentation const& type)
 	{
 		assert(!has_field(name));
-		fields[(std::string)name] = type;
+		auto it = fields.insert(std::upper_bound(fields.begin(), fields.end(), name), (std::string)name);
+		types.insert(types.begin() + (it - fields.begin()), type);
 	}
 
 	void TupleType::add_field(std::string_view name, TypeRepresentation&& type)
 	{
 		assert(!has_field(name));
-		fields[(std::string)name] = std::move(type);
+		auto it = fields.insert(std::upper_bound(fields.begin(), fields.end(), name), (std::string)name);
+		types.insert(types.begin() + (it - fields.begin()), std::move(type));
 	}
 
 	bool TupleType::operator==(TupleType const& other) const noexcept
@@ -104,14 +122,13 @@ export namespace minairo
 		{
 			return false;
 		}
-		for (auto field : fields)
+		for (int i = 0; i < fields.size(); ++i)
 		{
-			auto of = other.fields.find(field.first);
-			if (of == other.fields.end())
+			if (fields[i] != other.fields[i])
 			{
 				return false;
 			}
-			else if (field.second != of->second)
+			else if (types[i] != other.types[i])
 			{
 				return false;
 			}
