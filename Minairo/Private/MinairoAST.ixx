@@ -135,7 +135,56 @@ export namespace minairo
 		}
 	};
 
-	class TupleDeclaration : public Expression
+	class MemberRead final :public Expression
+	{
+	public:
+		std::unique_ptr<Expression> left;
+		TerminalData member;
+		int index = -1;
+		std::optional<TypeRepresentation> type;
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		std::optional<TypeRepresentation> get_expression_type() const override
+		{
+			return type;
+		}
+		virtual TerminalData get_first_terminal() const override
+		{
+			return left->get_first_terminal();
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return member;
+		}
+	};
+
+	class MemberWrite final :public Expression
+	{
+	public:
+		std::unique_ptr<Expression> left;
+		TerminalData member;
+		std::unique_ptr<Expression> right;
+		int index = -1;
+		std::optional<TypeRepresentation> type;
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		std::optional<TypeRepresentation> get_expression_type() const override
+		{
+			return type;
+		}
+		virtual TerminalData get_first_terminal() const override
+		{
+			return left->get_first_terminal();
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return member;
+		}
+	};
+
+	class TupleDeclaration final : public Expression
 	{
 	public:
 		TupleType tuple;
@@ -221,32 +270,6 @@ export namespace minairo
 	public:
 		TerminalData identifier;
 		std::unique_ptr<Expression> exp;
-		std::optional<TypeRepresentation> type;
-		int index = -1;
-
-		void accept(ExpressionVisitor& visitor) override;
-		void accept(ExpressionConstVisitor& visitor) const override;
-		virtual std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return type;
-		}
-		virtual TerminalData get_first_terminal() const override
-		{
-			return identifier;
-		}
-		virtual TerminalData get_last_terminal() const override
-		{
-			return exp->get_last_terminal();
-		}
-	};
-
-	class VariableOperatorAndAssign final : public Expression
-	{
-	public:
-		TerminalData identifier;
-		TerminalData op;
-		std::unique_ptr<Expression> exp;
-		FunctionRepresentation const* function_to_call = nullptr;
 		std::optional<TypeRepresentation> type;
 		int index = -1;
 
@@ -387,11 +410,12 @@ export namespace minairo
 		virtual void visit(BuildInTypeDeclaration& binary) = 0;
 		virtual void visit(Grouping& grouping) = 0;
 		virtual void visit(Literal& literal) = 0;
+		virtual void visit(MemberRead& literal) = 0;
+		virtual void visit(MemberWrite& literal) = 0;
 		virtual void visit(TupleDeclaration& unary_pre) = 0;
 		virtual void visit(UnaryPre& unary_pre) = 0;
 		virtual void visit(UnaryPost& unary_post) = 0;
 		virtual void visit(VariableAssign& unary_post) = 0;
-		virtual void visit(VariableOperatorAndAssign& unary_post) = 0;
 		virtual void visit(VariableRead& unary_post) = 0;
 	};
 	class ExpressionConstVisitor
@@ -401,11 +425,12 @@ export namespace minairo
 		virtual void visit(BuildInTypeDeclaration const& binary) = 0;
 		virtual void visit(Grouping const& grouping) = 0;
 		virtual void visit(Literal const& literal) = 0;
+		virtual void visit(MemberRead const& literal) = 0;
+		virtual void visit(MemberWrite const& literal) = 0;
 		virtual void visit(TupleDeclaration const& unary_pre) = 0;
 		virtual void visit(UnaryPre const& unary_pre) = 0;
 		virtual void visit(UnaryPost const& unary_post) = 0;
 		virtual void visit(VariableAssign const& unary_post) = 0;
-		virtual void visit(VariableOperatorAndAssign const& unary_post) = 0;
 		virtual void visit(VariableRead const& unary_post) = 0;
 	};
 	class StatementVisitor
@@ -434,11 +459,19 @@ void minairo::BuildInTypeDeclaration::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
+void minairo::Grouping::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
 void minairo::Literal::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::Grouping::accept(ExpressionVisitor& visitor)
+void minairo::MemberRead::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+void minairo::MemberWrite::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
@@ -458,10 +491,6 @@ void minairo::VariableAssign::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::VariableOperatorAndAssign::accept(ExpressionVisitor& visitor)
-{
-	visitor.visit(*this);
-}
 void minairo::VariableRead::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
@@ -475,11 +504,19 @@ void minairo::BuildInTypeDeclaration::accept(ExpressionConstVisitor& visitor) co
 {
 	visitor.visit(*this);
 }
+void minairo::Grouping::accept(ExpressionConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
 void minairo::Literal::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::Grouping::accept(ExpressionConstVisitor& visitor) const
+void minairo::MemberRead::accept(ExpressionConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void minairo::MemberWrite::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
@@ -496,10 +533,6 @@ void minairo::UnaryPost::accept(ExpressionConstVisitor& visitor) const
 	visitor.visit(*this);
 }
 void minairo::VariableAssign::accept(ExpressionConstVisitor& visitor) const
-{
-	visitor.visit(*this);
-}
-void minairo::VariableOperatorAndAssign::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

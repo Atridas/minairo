@@ -197,11 +197,51 @@ namespace minairo
 
 	ExpressionPtr op_and_assign(std::unique_ptr<VariableRead> left, Scanner& scanner)
 	{
-		auto result = std::make_unique<VariableOperatorAndAssign>();
+		/*auto result = std::make_unique<VariableOperatorAndAssign>();
 		result->identifier = left->identifier;
 		result->op = scanner.get_next_symbol().type;
 		result->exp = parse_precedence(scanner, Precedence::Assignment);
+		return result;*/
+		assert(false);
+		return nullptr;
+	}
+
+	ExpressionPtr assign(std::unique_ptr<MemberRead> left, Scanner& scanner)
+	{
+		consume(Terminal::OP_ASSIGN, scanner);
+		auto result = std::make_unique<MemberWrite>();
+		result->left = std::move(left->left);
+		result->member = left->member;
+		result->right = parse_precedence(scanner, Precedence::Assignment);
 		return result;
+	}
+
+	ExpressionPtr op_and_assign(std::unique_ptr<MemberRead> left, Scanner& scanner)
+	{
+		/*auto result = std::make_unique<VariableOperatorAndAssign>();
+		result->identifier = left->identifier;
+		result->op = scanner.get_next_symbol().type;
+		result->exp = parse_precedence(scanner, Precedence::Assignment);
+		return result;*/
+		assert(false);
+		return nullptr;
+	}
+
+	template<typename VariableOrMemberRead>
+	ExpressionPtr try_assign(std::unique_ptr<VariableOrMemberRead> left, Scanner& scanner)
+	{
+		switch (scanner.peek_next_symbol().type)
+		{
+		case Terminal::OP_ASSIGN:
+			return assign(std::move(left), scanner);
+		case Terminal::OP_ASSIGN_MUL:
+		case Terminal::OP_ASSIGN_DIV:
+		case Terminal::OP_ASSIGN_ADD:
+		case Terminal::OP_ASSIGN_SUB:
+			return op_and_assign(std::move(left), scanner);
+		default:
+			return left;
+		}
 	}
 
 	// ------------------------------------------------------------------------------------
@@ -271,18 +311,7 @@ namespace minairo
 		auto result = std::make_unique<VariableRead>();
 		result->identifier = consume(Terminal::IDENTIFIER, scanner);
 
-		switch (scanner.peek_next_symbol().type)
-		{
-		case Terminal::OP_ASSIGN:
-			return assign(std::move(result), scanner);
-		case Terminal::OP_ASSIGN_MUL:
-		case Terminal::OP_ASSIGN_DIV:
-		case Terminal::OP_ASSIGN_ADD:
-		case Terminal::OP_ASSIGN_SUB:
-			return op_and_assign(std::move(result), scanner);
-		default:
-			return result;
-		}
+		return try_assign(std::move(result), scanner);
 	}
 
 	ExpressionPtr integer_literal(Scanner& scanner)
@@ -441,6 +470,16 @@ namespace minairo
 		return result;
 	}
 
+	ExpressionPtr member_read(ExpressionPtr left, Precedence current_precendence, Scanner& scanner)
+	{
+		auto result = std::make_unique<MemberRead>();
+		result->left = std::move(left);
+		consume(Terminal::OP_DOT, scanner);
+		result->member = consume(Terminal::IDENTIFIER, scanner);
+
+		return try_assign(std::move(result), scanner);
+	}
+
 	ExpressionPtr type_declaration(Scanner& scanner)
 	{
 		if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
@@ -513,6 +552,8 @@ namespace minairo
 		pratt_precedences[(int)Terminal::OP_DIV] = Precedence::Factor;
 		pratt_infixes[(int)Terminal::OP_MOD] = &binary;
 		pratt_precedences[(int)Terminal::OP_MOD] = Precedence::Factor;
+		pratt_infixes[(int)Terminal::OP_DOT] = &member_read;
+		pratt_precedences[(int)Terminal::OP_DOT] = Precedence::Call;
 	}
 
 

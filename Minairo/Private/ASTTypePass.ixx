@@ -212,6 +212,60 @@ export namespace minairo
 			// ------
 		}
 
+		void visit(MemberRead& member_read) override
+		{
+			member_read.left->accept(*this);
+			TypeRepresentation left_type = *member_read.left->get_expression_type();
+			if (auto tupleopt = left_type.as_tuple())
+			{
+				TupleType tuple = *std::move(tupleopt);
+				if (tuple.has_field(member_read.member.text))
+				{
+					member_read.index = tuple.get_field_index(member_read.member.text);
+					member_read.type = tuple.get_field_type(member_read.member.text);
+				}
+				else
+				{
+					throw message_exception("tuple doesn't have a member of this name\n", member_read);
+				}
+			}
+			else
+			{
+				throw message_exception("Expected a tuple before '.'\n", *member_read.left);
+			}
+		}
+
+		void visit(MemberWrite& member_write) override
+		{
+			member_write.left->accept(*this);
+			TypeRepresentation left_type = *member_write.left->get_expression_type();
+			if (auto tupleopt = left_type.as_tuple())
+			{
+				TupleType tuple = *std::move(tupleopt);
+				if (tuple.has_field(member_write.member.text))
+				{
+					member_write.right->accept(*this);
+
+					member_write.index = tuple.get_field_index(member_write.member.text);
+					member_write.type = tuple.get_field_type(member_write.member.text);
+
+
+					if (*member_write.type != *member_write.right->get_expression_type())
+					{
+						throw message_exception("Assignment of different types\n", member_write);
+					}
+				}
+				else
+				{
+					throw message_exception("tuple doesn't have a member of this name\n", member_write);
+				}
+			}
+			else
+			{
+				throw message_exception("Expected a tuple before '.'\n", *member_write.left);
+			}
+		}
+
 		void visit(TupleDeclaration& tuple_declaration) override
 		{
 			assert(tuple_declaration.field_names.size() == tuple_declaration.field_types.size());
@@ -255,59 +309,6 @@ export namespace minairo
 			{
 				throw message_exception("Assignment of different types\n", variable_assign.identifier);
 			}
-		}
-
-		void visit(VariableOperatorAndAssign& variable_op_assign) override
-		{
-			variable_op_assign.exp->accept(*this);
-
-			auto variable = find_variable(variable_op_assign.identifier);
-			if (variable.constant)
-			{
-				throw const_write_exception(variable_op_assign.identifier);
-			}
-			variable_op_assign.type = variable.type;
-			variable_op_assign.index = variable.index;
-
-			if (*variable_op_assign.type != *variable_op_assign.exp->get_expression_type())
-			{
-				throw message_exception("Assignment of different types\n", variable_op_assign.op);
-			}
-
-			TypeRepresentation argument_types[2] = { *variable_op_assign.type, *variable_op_assign.exp->get_expression_type() };
-			FunctionRepresentation const* function = nullptr;
-			switch (variable_op_assign.op.type)
-			{
-			case Terminal::OP_ASSIGN_ADD:
-			{
-				variable_op_assign.function_to_call = function_map.get("operator+", argument_types);
-				break;
-			}
-			case Terminal::OP_ASSIGN_SUB:
-			{
-				variable_op_assign.function_to_call = function_map.get("operator-", argument_types);
-				break;
-			}
-			case Terminal::OP_ASSIGN_MUL:
-			{
-				variable_op_assign.function_to_call = function_map.get("operator*", argument_types);
-				break;
-			}
-			case Terminal::OP_ASSIGN_DIV:
-			{
-				variable_op_assign.function_to_call = function_map.get("operator/", argument_types);
-				break;
-			}
-			case Terminal::OP_ASSIGN_MOD:
-			{
-				variable_op_assign.function_to_call = function_map.get("operator%", argument_types);
-				break;
-			}
-			default:
-				assert(false); // TODO
-			}
-
-			assert(variable_op_assign.function_to_call != nullptr);
 		}
 
 		void visit(VariableRead& variable_read) override

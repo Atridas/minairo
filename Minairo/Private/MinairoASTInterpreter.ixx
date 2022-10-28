@@ -29,6 +29,40 @@ export namespace minairo
 		std::vector<Value> fields;
 	};
 
+	struct TupleReferenceOnStack
+	{
+		Tuple* tuple;
+
+		Value& get_field(int index)
+		{
+			return tuple->fields[index];
+		}
+
+		Tuple& as_tuple() const
+		{
+			return *tuple;
+		}
+	};
+
+	struct TupleReference : public std::variant<TupleReferenceOnStack>
+	{
+		Value& get_field(int index)
+		{
+			return std::visit([index](auto self) -> Value&
+				{
+					return self.get_field(index);
+				}, *this);
+		}
+
+		Tuple as_tuple() const
+		{
+			return std::visit([](auto self) -> Tuple&
+				{
+					return self.as_tuple();
+				}, *this);
+		}
+	};
+
 
 	class Value : public std::variant<
 		int8_t, int16_t, int32_t, int64_t,
@@ -38,7 +72,8 @@ export namespace minairo
 		char32_t,
 		bool,
 		TypeRepresentation,
-		Tuple>
+		Tuple,
+		TupleReference>
 	{
 		using Base = std::variant<
 			int8_t, int16_t, int32_t, int64_t,
@@ -48,7 +83,8 @@ export namespace minairo
 			char32_t,
 			bool,
 			TypeRepresentation,
-			Tuple>;
+			Tuple,
+			TupleReference>;
 
 
 	public:
@@ -68,6 +104,7 @@ export namespace minairo
 		Value(BuildInType const& i) : Base{ (TypeRepresentation)i } {};
 		Value(TupleType const& i) : Base{ (TypeRepresentation)i } {};
 		Value(Tuple const& i) : Base{ i } {};
+		Value(TupleReferenceOnStack const& i) : Base{ (TupleReference)i } {};
 
 		Value(Value const&) = default;
 		Value(Value&&) = default;
@@ -349,6 +386,23 @@ export namespace minairo
 			}
 		}
 
+		void visit(MemberRead const& member_read) override
+		{
+			member_read.left->accept(*this);
+			Value result = std::get<TupleReference>(last_expression_value).get_field(member_read.index);
+			last_expression_value = result;
+		}
+
+		void visit(MemberWrite const& member_write) override
+		{
+			member_write.right->accept(*this);
+			Value value = last_expression_value;
+
+			member_write.left->accept(*this);
+			Value result = std::get<TupleReference>(last_expression_value).get_field(member_write.index) = value;
+			last_expression_value = result;
+		}
+
 		void visit(TupleDeclaration const& tuple_declaration) override
 		{
 			last_expression_value = tuple_declaration.tuple;
@@ -387,29 +441,19 @@ export namespace minairo
 			variables[variable_assign.index] = last_expression_value;
 		}
 
-		void visit(VariableOperatorAndAssign const& variable_op_assign) override
-		{
-			assert(variable_op_assign.index < variables.size());
-			variable_op_assign.exp->accept(*this);
-
-			Value right = last_expression_value;
-			Value left = variables[variable_op_assign.index];
-
-			void* arguments[2] = { get_ptr(left), get_ptr(right) };
-
-			TypeRepresentation return_type = *variable_op_assign.get_expression_type();
-			void* result_ptr = set_to_type(last_expression_value, return_type);
-
-			variable_op_assign.function_to_call->call(result_ptr, arguments);
-			variables[variable_op_assign.index] = last_expression_value;
-		}
-
 		void visit(VariableRead const& variable_read) override
 		{
 			if (*variable_read.type == BuildInType::Typedef)
 			{
 				assert(variable_read.index == -1);
 				last_expression_value = *variable_read.static_type;
+			}
+			else if (variable_read.type->is_tuple())
+			{
+				TupleReferenceOnStack tuple_ref;
+				assert(variable_read.index >= 0 && variable_read.index < variables.size());
+				tuple_ref.tuple = &std::get<Tuple>(variables[variable_read.index]);
+				last_expression_value = tuple_ref;
 			}
 			else
 			{
@@ -447,6 +491,11 @@ export namespace minairo
 		void visit(ExpressionStatement const &expression_statement) override
 		{
 			expression_statement.exp->accept(*this);
+
+			if (expression_statement.exp->get_expression_type()->is_tuple())
+			{
+				last_expression_value = std::get<TupleReference>(last_expression_value).as_tuple();
+			}
 		}
 
 		void visit(VariableDefinition const& variable_definition) override
