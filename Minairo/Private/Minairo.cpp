@@ -112,6 +112,7 @@ namespace minairo
 
 	}
 
+	std::string print_table(Table const& table);
 	std::string print_tuple(Tuple const& tuple);
 
 	std::string print_value(Value const& value)
@@ -201,6 +202,10 @@ namespace minairo
 				}, value);
 				return ss.str();
 			}
+			else if constexpr (std::is_same_v<T, Table>)
+			{
+				return print_table(value);
+			}
 			else if constexpr (std::is_same_v<T, Tuple>)
 			{
 				return print_tuple(value);
@@ -210,6 +215,35 @@ namespace minairo
 				return "unknown";
 			}
 		}, value);
+	}
+
+	std::string print_table(Table const& table)
+	{
+		if (table.rows == 0)
+		{
+			return "table { }";
+		}
+		else
+		{
+			std::stringstream ss;
+			ss << "table {";
+
+			const char* comma = "";
+			for (int r = 0; r < table.rows; ++r)
+			{
+				ss << "\n    { ";
+				comma = "";
+				for (int c = 0; c < table.type.base_tuple.get_num_fields(); ++c)
+				{
+					ss << comma << table.type.base_tuple.get_field_name(c) << ": " << print_value(table.fields[c][r]);
+					comma = ", ";
+				}
+				ss << " }";
+			}
+			ss << "\n  }";
+
+			return ss.str();
+		}
 	}
 
 	std::string print_tuple(Tuple const& tuple)
@@ -232,7 +266,6 @@ namespace minairo
 
 		try
 		{
-
 			auto expression = generate_AST(code);
 
 			{

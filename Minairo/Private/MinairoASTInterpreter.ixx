@@ -23,6 +23,14 @@ export namespace minairo
 {
 	class Value;
 
+	struct Table
+	{
+		TableType type;
+		int rows = 0;
+		// TODO allocate this in one go as we know the table type(?)
+		std::vector<std::vector<Value>> fields;
+	};
+
 	struct Tuple
 	{
 		TupleType type;
@@ -71,6 +79,7 @@ export namespace minairo
 		char32_t,
 		bool,
 		TypeRepresentation,
+		Table,
 		Tuple,
 		TupleReference>
 	{
@@ -82,6 +91,7 @@ export namespace minairo
 			char32_t,
 			bool,
 			TypeRepresentation,
+			Table,
 			Tuple,
 			TupleReference>;
 
@@ -101,7 +111,9 @@ export namespace minairo
 		Value(bool const& i) : Base{ i } {};
 		Value(TypeRepresentation const& i) : Base{ i } {};
 		Value(BuildInType const& i) : Base{ (TypeRepresentation)i } {};
+		Value(TableType const& i) : Base{ (TypeRepresentation)i } {};
 		Value(TupleType const& i) : Base{ (TypeRepresentation)i } {};
+		Value(Table const& i) : Base{ i } {};
 		Value(Tuple const& i) : Base{ i } {};
 		Value(TupleReferenceOnStack const& i) : Base{ (TupleReference)i } {};
 
@@ -206,6 +218,7 @@ export namespace minairo
 	}
 
 	Value get_default_value(BuildInType type);
+	Value get_default_value(TableType const& type);
 	Value get_default_value(TupleType const& type);
 	Value get_default_value(TypeRepresentation const& type);
 
@@ -241,6 +254,16 @@ export namespace minairo
 			assert(false);
 			return BuildInType::Void;
 		}
+	}
+
+	Value get_default_value(TableType const& type)
+	{
+		Table result;
+		result.type = type;
+
+		result.fields.resize(type.base_tuple.get_num_fields());
+
+		return result;
 	}
 
 	Value get_default_value(TupleType const& type)
@@ -442,6 +465,11 @@ export namespace minairo
 			last_expression_value = result;
 		}
 
+		void visit(TableDeclaration const& table_declaration) override
+		{
+			last_expression_value = table_declaration.table;
+		}
+
 		void visit(TupleDeclaration const& tuple_declaration) override
 		{
 			last_expression_value = tuple_declaration.tuple;
@@ -477,7 +505,39 @@ export namespace minairo
 		{
 			assert(variable_assign.index < variables.size());
 			variable_assign.exp->accept(*this);
-			variables[variable_assign.index] = last_expression_value;
+
+			switch (variable_assign.op.type)
+			{
+			case Terminal::OP_ASSIGN:
+				variables[variable_assign.index] = last_expression_value;
+				break;
+			case Terminal::OP_ASSIGN_ADD:
+				if (variable_assign.type->is_table())
+				{
+					TableType table_type = *variable_assign.type->as_table();
+					Table& table = std::get<Table>(variables[variable_assign.index]);
+					Tuple& tuple = std::get<Tuple>(last_expression_value);
+					for (int i = 0; i < table_type.base_tuple.get_num_fields(); ++i)
+					{
+						table.fields[i].push_back(tuple.fields[i]);
+					}
+					++table.rows;
+					// TODO table reference
+					last_expression_value = variables[variable_assign.index];
+				}
+				else
+				{
+					assert(false);
+				}
+				break;
+			case Terminal::OP_ASSIGN_SUB:
+			case Terminal::OP_ASSIGN_MUL:
+			case Terminal::OP_ASSIGN_DIV:
+			case Terminal::OP_ASSIGN_MOD:
+			default:
+				assert(false);
+				break;
+			}
 		}
 
 		void visit(VariableRead const& variable_read) override

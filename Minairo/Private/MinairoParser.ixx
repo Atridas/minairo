@@ -189,43 +189,21 @@ namespace minairo
 
 	ExpressionPtr assign(std::unique_ptr<VariableRead> left, Scanner& scanner)
 	{
-		consume(Terminal::OP_ASSIGN, scanner);
 		auto result = std::make_unique<VariableAssign>();
 		result->identifier = left->identifier;
+		result->op = scanner.get_next_symbol();
 		result->exp = parse_precedence(scanner, Precedence::Assignment);
 		return result;
-	}
-
-	ExpressionPtr op_and_assign(std::unique_ptr<VariableRead> left, Scanner& scanner)
-	{
-		/*auto result = std::make_unique<VariableOperatorAndAssign>();
-		result->identifier = left->identifier;
-		result->op = scanner.get_next_symbol().type;
-		result->exp = parse_precedence(scanner, Precedence::Assignment);
-		return result;*/
-		assert(false);
-		return nullptr;
 	}
 
 	ExpressionPtr assign(std::unique_ptr<MemberRead> left, Scanner& scanner)
 	{
-		consume(Terminal::OP_ASSIGN, scanner);
 		auto result = std::make_unique<MemberWrite>();
 		result->left = std::move(left->left);
 		result->member = left->member;
+		result->op = scanner.get_next_symbol();
 		result->right = parse_precedence(scanner, Precedence::Assignment);
 		return result;
-	}
-
-	ExpressionPtr op_and_assign(std::unique_ptr<MemberRead> left, Scanner& scanner)
-	{
-		/*auto result = std::make_unique<VariableOperatorAndAssign>();
-		result->identifier = left->identifier;
-		result->op = scanner.get_next_symbol().type;
-		result->exp = parse_precedence(scanner, Precedence::Assignment);
-		return result;*/
-		assert(false);
-		return nullptr;
 	}
 
 	template<typename VariableOrMemberRead>
@@ -234,12 +212,11 @@ namespace minairo
 		switch (scanner.peek_next_symbol().type)
 		{
 		case Terminal::OP_ASSIGN:
-			return assign(std::move(left), scanner);
 		case Terminal::OP_ASSIGN_MUL:
 		case Terminal::OP_ASSIGN_DIV:
 		case Terminal::OP_ASSIGN_ADD:
 		case Terminal::OP_ASSIGN_SUB:
-			return op_and_assign(std::move(left), scanner);
+			return assign(std::move(left), scanner);
 		default:
 			return left;
 		}
@@ -444,6 +421,83 @@ namespace minairo
 		return result;
 	}
 
+	ExpressionPtr table_type_declaration(Scanner& scanner)
+	{
+		auto result = std::make_unique<TableDeclaration>();
+		result->table_terminal = consume(Terminal::WK_TABLE, scanner);
+
+		if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
+		{
+			result->tuple_name = result->last_terminal = consume(Terminal::IDENTIFIER, scanner);
+		}
+		else
+		{
+			consume(Terminal::BRACKET_CURLY_OPEN, scanner);
+
+			result->inner_tuple = std::make_unique<TupleDeclaration>();
+
+			while (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
+			{
+				result->inner_tuple->field_names.push_back(consume(Terminal::IDENTIFIER, scanner));
+
+				while (scanner.peek_next_symbol().type == Terminal::OP_COMMA)
+				{
+					consume(Terminal::OP_COMMA, scanner);
+					result->inner_tuple->field_names.push_back(consume(Terminal::IDENTIFIER, scanner));
+				}
+
+				consume(Terminal::OP_COLON, scanner);
+
+				if (scanner.peek_next_symbol().type == Terminal::OP_ASSIGN)
+				{
+					consume(Terminal::OP_ASSIGN, scanner);
+					result->inner_tuple->field_types.push_back(nullptr);
+					result->inner_tuple->field_initializers.push_back(expression(scanner));
+				}
+				else
+				{
+					result->inner_tuple->field_types.push_back(type_declaration(scanner));
+
+					if (scanner.peek_next_symbol().type == Terminal::OP_ASSIGN)
+					{
+						consume(Terminal::OP_ASSIGN, scanner);
+						result->inner_tuple->field_initializers.push_back(expression(scanner));
+						// TODO uninitialized(?)
+					}
+					else
+					{
+						result->inner_tuple->field_initializers.push_back(nullptr);
+					}
+				}
+
+				assert(result->inner_tuple->field_initializers.size() == result->inner_tuple->field_types.size());
+
+				while (result->inner_tuple->field_types.size() < result->inner_tuple->field_names.size())
+				{
+					result->inner_tuple->field_types.push_back(nullptr);
+					result->inner_tuple->field_initializers.push_back(nullptr);
+				}
+
+				assert(result->inner_tuple->field_types.size() == result->inner_tuple->field_names.size());
+				assert(result->inner_tuple->field_initializers.size() == result->inner_tuple->field_names.size());
+
+				// -----------------
+
+				if (scanner.peek_next_symbol().type == Terminal::OP_COMMA)
+				{
+					consume(Terminal::OP_COMMA, scanner);
+					if (scanner.peek_next_symbol().type != Terminal::BRACKET_CURLY_CLOSE && scanner.peek_next_symbol().type != Terminal::IDENTIFIER)
+					{
+						consume(Terminal::IDENTIFIER, scanner); // little hack to produce correct error
+					}
+				}
+			}
+			result->last_terminal = consume(Terminal::BRACKET_CURLY_CLOSE, scanner);
+		}
+
+		return result;
+	}
+
 	ExpressionPtr tuple_type_declaration(Scanner& scanner)
 	{
 		auto result = std::make_unique<TupleDeclaration>();
@@ -555,6 +609,10 @@ namespace minairo
 			result->identifier = consume(Terminal::IDENTIFIER, scanner);
 			return result;
 		}
+		else if (scanner.peek_next_symbol().type == Terminal::WK_TABLE)
+		{
+			return table_type_declaration(scanner);
+		}
 		else if (scanner.peek_next_symbol().type == Terminal::WK_TUPLE)
 		{
 			return tuple_type_declaration(scanner);
@@ -607,6 +665,7 @@ namespace minairo
 		pratt_prefixes[(int)Terminal::WK_FLOAT64] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::WK_BOOL] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::WK_TYPEDEF] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_TABLE] = &table_type_declaration;
 		pratt_prefixes[(int)Terminal::WK_TUPLE] = &tuple_type_declaration;
 
 

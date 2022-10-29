@@ -202,7 +202,7 @@ export namespace minairo
 	{
 	public:
 		std::unique_ptr<Expression> left;
-		TerminalData member;
+		TerminalData member, op;
 		std::unique_ptr<Expression> right;
 		int index = -1;
 		std::optional<TypeRepresentation> type;
@@ -220,6 +220,34 @@ export namespace minairo
 		virtual TerminalData get_last_terminal() const override
 		{
 			return member;
+		}
+	};
+
+	class TableDeclaration final : public Expression
+	{
+	public:
+		TableType table;
+		TerminalData table_terminal, last_terminal;
+		std::unique_ptr<class TupleDeclaration> inner_tuple;
+		TerminalData tuple_name;
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		std::optional<TypeRepresentation> get_type_value() const override
+		{
+			return table;
+		}
+		std::optional<TypeRepresentation> get_expression_type() const override
+		{
+			return BuildInType::Typedef;
+		}
+		virtual TerminalData get_first_terminal() const override
+		{
+			return table_terminal;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return last_terminal;
 		}
 	};
 
@@ -308,7 +336,7 @@ export namespace minairo
 	class VariableAssign final : public Expression
 	{
 	public:
-		TerminalData identifier;
+		TerminalData identifier, op;
 		std::unique_ptr<Expression> exp;
 		std::optional<TypeRepresentation> type;
 		int index = -1;
@@ -453,6 +481,7 @@ export namespace minairo
 		virtual void visit(Literal& literal) = 0;
 		virtual void visit(MemberRead& literal) = 0;
 		virtual void visit(MemberWrite& literal) = 0;
+		virtual void visit(TableDeclaration& unary_pre) = 0;
 		virtual void visit(TupleDeclaration& unary_pre) = 0;
 		virtual void visit(UnaryPre& unary_pre) = 0;
 		virtual void visit(UnaryPost& unary_post) = 0;
@@ -469,6 +498,7 @@ export namespace minairo
 		virtual void visit(Literal const& literal) = 0;
 		virtual void visit(MemberRead const& literal) = 0;
 		virtual void visit(MemberWrite const& literal) = 0;
+		virtual void visit(TableDeclaration const& unary_pre) = 0;
 		virtual void visit(TupleDeclaration const& unary_pre) = 0;
 		virtual void visit(UnaryPre const& unary_pre) = 0;
 		virtual void visit(UnaryPost const& unary_post) = 0;
@@ -525,6 +555,10 @@ void minairo::UnaryPre::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
+void minairo::TableDeclaration::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
 void minairo::TupleDeclaration::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
@@ -567,6 +601,10 @@ void minairo::MemberRead::accept(ExpressionConstVisitor& visitor) const
 	visitor.visit(*this);
 }
 void minairo::MemberWrite::accept(ExpressionConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void minairo::TableDeclaration::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

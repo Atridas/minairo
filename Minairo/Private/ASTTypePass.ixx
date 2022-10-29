@@ -53,7 +53,7 @@ export namespace minairo
 				print_error_line(ss, first_token, last_token);
 				break;
 			case Type::Message:
-				ss << message;
+				ss << message << '\n';
 				print_error_line(ss, first_token, last_token);
 				break;
 			default:
@@ -95,6 +95,7 @@ export namespace minairo
 	{
 		TypeException result;
 		result.type = TypeException::Type::Message;
+		result.message = message;
 		result.first_token = result.last_token = token;
 		return result;
 	}
@@ -268,13 +269,49 @@ export namespace minairo
 
 					if (*member_write.type != *member_write.right->get_expression_type())
 					{
-						throw message_exception("Assignment of different types\n", member_write);
+						throw message_exception("Assignment of different types", member_write);
 					}
 				}
 			}
 			else
 			{
-				throw message_exception("Expected a tuple before '.'\n", *member_write.left);
+				throw message_exception("Expected a tuple before '.'", *member_write.left);
+			}
+
+			if (member_write.op.type != Terminal::OP_ASSIGN)
+			{
+				// TODO
+				throw message_exception("Operator not supported", member_write.op);
+			}
+		}
+
+		void visit(TableDeclaration& table_declaration) override
+		{
+			if (table_declaration.inner_tuple == nullptr)
+			{
+				assert(table_declaration.tuple_name.type == Terminal::IDENTIFIER);
+
+				if (auto type = find_typedef(table_declaration.tuple_name))
+				{
+					if (type->is_tuple())
+					{
+						table_declaration.table.base_tuple = *type->as_tuple();
+					}
+					else
+					{
+						throw message_exception("Type is not a tuple", table_declaration.tuple_name);
+					}
+				}
+				else
+				{
+					throw message_exception("Can't find type identifier", table_declaration.tuple_name);
+				}
+			}
+			else
+			{
+				table_declaration.inner_tuple->accept(*this);
+
+				table_declaration.table.base_tuple = table_declaration.inner_tuple->tuple;
 			}
 		}
 
@@ -282,10 +319,8 @@ export namespace minairo
 		{
 			assert(tuple_declaration.field_names.size() == tuple_declaration.field_types.size());
 
-
 			TypeRepresentation last_type;
 			uint64_t last_initial_value = 0;
-
 
 			for (int i = 0; i < tuple_declaration.field_names.size(); ++i)
 			{
@@ -363,11 +398,36 @@ export namespace minairo
 			variable_assign.type = variable.type;
 			variable_assign.index = variable.index;
 
-
-			if (!implicit_cast(*variable_assign.type, variable_assign.exp))
+			switch (variable_assign.op.type)
 			{
-				throw message_exception("Assignment of different types", *variable_assign.exp);
+			case Terminal::OP_ASSIGN:
+				if (!implicit_cast(*variable_assign.type, variable_assign.exp))
+				{
+					throw message_exception("Assignment of different types", *variable_assign.exp);
+				}
+				break;
+			case Terminal::OP_ASSIGN_ADD:
+				if (variable_assign.type->is_table())
+				{
+					if (!implicit_cast(variable_assign.type->as_table()->base_tuple, variable_assign.exp))
+					{
+						throw message_exception("table insertion needs a tuple of the right type", *variable_assign.exp);
+					}
+				}
+				else
+				{
+					throw message_exception("Operator not supported", variable_assign.op);
+				}
+				break;
+			case Terminal::OP_ASSIGN_SUB:
+			case Terminal::OP_ASSIGN_MUL:
+			case Terminal::OP_ASSIGN_DIV:
+			case Terminal::OP_ASSIGN_MOD:
+				throw message_exception("Operator not supported", variable_assign.op);
+			default:
+				assert(false);
 			}
+			
 		}
 
 		void visit(VariableRead& variable_read) override

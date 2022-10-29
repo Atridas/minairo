@@ -60,44 +60,12 @@ export namespace minairo
 	class TableType
 	{
 	public:
-		bool has_field(std::string_view name) const noexcept
-		{
-			return base_tuple.has_field(name);
-		}
-
-		TypeRepresentation const& get_field_type(std::string_view name) const
-		{
-			return base_tuple.get_field_type(name);
-		}
-		int get_field_index(std::string_view name) const
-		{
-			return base_tuple.get_field_index(name);
-		}
-
-		int get_num_fields() const
-		{
-			return base_tuple.get_num_fields();
-		}
-		std::string_view get_field_name(int index) const
-		{
-			return base_tuple.get_field_name(index);
-		}
-		TypeRepresentation const& get_field_type(int index) const
-		{
-			return base_tuple.get_field_type(index);
-		}
-
-		void add_field(std::string_view name, TypeRepresentation const& type, uint64_t init_value = 0)
-		{
-			return base_tuple.add_field(name, type, init_value);
-		}
+		TupleType base_tuple;
 
 		bool operator==(TableType const& other) const noexcept
 		{
 			return base_tuple == other.base_tuple;
 		}
-	private:
-		TupleType base_tuple;
 	};
 
 
