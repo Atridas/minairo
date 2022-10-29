@@ -4,6 +4,7 @@ module;
 
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -314,6 +315,46 @@ namespace minairo
 		return try_assign(std::move(result), scanner);
 	}
 
+	ExpressionPtr initializer_list(Scanner& scanner)
+	{
+		auto result = std::make_unique<InitializerList>();
+		result->open = consume(Terminal::BRACKET_CURLY_OPEN, scanner);
+
+		if (scanner.peek_next_symbol().type != Terminal::BRACKET_CURLY_CLOSE)
+		{
+			for(;;)
+			{
+				if (scanner.peek_next_symbol(0).type == Terminal::IDENTIFIER && scanner.peek_next_symbol(1).type == Terminal::OP_ASSIGN)
+				{
+					result->names.push_back(consume(Terminal::IDENTIFIER, scanner));
+					consume(Terminal::OP_ASSIGN, scanner);
+				}
+				else
+				{
+					result->names.push_back(std::nullopt);
+				}
+
+				result->expressions.push_back(expression(scanner));
+
+				if (scanner.peek_next_symbol().type != Terminal::OP_COMMA)
+				{
+					break;
+				}
+				else
+				{
+					consume(Terminal::OP_COMMA, scanner);
+					if (scanner.peek_next_symbol().type == Terminal::BRACKET_CURLY_CLOSE)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		result->close = consume(Terminal::BRACKET_CURLY_CLOSE, scanner);
+		return result;
+	}
+
 	ExpressionPtr integer_literal(Scanner& scanner)
 	{
 		auto result = std::make_unique<Literal>();
@@ -422,12 +463,38 @@ namespace minairo
 
 			consume(Terminal::OP_COLON, scanner);
 
-			result->field_types.push_back(type_declaration(scanner));
+			if (scanner.peek_next_symbol().type == Terminal::OP_ASSIGN)
+			{
+				consume(Terminal::OP_ASSIGN, scanner);
+				result->field_types.push_back(nullptr);
+				result->field_initializers.push_back(expression(scanner));
+			}
+			else
+			{
+				result->field_types.push_back(type_declaration(scanner));
+				
+				if (scanner.peek_next_symbol().type == Terminal::OP_ASSIGN)
+				{
+					consume(Terminal::OP_ASSIGN, scanner);
+					result->field_initializers.push_back(expression(scanner));
+					// TODO uninitialized(?)
+				}
+				else
+				{
+					result->field_initializers.push_back(nullptr);
+				}
+			}
+
+			assert(result->field_initializers.size() == result->field_types.size());
 
 			while (result->field_types.size() < result->field_names.size())
 			{
-				result->field_types.push_back(result->field_types.back());
+				result->field_types.push_back(nullptr);
+				result->field_initializers.push_back(nullptr);
 			}
+
+			assert(result->field_types.size() == result->field_names.size());
+			assert(result->field_initializers.size() == result->field_names.size());
 
 			// -----------------
 
@@ -519,6 +586,7 @@ namespace minairo
 		pratt_prefixes[(int)Terminal::OP_BIT_NOT] = &unary;
 		pratt_prefixes[(int)Terminal::INTEGER_LITERAL] = &integer_literal;
 		pratt_prefixes[(int)Terminal::IDENTIFIER] = &identifier_literal;
+		pratt_prefixes[(int)Terminal::BRACKET_CURLY_OPEN] = &initializer_list;
 
 		//	case Terminal::FLOAT_LITERAL: return std::make_unique<Literal>(parse_float(scanner.get_next_symbol()));
 		//	case Terminal::CHAR_LITERAL: return std::make_unique<Literal>(parse_char(scanner.get_next_symbol()));

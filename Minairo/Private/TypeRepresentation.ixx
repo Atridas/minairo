@@ -23,7 +23,8 @@ export namespace minairo
 		U8, U16, U32, U64,
 		F32, F64,
 
-		Typedef
+		InitializerList,
+		Typedef,
 	};
 
 	class TupleType
@@ -37,15 +38,23 @@ export namespace minairo
 		int get_num_fields() const { return (int)fields.size(); }
 		std::string_view get_field_name(int index) const { return fields[index]; }
 		TypeRepresentation const& get_field_type(int index) const { return types[index]; }
+		uint64_t const& get_field_init_value(int index) const { return init_values[index]; }
 
-		void add_field(std::string_view name, TypeRepresentation const& type);
-		void add_field(std::string_view name, TypeRepresentation&& type);
+		void add_field(std::string_view name, TypeRepresentation const& type, uint64_t init_value = 0);
 
 		bool operator==(TupleType const&) const noexcept;
 	private:
 
 		std::vector<std::string> fields;
 		std::vector<TypeRepresentation> types;
+		std::vector<uint64_t> init_values;
+	};
+
+	class TupleReferenceType
+	{
+	public:
+		TupleType tuple;
+		bool constant;
 	};
 
 	class TableType
@@ -78,13 +87,9 @@ export namespace minairo
 			return base_tuple.get_field_type(index);
 		}
 
-		void add_field(std::string_view name, TypeRepresentation const& type)
+		void add_field(std::string_view name, TypeRepresentation const& type, uint64_t init_value = 0)
 		{
-			return base_tuple.add_field(name, type);
-		}
-		void add_field(std::string_view name, TypeRepresentation&& type)
-		{
-			return base_tuple.add_field(name, std::move(type));
+			return base_tuple.add_field(name, type, init_value);
 		}
 
 		bool operator==(TableType const& other) const noexcept
@@ -96,18 +101,37 @@ export namespace minairo
 	};
 
 
-	class TypeRepresentation : public std::variant<BuildInType, TupleType, TableType>
+	class TypeRepresentation : public std::variant<BuildInType, TupleType, TupleReferenceType, TableType>
 	{
+		using Base = std::variant<BuildInType, TupleType, TupleReferenceType, TableType>;
 	public:
 		TypeRepresentation() = default;
-		TypeRepresentation(BuildInType const& b) : std::variant<BuildInType, TupleType, TableType>{ b } {};
-		TypeRepresentation(TupleType const& t) : std::variant<BuildInType, TupleType, TableType>{ t } {};
-		TypeRepresentation(TableType const& t) : std::variant<BuildInType, TupleType, TableType>{ t } {};
+		TypeRepresentation(BuildInType const& b) : Base{ b } {};
+		TypeRepresentation(TupleType const& t) : Base{ t } {};
+		TypeRepresentation(TupleReferenceType const& t) : Base{ t } {};
+		TypeRepresentation(TableType const& t) : Base{ t } {};
 
 		TypeRepresentation(TypeRepresentation const&) = default;
 		TypeRepresentation(TypeRepresentation&&) = default;
 		TypeRepresentation& operator=(TypeRepresentation const&) = default;
 		TypeRepresentation& operator=(TypeRepresentation&&) = default;
+
+		bool is_build_in() const
+		{
+			return std::holds_alternative<BuildInType>(*this);
+		}
+
+		std::optional<BuildInType> as_build_in() const
+		{
+			if (std::holds_alternative<BuildInType>(*this))
+			{
+				return std::get<BuildInType>(*this);
+			}
+			else
+			{
+				return std::nullopt;
+			}
+		}
 
 		bool is_tuple() const
 		{
@@ -119,6 +143,23 @@ export namespace minairo
 			if (std::holds_alternative<TupleType>(*this))
 			{
 				return std::get<TupleType>(*this);
+			}
+			else
+			{
+				return std::nullopt;
+			}
+		}
+
+		bool is_tuple_reference() const
+		{
+			return std::holds_alternative<TupleReferenceType>(*this);
+		}
+
+		std::optional<TupleReferenceType> as_tuple_reference() const
+		{
+			if (std::holds_alternative<TupleReferenceType>(*this))
+			{
+				return std::get<TupleReferenceType>(*this);
 			}
 			else
 			{
@@ -186,18 +227,12 @@ export namespace minairo
 		return (int)(std::lower_bound(fields.begin(), fields.end(), name) - fields.begin());
 	}
 
-	void TupleType::add_field(std::string_view name, TypeRepresentation const& type)
+	void TupleType::add_field(std::string_view name, TypeRepresentation const& type, uint64_t init_value)
 	{
 		assert(!has_field(name));
 		auto it = fields.insert(std::upper_bound(fields.begin(), fields.end(), name), (std::string)name);
 		types.insert(types.begin() + (it - fields.begin()), type);
-	}
-
-	void TupleType::add_field(std::string_view name, TypeRepresentation&& type)
-	{
-		assert(!has_field(name));
-		auto it = fields.insert(std::upper_bound(fields.begin(), fields.end(), name), (std::string)name);
-		types.insert(types.begin() + (it - fields.begin()), std::move(type));
+		init_values.insert(init_values.begin() + (it - fields.begin()), init_value);
 	}
 
 	bool TupleType::operator==(TupleType const& other) const noexcept

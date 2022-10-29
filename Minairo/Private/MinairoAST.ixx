@@ -34,6 +34,7 @@ export namespace minairo
 
 		virtual std::optional<TypeRepresentation> get_type_value() const { return std::nullopt; }
 		virtual std::optional<TypeRepresentation> get_expression_type() const = 0;
+		virtual std::optional<uint64_t> get_constant_value() const { return std::nullopt; }
 		virtual TerminalData get_first_terminal() const = 0;
 		virtual TerminalData get_last_terminal() const = 0;
 	};
@@ -112,6 +113,33 @@ export namespace minairo
 		}
 	};
 
+	class InitializerList final : public Expression
+	{
+	public:
+		std::vector<std::optional<TerminalData>> names;
+		std::vector<std::unique_ptr<Expression>> expressions;
+		std::vector<int> indexes;
+		std::vector<int> default_initializers;
+		TupleType destination_type;
+		TerminalData open, close;
+
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		virtual std::optional<TypeRepresentation> get_expression_type() const override
+		{
+			return BuildInType::InitializerList;
+		}
+		virtual TerminalData get_first_terminal() const override
+		{
+			return open;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return close;
+		}
+	};
+
 	class Literal final : public Expression
 	{
 	public:
@@ -121,6 +149,17 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
+		std::optional<uint64_t> get_constant_value() const override
+		{
+			if (std::holds_alternative<uint64_t>(value))
+			{
+				return std::get<uint64_t>(value);
+			}
+			else
+			{
+				return std::nullopt;
+			}
+		}
 		virtual std::optional<TypeRepresentation> get_expression_type() const override
 		{
 			return type_representation;
@@ -191,7 +230,8 @@ export namespace minairo
 		TerminalData tuple_terminal, closing_bracket;
 
 		std::vector<TerminalData> field_names;
-		std::vector<std::shared_ptr<Expression>> field_types;
+		std::vector<std::unique_ptr<Expression>> field_types;
+		std::vector<std::unique_ptr<Expression>> field_initializers;
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
@@ -409,6 +449,7 @@ export namespace minairo
 		virtual void visit(Binary& binary) = 0;
 		virtual void visit(BuildInTypeDeclaration& binary) = 0;
 		virtual void visit(Grouping& grouping) = 0;
+		virtual void visit(InitializerList& literal) = 0;
 		virtual void visit(Literal& literal) = 0;
 		virtual void visit(MemberRead& literal) = 0;
 		virtual void visit(MemberWrite& literal) = 0;
@@ -424,6 +465,7 @@ export namespace minairo
 		virtual void visit(Binary const& binary) = 0;
 		virtual void visit(BuildInTypeDeclaration const& binary) = 0;
 		virtual void visit(Grouping const& grouping) = 0;
+		virtual void visit(InitializerList const& literal) = 0;
 		virtual void visit(Literal const& literal) = 0;
 		virtual void visit(MemberRead const& literal) = 0;
 		virtual void visit(MemberWrite const& literal) = 0;
@@ -460,6 +502,10 @@ void minairo::BuildInTypeDeclaration::accept(ExpressionVisitor& visitor)
 	visitor.visit(*this);
 }
 void minairo::Grouping::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+void minairo::InitializerList::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
@@ -505,6 +551,10 @@ void minairo::BuildInTypeDeclaration::accept(ExpressionConstVisitor& visitor) co
 	visitor.visit(*this);
 }
 void minairo::Grouping::accept(ExpressionConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void minairo::InitializerList::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

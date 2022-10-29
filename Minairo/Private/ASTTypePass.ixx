@@ -207,6 +207,14 @@ export namespace minairo
 			grouping.expr->accept(*this);
 		}
 
+		void visit(InitializerList& initializer_list) override
+		{
+			for (auto &expr : initializer_list.expressions)
+			{
+				expr->accept(*this);
+			}
+		}
+
 		void visit(Literal& literal) override
 		{
 			// ------
@@ -216,13 +224,13 @@ export namespace minairo
 		{
 			member_read.left->accept(*this);
 			TypeRepresentation left_type = *member_read.left->get_expression_type();
-			if (auto tupleopt = left_type.as_tuple())
+			if (auto tupleopt = left_type.as_tuple_reference())
 			{
-				TupleType tuple = *std::move(tupleopt);
-				if (tuple.has_field(member_read.member.text))
+				TupleReferenceType tuple_ref = *std::move(tupleopt);
+				if (tuple_ref.tuple.has_field(member_read.member.text))
 				{
-					member_read.index = tuple.get_field_index(member_read.member.text);
-					member_read.type = tuple.get_field_type(member_read.member.text);
+					member_read.index = tuple_ref.tuple.get_field_index(member_read.member.text);
+					member_read.type = tuple_ref.tuple.get_field_type(member_read.member.text);
 				}
 				else
 				{
@@ -239,25 +247,29 @@ export namespace minairo
 		{
 			member_write.left->accept(*this);
 			TypeRepresentation left_type = *member_write.left->get_expression_type();
-			if (auto tupleopt = left_type.as_tuple())
+			if (auto tupleopt = left_type.as_tuple_reference())
 			{
-				TupleType tuple = *std::move(tupleopt);
-				if (tuple.has_field(member_write.member.text))
+				TupleReferenceType tuple_ref = *std::move(tupleopt);
+				if (!tuple_ref.tuple.has_field(member_write.member.text))
+				{
+					throw message_exception("tuple doesn't have a member of this name\n", member_write);
+				}
+				else if (tuple_ref.constant)
+				{
+					throw message_exception("can't assign to a member of a constant tuple\n", member_write);
+				}
+				else
 				{
 					member_write.right->accept(*this);
 
-					member_write.index = tuple.get_field_index(member_write.member.text);
-					member_write.type = tuple.get_field_type(member_write.member.text);
+					member_write.index = tuple_ref.tuple.get_field_index(member_write.member.text);
+					member_write.type = tuple_ref.tuple.get_field_type(member_write.member.text);
 
 
 					if (*member_write.type != *member_write.right->get_expression_type())
 					{
 						throw message_exception("Assignment of different types\n", member_write);
 					}
-				}
-				else
-				{
-					throw message_exception("tuple doesn't have a member of this name\n", member_write);
 				}
 			}
 			else
@@ -270,6 +282,11 @@ export namespace minairo
 		{
 			assert(tuple_declaration.field_names.size() == tuple_declaration.field_types.size());
 
+
+			TypeRepresentation last_type;
+			uint64_t last_initial_value = 0;
+
+
 			for (int i = 0; i < tuple_declaration.field_names.size(); ++i)
 			{
 				if (tuple_declaration.tuple.has_field(tuple_declaration.field_names[i].text))
@@ -277,9 +294,50 @@ export namespace minairo
 					throw message_exception("Repeated field in tuple declaration\n", tuple_declaration.field_names[i]);
 				}
 
-				tuple_declaration.field_types[i]->accept(*this);
+				TypeRepresentation field_type;
+				uint64_t initial_value = 0;
 
-				tuple_declaration.tuple.add_field(tuple_declaration.field_names[i].text, *tuple_declaration.field_types[i]->get_type_value());
+				if (tuple_declaration.field_types[i])
+				{
+					tuple_declaration.field_types[i]->accept(*this);
+					field_type = *tuple_declaration.field_types[i]->get_type_value();
+				}
+
+				if (tuple_declaration.field_initializers[i])
+				{
+					tuple_declaration.field_initializers[i]->accept(*this);
+					if (auto init = tuple_declaration.field_initializers[i]->get_constant_value())
+					{
+						initial_value = *init;
+					}
+					else
+					{
+						throw message_exception("Couldn't get constant\n", *tuple_declaration.field_initializers[i]);
+					}
+				}
+
+				if (tuple_declaration.field_types[i] && tuple_declaration.field_initializers[i])
+				{
+					if(!implicit_cast(*tuple_declaration.field_types[i]->get_type_value(), tuple_declaration.field_initializers[i]))
+					{
+						throw message_exception("Initializer has not the right type\n", *tuple_declaration.field_initializers[i]);
+					}
+				}
+				else if (tuple_declaration.field_initializers[i])
+				{
+					assert(!tuple_declaration.field_types[i]);
+					field_type = *tuple_declaration.field_initializers[i]->get_expression_type();
+				}
+				else if (!tuple_declaration.field_types[i] && !tuple_declaration.field_initializers[i])
+				{
+					field_type = last_type;
+					initial_value = last_initial_value;
+				}
+				
+				tuple_declaration.tuple.add_field(tuple_declaration.field_names[i].text, field_type, initial_value);
+
+				last_type = field_type;
+				last_initial_value = initial_value;
 			}
 		}
 
@@ -305,9 +363,10 @@ export namespace minairo
 			variable_assign.type = variable.type;
 			variable_assign.index = variable.index;
 
-			if (*variable_assign.type != *variable_assign.exp->get_expression_type())
+
+			if (!implicit_cast(*variable_assign.type, variable_assign.exp))
 			{
-				throw message_exception("Assignment of different types\n", variable_assign.identifier);
+				throw message_exception("Assignment of different types", *variable_assign.exp);
 			}
 		}
 
@@ -321,7 +380,17 @@ export namespace minairo
 			else
 			{
 				auto variable = find_variable(variable_read.identifier);
-				variable_read.type = variable.type;
+				if (variable.type.is_tuple())
+				{
+					TupleReferenceType as_reference;
+					as_reference.tuple = *variable.type.as_tuple();
+					as_reference.constant = variable.constant;
+					variable_read.type = as_reference;
+				}
+				else
+				{
+					variable_read.type = variable.type;
+				}
 				variable_read.index = variable.index;
 			}
 		}
@@ -378,6 +447,7 @@ export namespace minairo
 
 			assert(variable_definition.type_definition != nullptr || variable_definition.initialization != nullptr);
 
+
 			if (variable_definition.type_definition != nullptr)
 			{
 				variable_definition.type_definition->accept(*this);
@@ -396,7 +466,7 @@ export namespace minairo
 				{
 					variable_definition.type = *variable_definition.initialization->get_expression_type();
 				}
-				else if (*variable_definition.type != *variable_definition.initialization->get_expression_type())
+				else if (!implicit_cast(*variable_definition.type, variable_definition.initialization))
 				{
 					throw message_exception("wrong variable type\n", variable_definition);
 				}
@@ -477,5 +547,70 @@ export namespace minairo
 			}
 			return std::nullopt;
 		}
+
+		bool implicit_cast(TypeRepresentation target, std::unique_ptr<Expression> &origin)
+		{
+			if (target == origin->get_expression_type())
+				return true;
+			else if (target.is_tuple() && origin->get_expression_type() == BuildInType::InitializerList)
+			{
+				assert(dynamic_cast<InitializerList*>(origin.get()));
+				InitializerList* initializer_list = static_cast<InitializerList*>(origin.get());
+				initializer_list->destination_type = *target.as_tuple();
+
+				int last_index = -1;
+				for (int i = 0; i < (int)initializer_list->expressions.size(); ++i)
+				{
+					int index;
+					if (initializer_list->names[i])
+					{
+						if (!initializer_list->destination_type.has_field(initializer_list->names[i]->text))
+						{
+							throw message_exception("tuple doesn't have this field\n", *initializer_list->names[i]);
+						}
+						index = initializer_list->destination_type.get_field_index(initializer_list->names[i]->text);
+						if (std::find(initializer_list->indexes.begin(), initializer_list->indexes.end(), index) != initializer_list->indexes.end())
+						{
+							throw message_exception("this field has already been initialized", *initializer_list->names[i]);
+						}
+					}
+					else
+					{
+						++last_index;
+						while (std::find(initializer_list->indexes.begin(), initializer_list->indexes.end(), last_index) != initializer_list->indexes.end())
+						{
+							++last_index;
+						}
+						index = last_index;
+
+						if (index >= initializer_list->destination_type.get_num_fields())
+						{
+							throw message_exception("too many initializer values for this tuple", *initializer_list->expressions[i]);
+						}
+					}
+
+					if (!implicit_cast(initializer_list->destination_type.get_field_type(index), initializer_list->expressions[i]))
+					{
+						throw message_exception("initializer has the wrong type", *initializer_list->expressions[i]);
+					}
+
+					initializer_list->indexes.push_back(index);
+					last_index = index;
+				}
+
+				for (int i = 0; i < initializer_list->destination_type.get_num_fields(); ++i)
+				{
+					if (std::find(initializer_list->indexes.begin(), initializer_list->indexes.end(), i) == initializer_list->indexes.end())
+					{
+						initializer_list->default_initializers.push_back(i);
+					}
+				}
+
+				return true;
+			}
+			else
+				return false;
+		}
+
 	};
 }

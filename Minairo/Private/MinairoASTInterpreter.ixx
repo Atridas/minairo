@@ -63,7 +63,6 @@ export namespace minairo
 		}
 	};
 
-
 	class Value : public std::variant<
 		int8_t, int16_t, int32_t, int64_t,
 		uint8_t, uint16_t, uint32_t, uint64_t,
@@ -174,9 +173,41 @@ export namespace minairo
 		}, value);
 	}
 
+	Value cast(BuildInType type, std::variant<uint64_t, double, std::string, char32_t, bool> const& value)
+	{
+		switch (type)
+		{
+		case BuildInType::I8:
+			return (int8_t)std::get<uint64_t>(value);
+		case BuildInType::I16:
+			return (int16_t)std::get<uint64_t>(value);
+		case BuildInType::I32:
+			return (int32_t)std::get<uint64_t>(value);
+		case BuildInType::I64:
+			return (int64_t)std::get<uint64_t>(value);
+		case BuildInType::U8:
+			return (uint8_t)std::get<uint64_t>(value);
+		case BuildInType::U16:
+			return (uint16_t)std::get<uint64_t>(value);
+		case BuildInType::U32:
+			return (uint32_t)std::get<uint64_t>(value);
+		case BuildInType::U64:
+			return (uint64_t)std::get<uint64_t>(value);
+		case BuildInType::F32:
+			return (float)std::get<double>(value);
+		case BuildInType::F64:
+			return (double)std::get<double>(value);
+		case BuildInType::Bool:
+			return std::get<bool>(value);
+		default:
+			assert(false);
+			return (int32_t)0;
+		}
+	}
+
 	Value get_default_value(BuildInType type);
-	Value get_default_value(TupleType type);
-	Value get_default_value(TypeRepresentation type);
+	Value get_default_value(TupleType const& type);
+	Value get_default_value(TypeRepresentation const& type);
 
 	Value get_default_value(BuildInType type)
 	{
@@ -212,20 +243,27 @@ export namespace minairo
 		}
 	}
 
-	Value get_default_value(TupleType type)
+	Value get_default_value(TupleType const& type)
 	{
 		Tuple result;
 		result.type = type;
 
 		for (int i = 0; i < type.get_num_fields(); ++i)
 		{
-			result.fields.push_back(get_default_value(type.get_field_type(i)));
+			if (type.get_field_type(i).is_build_in())
+			{
+				result.fields.push_back(cast(*type.get_field_type(i).as_build_in(), type.get_field_init_value(i)));
+			}
+			else
+			{
+				result.fields.push_back(get_default_value(type.get_field_type(i)));
+			}
 		}
 
 		return result;
 	}
 
-	Value get_default_value(TypeRepresentation type)
+	Value get_default_value(TypeRepresentation const& type)
 	{
 		return std::visit([](auto t) { return get_default_value(t); }, type);
 	}
@@ -295,9 +333,15 @@ export namespace minairo
 	class Interpreter final : public ExpressionConstVisitor, public StatementConstVisitor
 	{
 	public:
-		explicit Interpreter(int _number_of_globals = 0) : number_of_globals(_number_of_globals) {}
+		explicit Interpreter(int _number_of_globals = 0, int _number_of_tuples = 0)
+			: number_of_globals(_number_of_globals)
+			, number_of_tuples(_number_of_tuples)
+		{}
 
-		using GlobalStack = std::vector<Value>;
+		struct GlobalStack
+		{
+			std::vector<Value> variables;
+		};
 
 		void set_globals(GlobalStack const& _globals)
 		{
@@ -336,49 +380,44 @@ export namespace minairo
 			grouping.expr->accept(*this);
 		}
 
+		void visit(InitializerList const& initializer_list) override
+		{
+			Tuple temporary_tuple;
+			temporary_tuple.type = initializer_list.destination_type;
+
+			temporary_tuple.fields.resize(temporary_tuple.type.get_num_fields());
+			for (int i = 0; i < (int)initializer_list.default_initializers.size(); ++i)
+			{
+				int index = initializer_list.default_initializers[i];
+
+				auto field_type = temporary_tuple.type.get_field_type(index);
+				if (field_type.is_build_in())
+				{
+					temporary_tuple.fields[index] = cast(*field_type.as_build_in(), temporary_tuple.type.get_field_init_value(index));
+				}
+				else
+				{
+					temporary_tuple.fields[index] = get_default_value(temporary_tuple.type.get_field_type(index));
+				}
+
+
+			}
+
+			for (int i = 0; i < (int)initializer_list.indexes.size(); ++i)
+			{
+				int index = initializer_list.indexes[i];
+				initializer_list.expressions[i]->accept(*this);
+
+				temporary_tuple.fields[index] = last_expression_value;
+			}
+			last_expression_value = temporary_tuple;
+		}
+
 		void visit(Literal const& literal) override
 		{
 			if (std::holds_alternative<BuildInType>(literal.type_representation))
 			{
-				switch (std::get<BuildInType>(literal.type_representation))
-				{
-				case BuildInType::I8:
-					last_expression_value = (int8_t)std::get<uint64_t>(literal.value);
-					break;
-				case BuildInType::I16:
-					last_expression_value = (int16_t)std::get<uint64_t>(literal.value);
-					break;
-				case BuildInType::I32:
-					last_expression_value = (int32_t)std::get<uint64_t>(literal.value);
-					break;
-				case BuildInType::I64:
-					last_expression_value = (int64_t)std::get<uint64_t>(literal.value);
-					break;
-				case BuildInType::U8:
-					last_expression_value = (uint8_t)std::get<uint64_t>(literal.value);
-					break;
-				case BuildInType::U16:
-					last_expression_value = (uint16_t)std::get<uint64_t>(literal.value);
-					break;
-				case BuildInType::U32:
-					last_expression_value = (uint32_t)std::get<uint64_t>(literal.value);
-					break;
-				case BuildInType::U64:
-					last_expression_value = (uint64_t)std::get<uint64_t>(literal.value);
-					break;
-				case BuildInType::F32:
-					last_expression_value = (float)std::get<double>(literal.value);
-					break;
-				case BuildInType::F64:
-					last_expression_value = (double)std::get<double>(literal.value);
-					break;
-				case BuildInType::Bool:
-					last_expression_value = std::get<bool>(literal.value);
-					break;
-				default:
-					assert(false);
-					break;
-				}
+				last_expression_value = cast(std::get<BuildInType>(literal.type_representation), literal.value);
 			}
 			else
 			{
@@ -448,7 +487,7 @@ export namespace minairo
 				assert(variable_read.index == -1);
 				last_expression_value = *variable_read.static_type;
 			}
-			else if (variable_read.type->is_tuple())
+			else if (variable_read.type->is_tuple_reference())
 			{
 				TupleReferenceOnStack tuple_ref;
 				assert(variable_read.index >= 0 && variable_read.index < variables.size());
@@ -472,7 +511,7 @@ export namespace minairo
 
 			if (block.is_global)
 			{
-				variables = std::move(globals);
+				variables = std::move(globals.variables);
 			}
 
 			for (auto& statement : block.statements)
@@ -482,7 +521,7 @@ export namespace minairo
 
 			if (block.is_global)
 			{
-				globals = std::move(variables);
+				globals.variables = std::move(variables);
 			}
 
 			variables.resize(current_stack_size);
@@ -492,7 +531,7 @@ export namespace minairo
 		{
 			expression_statement.exp->accept(*this);
 
-			if (expression_statement.exp->get_expression_type()->is_tuple())
+			if (std::holds_alternative<TupleReference>(last_expression_value))
 			{
 				last_expression_value = std::get<TupleReference>(last_expression_value).as_tuple();
 			}
@@ -525,7 +564,6 @@ export namespace minairo
 					tuple.type = std::get<TupleType>(*variable_definition.type); 
 					last_expression_value = std::move(tuple);
 					variables.push_back(last_expression_value);
-
 				}
 				else
 				{
@@ -539,8 +577,9 @@ export namespace minairo
 		Value last_expression_value;
 
 		std::vector<Value> variables;
-		std::vector<Value> globals;
+		GlobalStack globals;
 
 		int number_of_globals;
+		int number_of_tuples;
 	};
 }
