@@ -19,16 +19,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MinairoException.ixx" />
     <ClCompile Include="Private\FunctionRepresentation.cpp" />
     <ClCompile Include="Private\MinairoAST.ixx" />
     <ClCompile Include="Private\Minairo.cpp" />
     <ClCompile Include="Private\MinairoASTInterpreter.ixx" />
+    <ClCompile Include="Private\MinairoException.ixx" />
     <ClCompile Include="Private\MinairoParser.ixx" />
     <ClCompile Include="Private\MinairoScanner.ixx" />
     <ClCompile Include="Private\FunctionRepresentation.ixx" />
     <ClCompile Include="Private\ASTTypePass.ixx" />
     <ClCompile Include="Private\TypeRepresentation.ixx" />
+    <ClCompile Include="Private\TypesAndValues.ixx" />
+    <ClCompile Include="Private\TypesAndValuesStructures.ixx" />
+    <ClCompile Include="Private\Values.ixx" />
     <ClCompile Include="Public\Minairo\Minairo.ixx" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

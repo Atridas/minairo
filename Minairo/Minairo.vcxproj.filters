@@ -39,7 +39,16 @@
     <ClCompile Include="Private\ASTTypePass.ixx">
       <Filter>Private</Filter>
     </ClCompile>
-    <ClCompile Include="MinairoException.ixx">
+    <ClCompile Include="Private\TypesAndValues.ixx">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\MinairoException.ixx">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\Values.ixx">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\TypesAndValuesStructures.ixx">
       <Filter>Private</Filter>
     </ClCompile>
   </ItemGroup>

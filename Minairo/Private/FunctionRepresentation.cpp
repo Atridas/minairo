@@ -6,7 +6,7 @@ module;
 #include <optional>
 #include <string_view>
 
-module Minairo.FunctionRepresentation;
+module Minairo.TypesAndValues:FunctionRepresentation;
 
 using namespace minairo;
 

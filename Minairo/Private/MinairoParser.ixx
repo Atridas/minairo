@@ -16,9 +16,9 @@ export module Minairo.Parser;
 
 import Minairo.AST;
 import Minairo.AST.Interpreter;
-import Minairo.TypeRepresentation;
 import Minairo.Exception;
 import Minairo.Scanner;
+import Minairo.TypesAndValues;
 
 namespace minairo
 {
@@ -274,6 +274,11 @@ namespace minairo
 		}
 		return result;
 	}
+
+	//ExpressionPtr function(Scanner& scanner)
+	//{
+	//	WK_FUNCTION
+	//}
 
 	ExpressionPtr grouping(Scanner& scanner)
 	{

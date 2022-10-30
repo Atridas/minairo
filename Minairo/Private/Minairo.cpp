@@ -14,10 +14,10 @@ module Minairo;
 
 import Minairo.AST;
 import Minairo.AST.Interpreter;
-import Minairo.FunctionRepresentation;
+import Minairo.AST.TypePass;
 import Minairo.Parser;
 import Minairo.Scanner;
-import Minairo.AST.TypePass;
+import Minairo.TypesAndValues;
 
 namespace minairo
 {

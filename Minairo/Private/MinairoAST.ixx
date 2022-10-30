@@ -11,9 +11,8 @@ module;
 
 export module Minairo.AST;
 
-import Minairo.FunctionRepresentation;
 import Minairo.Scanner;
-import Minairo.TypeRepresentation;
+import Minairo.TypesAndValues;
 
 export namespace minairo
 {
@@ -222,6 +221,28 @@ export namespace minairo
 			return member;
 		}
 	};
+	
+	/*class ProcedureDeclaration final : public Expression
+	{
+	public:
+		TerminalData type;
+		std::unique_ptr<Statement> body;
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		std::optional<TypeRepresentation> get_expression_type() const override
+		{
+			return BuildInType::ProcedureDef;
+		}
+		virtual TerminalData get_first_terminal() const override
+		{
+			return type;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return body->get_last_terminal();
+		}
+	};*/
 
 	class TableDeclaration final : public Expression
 	{

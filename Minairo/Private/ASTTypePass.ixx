@@ -14,9 +14,8 @@ export module Minairo.AST.TypePass;
 
 import Minairo.AST;
 import Minairo.Exception;
-import Minairo.FunctionRepresentation;
 import Minairo.Scanner;
-import Minairo.TypeRepresentation;
+import Minairo.TypesAndValues;
 
 
 export namespace minairo
@@ -320,7 +319,7 @@ export namespace minairo
 			assert(tuple_declaration.field_names.size() == tuple_declaration.field_types.size());
 
 			TypeRepresentation last_type;
-			uint64_t last_initial_value = 0;
+			Value last_initial_value = 0;
 
 			for (int i = 0; i < tuple_declaration.field_names.size(); ++i)
 			{
@@ -330,20 +329,27 @@ export namespace minairo
 				}
 
 				TypeRepresentation field_type;
-				uint64_t initial_value = 0;
+				Value initial_value = 0;
 
 				if (tuple_declaration.field_types[i])
 				{
 					tuple_declaration.field_types[i]->accept(*this);
 					field_type = *tuple_declaration.field_types[i]->get_type_value();
+					initial_value = get_default_value(field_type);
 				}
 
 				if (tuple_declaration.field_initializers[i])
 				{
 					tuple_declaration.field_initializers[i]->accept(*this);
+
+					if (!tuple_declaration.field_types[i])
+					{
+						field_type = *tuple_declaration.field_initializers[i]->get_expression_type();
+					}
+
 					if (auto init = tuple_declaration.field_initializers[i]->get_constant_value())
 					{
-						initial_value = *init;
+						initial_value = cast(*field_type.as_build_in(), *init);
 					}
 					else
 					{
@@ -357,11 +363,6 @@ export namespace minairo
 					{
 						throw message_exception("Initializer has not the right type\n", *tuple_declaration.field_initializers[i]);
 					}
-				}
-				else if (tuple_declaration.field_initializers[i])
-				{
-					assert(!tuple_declaration.field_types[i]);
-					field_type = *tuple_declaration.field_initializers[i]->get_expression_type();
 				}
 				else if (!tuple_declaration.field_types[i] && !tuple_declaration.field_initializers[i])
 				{

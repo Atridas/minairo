@@ -9,150 +9,12 @@ module;
 #include <unordered_map>
 #include <variant>
 
-export module Minairo.TypeRepresentation;
+export module Minairo.TypesAndValues:TypeRepresentation;
+
+import :Structures;
 
 export namespace minairo
 {
-	class TypeRepresentation;
-
-	enum class BuildInType
-	{
-		Void,
-		Bool,
-		I8, I16, I32, I64,
-		U8, U16, U32, U64,
-		F32, F64,
-
-		InitializerList,
-		Typedef,
-	};
-
-	class TupleType
-	{
-	public:
-		bool has_field(std::string_view name) const noexcept;
-
-		TypeRepresentation const& get_field_type(std::string_view name) const;
-		int get_field_index(std::string_view name) const;
-
-		int get_num_fields() const { return (int)fields.size(); }
-		std::string_view get_field_name(int index) const { return fields[index]; }
-		TypeRepresentation const& get_field_type(int index) const { return types[index]; }
-		uint64_t const& get_field_init_value(int index) const { return init_values[index]; }
-
-		void add_field(std::string_view name, TypeRepresentation const& type, uint64_t init_value = 0);
-
-		bool operator==(TupleType const&) const noexcept;
-	private:
-
-		std::vector<std::string> fields;
-		std::vector<TypeRepresentation> types;
-		std::vector<uint64_t> init_values;
-	};
-
-	class TupleReferenceType
-	{
-	public:
-		TupleType tuple;
-		bool constant;
-	};
-
-	class TableType
-	{
-	public:
-		TupleType base_tuple;
-
-		bool operator==(TableType const& other) const noexcept
-		{
-			return base_tuple == other.base_tuple;
-		}
-	};
-
-
-	class TypeRepresentation : public std::variant<BuildInType, TupleType, TupleReferenceType, TableType>
-	{
-		using Base = std::variant<BuildInType, TupleType, TupleReferenceType, TableType>;
-	public:
-		TypeRepresentation() = default;
-		TypeRepresentation(BuildInType const& b) : Base{ b } {};
-		TypeRepresentation(TupleType const& t) : Base{ t } {};
-		TypeRepresentation(TupleReferenceType const& t) : Base{ t } {};
-		TypeRepresentation(TableType const& t) : Base{ t } {};
-
-		TypeRepresentation(TypeRepresentation const&) = default;
-		TypeRepresentation(TypeRepresentation&&) = default;
-		TypeRepresentation& operator=(TypeRepresentation const&) = default;
-		TypeRepresentation& operator=(TypeRepresentation&&) = default;
-
-		bool is_build_in() const
-		{
-			return std::holds_alternative<BuildInType>(*this);
-		}
-
-		std::optional<BuildInType> as_build_in() const
-		{
-			if (std::holds_alternative<BuildInType>(*this))
-			{
-				return std::get<BuildInType>(*this);
-			}
-			else
-			{
-				return std::nullopt;
-			}
-		}
-
-		bool is_tuple() const
-		{
-			return std::holds_alternative<TupleType>(*this);
-		}
-
-		std::optional<TupleType> as_tuple() const
-		{
-			if (std::holds_alternative<TupleType>(*this))
-			{
-				return std::get<TupleType>(*this);
-			}
-			else
-			{
-				return std::nullopt;
-			}
-		}
-
-		bool is_tuple_reference() const
-		{
-			return std::holds_alternative<TupleReferenceType>(*this);
-		}
-
-		std::optional<TupleReferenceType> as_tuple_reference() const
-		{
-			if (std::holds_alternative<TupleReferenceType>(*this))
-			{
-				return std::get<TupleReferenceType>(*this);
-			}
-			else
-			{
-				return std::nullopt;
-			}
-		}
-
-		bool is_table() const
-		{
-			return std::holds_alternative<TableType>(*this);
-		}
-
-		std::optional<TableType> as_table() const
-		{
-			if (std::holds_alternative<TableType>(*this))
-			{
-				return std::get<TableType>(*this);
-			}
-			else
-			{
-				return std::nullopt;
-			}
-		}
-	};
-
 	bool operator==(TypeRepresentation const& a, TypeRepresentation const &b)
 	{
 		if (std::holds_alternative<BuildInType>(a) && std::holds_alternative<BuildInType>(b))
@@ -195,7 +57,7 @@ export namespace minairo
 		return (int)(std::lower_bound(fields.begin(), fields.end(), name) - fields.begin());
 	}
 
-	void TupleType::add_field(std::string_view name, TypeRepresentation const& type, uint64_t init_value)
+	void TupleType::add_field(std::string_view name, TypeRepresentation const& type, Value const &init_value)
 	{
 		assert(!has_field(name));
 		auto it = fields.insert(std::upper_bound(fields.begin(), fields.end(), name), (std::string)name);
@@ -300,5 +162,73 @@ export namespace minairo
 	TypeRepresentation get_type_representation<bool>()
 	{
 		return BuildInType::Bool;
+	}
+
+	bool TypeRepresentation::is_build_in() const
+	{
+		return std::holds_alternative<BuildInType>(*this);
+	}
+
+	std::optional<BuildInType> TypeRepresentation::as_build_in() const
+	{
+		if (std::holds_alternative<BuildInType>(*this))
+		{
+			return std::get<BuildInType>(*this);
+		}
+		else
+		{
+			return std::nullopt;
+		}
+	}
+
+	bool TypeRepresentation::is_tuple() const
+	{
+		return std::holds_alternative<TupleType>(*this);
+	}
+
+	std::optional<TupleType> TypeRepresentation::as_tuple() const
+	{
+		if (std::holds_alternative<TupleType>(*this))
+		{
+			return std::get<TupleType>(*this);
+		}
+		else
+		{
+			return std::nullopt;
+		}
+	}
+
+	bool TypeRepresentation::is_tuple_reference() const
+	{
+		return std::holds_alternative<TupleReferenceType>(*this);
+	}
+
+	std::optional<TupleReferenceType> TypeRepresentation::as_tuple_reference() const
+	{
+		if (std::holds_alternative<TupleReferenceType>(*this))
+		{
+			return std::get<TupleReferenceType>(*this);
+		}
+		else
+		{
+			return std::nullopt;
+		}
+	}
+
+	bool TypeRepresentation::is_table() const
+	{
+		return std::holds_alternative<TableType>(*this);
+	}
+
+	std::optional<TableType> TypeRepresentation::as_table() const
+	{
+		if (std::holds_alternative<TableType>(*this))
+		{
+			return std::get<TableType>(*this);
+		}
+		else
+		{
+			return std::nullopt;
+		}
 	}
 }

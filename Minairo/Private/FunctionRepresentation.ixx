@@ -8,9 +8,9 @@ module;
 #include <string_view>
 #include <vector>
 
-export module Minairo.FunctionRepresentation;
+export module Minairo.TypesAndValues:FunctionRepresentation;
 
-import Minairo.TypeRepresentation;
+import :TypeRepresentation;
 
 export namespace minairo
 {
