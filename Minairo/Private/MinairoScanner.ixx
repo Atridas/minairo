@@ -65,6 +65,7 @@ export namespace minairo
 		WK_FLOAT32,
 		WK_FLOAT64,
 		WK_TYPEDEF,
+		OP_ARROW,
 		OP_DOT,
 		OP_COMMA,
 		OP_QUEST,
@@ -153,6 +154,7 @@ export namespace minairo
 		case Terminal::WK_FLOAT32: return "WK_FLOAT32";
 		case Terminal::WK_FLOAT64: return "WK_FLOAT64";
 		case Terminal::WK_TYPEDEF: return "WK_TYPEDEF";
+		case Terminal::OP_ARROW: return "OP_ARROW";
 		case Terminal::OP_DOT: return "OP_DOT";
 		case Terminal::OP_COMMA: return "OP_COMMA";
 		case Terminal::OP_QUEST: return "OP_QUEST";
@@ -639,6 +641,9 @@ export namespace minairo
 					case '=':
 						state = 69;
 						break;
+					case '>':
+						state = 70;
+						break;
 					default:
 						{
 							return TerminalData(Terminal::OP_SUB, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
@@ -649,7 +654,7 @@ export namespace minairo
 				case 13:
 					if ( ( character >= '0' && character <= '9' ) )
 					{
-						state = 70;
+						state = 71;
 						break;
 					}
 					else
@@ -661,13 +666,13 @@ export namespace minairo
 					switch (character)
 					{
 					case '*':
-						state = 71;
-						break;
-					case '/':
 						state = 72;
 						break;
-					case '=':
+					case '/':
 						state = 73;
+						break;
+					case '=':
+						state = 74;
 						break;
 					default:
 						{
@@ -680,45 +685,45 @@ export namespace minairo
 					switch (character)
 					{
 					case '\'':
-						state = 74;
+						state = 75;
 						break;
 					case '.':
-						state = 75;
+						state = 76;
 						break;
 					case '8':
 					case '9':
-						state = 77;
+						state = 78;
 						break;
 					case 'B':
 					case 'b':
-						state = 78;
+						state = 79;
 						break;
 					case 'E':
 					case 'e':
-						state = 79;
+						state = 80;
 						break;
 					case 'L':
-						state = 80;
+						state = 81;
 						break;
 					case 'U':
 					case 'u':
-						state = 81;
+						state = 82;
 						break;
 					case 'X':
 					case 'x':
-						state = 82;
+						state = 83;
 						break;
 					case 'Z':
 					case 'z':
-						state = 83;
+						state = 84;
 						break;
 					case 'l':
-						state = 84;
+						state = 85;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '7' ) )
 						{
-							state = 76;
+							state = 77;
 							break;
 						}
 						else
@@ -732,28 +737,28 @@ export namespace minairo
 					switch (character)
 					{
 					case '.':
-						state = 75;
+						state = 76;
 						break;
 					case 'E':
 					case 'e':
-						state = 79;
+						state = 80;
 						break;
 					case 'L':
-						state = 80;
+						state = 81;
 						break;
 					case 'U':
 					case 'u':
-						state = 81;
+						state = 82;
 						break;
 					case 'Z':
 					case 'z':
-						state = 83;
-						break;
-					case 'l':
 						state = 84;
 						break;
-					case '\'':
+					case 'l':
 						state = 85;
+						break;
+					case '\'':
+						state = 86;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) )
@@ -782,7 +787,7 @@ export namespace minairo
 					switch (character)
 					{
 					case '=':
-						state = 86;
+						state = 87;
 						break;
 					default:
 						{
@@ -795,7 +800,7 @@ export namespace minairo
 					switch (character)
 					{
 					case '=':
-						state = 87;
+						state = 88;
 						break;
 					default:
 						{
@@ -808,7 +813,7 @@ export namespace minairo
 					switch (character)
 					{
 					case '=':
-						state = 88;
+						state = 89;
 						break;
 					default:
 						{
@@ -908,22 +913,22 @@ export namespace minairo
 						// state = 28;
 						break;
 					case 195:
-						state = 90;
+						state = 91;
 						break;
 					case 196:
 					case 197:
 					case 198:
 					case 199:
 					case 200:
-						state = 91;
+						state = 92;
 						break;
 					case 201:
-						state = 92;
+						state = 93;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= 'a' && character <= 'z' ) )
 						{
-							state = 89;
+							state = 90;
 							break;
 						}
 						else
@@ -950,7 +955,7 @@ export namespace minairo
 						state = 52;
 						break;
 					case 's':
-						state = 93;
+						state = 94;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 's' && character <= 'z' ) )
@@ -982,10 +987,10 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'o':
-						state = 94;
+						state = 95;
 						break;
 					case 'y':
-						state = 95;
+						state = 96;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character != 'y' && character <= 'z' ) )
@@ -1017,10 +1022,10 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'e':
-						state = 96;
+						state = 97;
 						break;
 					case 'o':
-						state = 97;
+						state = 98;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character != 'o' && character <= 'z' ) )
@@ -1052,10 +1057,10 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'l':
-						state = 98;
+						state = 99;
 						break;
 					case 'x':
-						state = 99;
+						state = 100;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character != 'x' && character <= 'z' ) )
@@ -1087,16 +1092,16 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'a':
-						state = 100;
-						break;
-					case 'l':
 						state = 101;
 						break;
-					case 'o':
+					case 'l':
 						state = 102;
 						break;
-					case 'u':
+					case 'o':
 						state = 103;
+						break;
+					case 'u':
+						state = 104;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character <= '_' ) || ( character >= 'b' && character != 'l' && character != 'o' && character != 'u' && character <= 'z' ) )
@@ -1128,7 +1133,7 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'r':
-						state = 104;
+						state = 105;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
@@ -1160,13 +1165,13 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'f':
-						state = 105;
-						break;
-					case 'm':
 						state = 106;
 						break;
-					case 'n':
+					case 'm':
 						state = 107;
+						break;
+					case 'n':
+						state = 108;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'f' && character <= 'l' ) || ( character >= 'o' && character <= 'z' ) )
@@ -1198,7 +1203,7 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'o':
-						state = 108;
+						state = 109;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
@@ -1230,7 +1235,7 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'o':
-						state = 109;
+						state = 110;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
@@ -1262,10 +1267,10 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'r':
-						state = 110;
+						state = 111;
 						break;
 					case 'u':
-						state = 111;
+						state = 112;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character != 'u' && character <= 'z' ) )
@@ -1297,7 +1302,7 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'e':
-						state = 112;
+						state = 113;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
@@ -1329,7 +1334,7 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'o':
-						state = 113;
+						state = 114;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
@@ -1361,16 +1366,16 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'a':
-						state = 114;
-						break;
-					case 'r':
 						state = 115;
 						break;
-					case 'u':
+					case 'r':
 						state = 116;
 						break;
-					case 'y':
+					case 'u':
 						state = 117;
+						break;
+					case 'y':
+						state = 118;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character <= '_' ) || ( character >= 'b' && character != 'r' && character != 'u' && character != 'y' && character <= 'z' ) )
@@ -1411,7 +1416,7 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'i':
-						state = 118;
+						state = 119;
 						break;
 					default:
 						if ( ( character >= '0' && character != '8' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'i' && character <= 'z' ) )
@@ -1443,7 +1448,7 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'o':
-						state = 119;
+						state = 120;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
@@ -1475,7 +1480,7 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'h':
-						state = 120;
+						state = 121;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'h' && character <= 'z' ) )
@@ -1507,7 +1512,7 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'i':
-						state = 121;
+						state = 122;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'i' && character <= 'z' ) )
@@ -1531,7 +1536,7 @@ export namespace minairo
 					switch (character)
 					{
 					case '|':
-						state = 122;
+						state = 123;
 						break;
 					default:
 						{
@@ -1597,13 +1602,13 @@ export namespace minairo
 					switch (character)
 					{
 					case 'U':
-						state = 124;
-						break;
-					case 'u':
 						state = 125;
 						break;
-					case 'x':
+					case 'u':
 						state = 126;
+						break;
+					case 'x':
+						state = 127;
 						break;
 					default:
 						if ( ( character >= '\"' && character <= '\"' ) || ( character >= '\'' && character <= '\'' ) || ( character >= '?' && character <= '?' ) || ( character >= '\\' && character <= '\\' ) || ( character >= 'a' && character <= 'b' ) || ( character >= 'f' && character <= 'f' ) || ( character >= 'n' && character <= 'n' ) || ( character >= 'r' && character != 's' && character != 'u' && character <= 'v' ) )
@@ -1613,7 +1618,7 @@ export namespace minairo
 						}
 						if ( ( character >= '0' && character <= '7' ) )
 						{
-							state = 123;
+							state = 124;
 							break;
 						}
 						else
@@ -1670,7 +1675,7 @@ export namespace minairo
 					switch (character)
 					{
 					case '\'':
-						state = 127;
+						state = 128;
 						break;
 					default:
 						{
@@ -1683,13 +1688,13 @@ export namespace minairo
 					switch (character)
 					{
 					case 'U':
-						state = 129;
-						break;
-					case 'u':
 						state = 130;
 						break;
-					case 'x':
+					case 'u':
 						state = 131;
+						break;
+					case 'x':
+						state = 132;
 						break;
 					default:
 						if ( ( character >= '\"' && character <= '\"' ) || ( character >= '\'' && character <= '\'' ) || ( character >= '?' && character <= '?' ) || ( character >= '\\' && character <= '\\' ) || ( character >= 'a' && character <= 'b' ) || ( character >= 'f' && character <= 'f' ) || ( character >= 'n' && character <= 'n' ) || ( character >= 'r' && character != 's' && character != 'u' && character <= 'v' ) )
@@ -1699,7 +1704,7 @@ export namespace minairo
 						}
 						if ( ( character >= '0' && character <= '7' ) )
 						{
-							state = 128;
+							state = 129;
 							break;
 						}
 						else
@@ -1756,7 +1761,7 @@ export namespace minairo
 					switch (character)
 					{
 					case '-':
-						state = 132;
+						state = 133;
 						break;
 					default:
 						{
@@ -1771,25 +1776,30 @@ export namespace minairo
 					}
 					break;
 				case 70:
+					{
+						return TerminalData(Terminal::OP_ARROW, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
+				case 71:
 					switch (character)
 					{
 					case '\'':
-						state = 133;
+						state = 134;
 						break;
 					case 'E':
 					case 'e':
-						state = 134;
+						state = 135;
 						break;
 					case 'F':
 					case 'L':
 					case 'f':
 					case 'l':
-						state = 135;
+						state = 136;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) )
 						{
-							// state = 70;
+							// state = 71;
 							break;
 						}
 						else
@@ -1799,7 +1809,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 71:
+				case 72:
 					{
 						int recursivities = 1;
 						int comment_state = 0;
@@ -1899,7 +1909,7 @@ export namespace minairo
 						}
 					}
 					break;
-				case 72:
+				case 73:
 					{
 						++current_text_index;
 						while(text[current_text_index] != '\n' && text[current_text_index] != '\r' && text[current_text_index] != '\0')
@@ -1913,22 +1923,22 @@ export namespace minairo
 						state = 0;
 					}
 					break;
-				case 73:
+				case 74:
 					{
 						return TerminalData(Terminal::OP_ASSIGN_DIV, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
-				case 74:
+				case 75:
 					switch (character)
 					{
 					case '8':
 					case '9':
-						state = 77;
+						state = 78;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '7' ) )
 						{
-							state = 76;
+							state = 77;
 							break;
 						}
 						else
@@ -1938,23 +1948,23 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 75:
+				case 76:
 					switch (character)
 					{
 					case 'F':
 					case 'L':
 					case 'f':
 					case 'l':
-						state = 135;
+						state = 136;
 						break;
 					case 'E':
 					case 'e':
-						state = 136;
+						state = 137;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) )
 						{
-							state = 70;
+							state = 71;
 							break;
 						}
 						else
@@ -1964,41 +1974,41 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 76:
+				case 77:
 					switch (character)
 					{
 					case '\'':
-						state = 74;
+						state = 75;
 						break;
 					case '.':
-						state = 75;
+						state = 76;
 						break;
 					case '8':
 					case '9':
-						state = 77;
+						state = 78;
 						break;
 					case 'E':
 					case 'e':
-						state = 79;
+						state = 80;
 						break;
 					case 'L':
-						state = 80;
+						state = 81;
 						break;
 					case 'U':
 					case 'u':
-						state = 81;
+						state = 82;
 						break;
 					case 'Z':
 					case 'z':
-						state = 83;
+						state = 84;
 						break;
 					case 'l':
-						state = 84;
+						state = 85;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '7' ) )
 						{
-							// state = 76;
+							// state = 77;
 							break;
 						}
 						else
@@ -2008,43 +2018,26 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 77:
+				case 78:
 					switch (character)
 					{
 					case '.':
-						state = 75;
+						state = 76;
 						break;
 					case 'E':
 					case 'e':
-						state = 79;
+						state = 80;
 						break;
 					case '\'':
-						state = 137;
+						state = 138;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) )
 						{
-							// state = 77;
+							// state = 78;
 							break;
 						}
 						else
-						{
-							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
-				case 78:
-					switch (character)
-					{
-					case '\'':
-						state = 138;
-						break;
-					case '0':
-					case '1':
-						state = 139;
-						break;
-					default:
 						{
 							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
@@ -2054,17 +2047,14 @@ export namespace minairo
 				case 79:
 					switch (character)
 					{
-					case '+':
-					case '-':
+					case '\'':
+						state = 139;
+						break;
+					case '0':
+					case '1':
 						state = 140;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) )
-						{
-							state = 141;
-							break;
-						}
-						else
 						{
 							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
@@ -2074,16 +2064,19 @@ export namespace minairo
 				case 80:
 					switch (character)
 					{
-					case 'L':
-						state = 83;
-						break;
-					case 'U':
-					case 'u':
-						state = 142;
+					case '+':
+					case '-':
+						state = 141;
 						break;
 					default:
+						if ( ( character >= '0' && character <= '9' ) )
 						{
-							return TerminalData(Terminal::INTEGER_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							state = 142;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -2091,15 +2084,12 @@ export namespace minairo
 				case 81:
 					switch (character)
 					{
-					case 'Z':
-					case 'z':
-						state = 142;
-						break;
 					case 'L':
-						state = 143;
+						state = 84;
 						break;
-					case 'l':
-						state = 144;
+					case 'U':
+					case 'u':
+						state = 143;
 						break;
 					default:
 						{
@@ -2111,16 +2101,36 @@ export namespace minairo
 				case 82:
 					switch (character)
 					{
-					case '\'':
+					case 'Z':
+					case 'z':
+						state = 143;
+						break;
+					case 'L':
+						state = 144;
+						break;
+					case 'l':
 						state = 145;
 						break;
-					case '.':
+					default:
+						{
+							return TerminalData(Terminal::INTEGER_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 83:
+					switch (character)
+					{
+					case '\'':
 						state = 146;
+						break;
+					case '.':
+						state = 147;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
 						{
-							state = 147;
+							state = 148;
 							break;
 						}
 						else
@@ -2130,29 +2140,12 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 83:
-					switch (character)
-					{
-					case 'U':
-					case 'u':
-						state = 142;
-						break;
-					default:
-						{
-							return TerminalData(Terminal::INTEGER_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
 				case 84:
 					switch (character)
 					{
-					case 'l':
-						state = 83;
-						break;
 					case 'U':
 					case 'u':
-						state = 142;
+						state = 143;
 						break;
 					default:
 						{
@@ -2162,6 +2155,23 @@ export namespace minairo
 					}
 					break;
 				case 85:
+					switch (character)
+					{
+					case 'l':
+						state = 84;
+						break;
+					case 'U':
+					case 'u':
+						state = 143;
+						break;
+					default:
+						{
+							return TerminalData(Terminal::INTEGER_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 86:
 					if ( ( character >= '0' && character <= '9' ) )
 					{
 						state = 16;
@@ -2172,41 +2182,41 @@ export namespace minairo
 						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
-				case 86:
+				case 87:
 					{
 						return TerminalData(Terminal::OP_LTE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
-				case 87:
+				case 88:
 					{
 						return TerminalData(Terminal::OP_EQ, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
-				case 88:
+				case 89:
 					{
 						return TerminalData(Terminal::OP_GTE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
-				case 89:
+				case 90:
 					switch (character)
 					{
 					case 195:
-						state = 90;
+						state = 91;
 						break;
 					case 196:
 					case 197:
 					case 198:
 					case 199:
 					case 200:
-						state = 91;
+						state = 92;
 						break;
 					case 201:
-						state = 92;
+						state = 93;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
-							// state = 89;
+							// state = 90;
 							break;
 						}
 						else
@@ -2216,21 +2226,10 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 90:
+				case 91:
 					if ( ( character >= 128 && character != 151 && character != 183 && character <= 191 ) )
 					{
-						state = 89;
-						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
-				case 91:
-					if ( ( character >= 128 && character <= 191 ) )
-					{
-						state = 89;
+						state = 90;
 						break;
 					}
 					else
@@ -2239,9 +2238,9 @@ export namespace minairo
 					}
 					break;
 				case 92:
-					if ( ( character >= 128 && character <= 143 ) )
+					if ( ( character >= 128 && character <= 191 ) )
 					{
-						state = 89;
+						state = 90;
 						break;
 					}
 					else
@@ -2250,35 +2249,14 @@ export namespace minairo
 					}
 					break;
 				case 93:
-					switch (character)
+					if ( ( character >= 128 && character <= 143 ) )
 					{
-					case 195:
-						state = 50;
+						state = 90;
 						break;
-					case 196:
-					case 197:
-					case 198:
-					case 199:
-					case 200:
-						state = 51;
-						break;
-					case 201:
-						state = 52;
-						break;
-					case 'c':
-						state = 148;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'c' && character <= 'z' ) )
-						{
-							state = 23;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
 				case 94:
@@ -2297,8 +2275,40 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'o':
+					case 'c':
 						state = 149;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'c' && character <= 'z' ) )
+						{
+							state = 23;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 95:
+					switch (character)
+					{
+					case 195:
+						state = 50;
+						break;
+					case 196:
+					case 197:
+					case 198:
+					case 199:
+					case 200:
+						state = 51;
+						break;
+					case 201:
+						state = 52;
+						break;
+					case 'o':
+						state = 150;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
@@ -2313,7 +2323,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 95:
+				case 96:
 					switch (character)
 					{
 					case 195:
@@ -2342,38 +2352,6 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 96:
-					switch (character)
-					{
-					case 195:
-						state = 50;
-						break;
-					case 196:
-					case 197:
-					case 198:
-					case 199:
-					case 200:
-						state = 51;
-						break;
-					case 201:
-						state = 52;
-						break;
-					case 's':
-						state = 150;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 's' && character <= 'z' ) )
-						{
-							state = 23;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
 				case 97:
 					switch (character)
 					{
@@ -2390,18 +2368,18 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'u':
+					case 's':
 						state = 151;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'u' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 's' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_DO, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -2422,18 +2400,18 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 's':
+					case 'u':
 						state = 152;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 's' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'u' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_DO, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -2454,11 +2432,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'p':
+					case 's':
 						state = 153;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'p' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 's' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2486,11 +2464,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'l':
+					case 'p':
 						state = 154;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'p' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2518,11 +2496,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'o':
+					case 'l':
 						state = 155;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2550,11 +2528,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'r':
+					case 'o':
 						state = 156;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2582,11 +2560,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'n':
+					case 'r':
 						state = 157;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'n' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2614,8 +2592,40 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'o':
+					case 'n':
 						state = 158;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'n' && character <= 'z' ) )
+						{
+							state = 23;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 105:
+					switch (character)
+					{
+					case 195:
+						state = 50;
+						break;
+					case 196:
+					case 197:
+					case 198:
+					case 199:
+					case 200:
+						state = 51;
+						break;
+					case 201:
+						state = 52;
+						break;
+					case 'o':
+						state = 159;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
@@ -2630,7 +2640,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 105:
+				case 106:
 					switch (character)
 					{
 					case 195:
@@ -2659,38 +2669,6 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 106:
-					switch (character)
-					{
-					case 195:
-						state = 50;
-						break;
-					case 196:
-					case 197:
-					case 198:
-					case 199:
-					case 200:
-						state = 51;
-						break;
-					case 201:
-						state = 52;
-						break;
-					case 'p':
-						state = 159;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'p' && character <= 'z' ) )
-						{
-							state = 23;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
 				case 107:
 					switch (character)
 					{
@@ -2707,11 +2685,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 't':
+					case 'p':
 						state = 160;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'p' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2739,11 +2717,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'i':
+					case 't':
 						state = 161;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'i' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2771,11 +2749,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'd':
+					case 'i':
 						state = 162;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'd' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'i' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2803,11 +2781,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'o':
+					case 'd':
 						state = 163;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'd' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2835,11 +2813,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'b':
+					case 'o':
 						state = 164;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'b' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2867,11 +2845,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 't':
+					case 'b':
 						state = 165;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'b' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2899,11 +2877,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'r':
+					case 't':
 						state = 166;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2931,14 +2909,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'b':
+					case 'r':
 						state = 167;
 						break;
-					case 'k':
-						state = 168;
-						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'b' && character != 'k' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2966,11 +2941,14 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'u':
+					case 'b':
+						state = 168;
+						break;
+					case 'k':
 						state = 169;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'u' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'b' && character != 'k' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -2998,11 +2976,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'p':
+					case 'u':
 						state = 170;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'p' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'u' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3062,11 +3040,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'n':
+					case 'p':
 						state = 172;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'n' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'p' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3094,11 +3072,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'i':
+					case 'n':
 						state = 173;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'i' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'n' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3126,14 +3104,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'e':
+					case 'i':
 						state = 174;
 						break;
-					case 'i':
-						state = 175;
-						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character != 'i' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'i' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3162,7 +3137,42 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'e':
+						state = 175;
+						break;
+					case 'i':
 						state = 176;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character != 'i' && character <= 'z' ) )
+						{
+							state = 23;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 122:
+					switch (character)
+					{
+					case 195:
+						state = 50;
+						break;
+					case 196:
+					case 197:
+					case 198:
+					case 199:
+					case 200:
+						state = 51;
+						break;
+					case 201:
+						state = 52;
+						break;
+					case 'e':
+						state = 177;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
@@ -3177,24 +3187,13 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 122:
+				case 123:
 					{
 						return TerminalData(Terminal::OP_OR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
-				case 123:
-					if ( ( character >= '0' && character <= '7' ) )
-					{
-						state = 177;
-						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
 				case 124:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					if ( ( character >= '0' && character <= '7' ) )
 					{
 						state = 178;
 						break;
@@ -3227,12 +3226,7 @@ export namespace minairo
 					}
 					break;
 				case 127:
-					{
-						return TerminalData(Terminal::CHAR_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
-				case 128:
-					if ( ( character >= '0' && character <= '7' ) )
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
 					{
 						state = 181;
 						break;
@@ -3242,8 +3236,13 @@ export namespace minairo
 						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
+				case 128:
+					{
+						return TerminalData(Terminal::CHAR_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
 				case 129:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					if ( ( character >= '0' && character <= '7' ) )
 					{
 						state = 182;
 						break;
@@ -3276,14 +3275,25 @@ export namespace minairo
 					}
 					break;
 				case 132:
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					{
+						state = 185;
+						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
+				case 133:
 					{
 						return TerminalData(Terminal::UNINITIALIZED, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
-				case 133:
+				case 134:
 					if ( ( character >= '0' && character <= '9' ) )
 					{
-						state = 70;
+						state = 71;
 						break;
 					}
 					else
@@ -3291,17 +3301,17 @@ export namespace minairo
 						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
-				case 134:
+				case 135:
 					switch (character)
 					{
 					case '+':
 					case '-':
-						state = 185;
+						state = 186;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) )
 						{
-							state = 186;
+							state = 187;
 							break;
 						}
 						else
@@ -3311,22 +3321,22 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 135:
+				case 136:
 					{
 						return TerminalData(Terminal::FLOAT_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
-				case 136:
+				case 137:
 					switch (character)
 					{
 					case '+':
 					case '-':
-						state = 187;
+						state = 188;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) )
 						{
-							state = 188;
+							state = 189;
 							break;
 						}
 						else
@@ -3336,54 +3346,54 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 137:
+				case 138:
 					if ( ( character >= '0' && character <= '9' ) )
 					{
-						state = 77;
+						state = 78;
 						break;
 					}
 					else
 					{
 						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
-				case 138:
-					switch (character)
-					{
-					case '0':
-					case '1':
-						state = 139;
-						break;
-					default:
-						{
-							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
 					}
 					break;
 				case 139:
 					switch (character)
 					{
+					case '0':
+					case '1':
+						state = 140;
+						break;
+					default:
+						{
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 140:
+					switch (character)
+					{
 					case 'L':
-						state = 80;
+						state = 81;
 						break;
 					case 'U':
 					case 'u':
-						state = 81;
+						state = 82;
 						break;
 					case 'Z':
 					case 'z':
-						state = 83;
-						break;
-					case 'l':
 						state = 84;
 						break;
+					case 'l':
+						state = 85;
+						break;
 					case '\'':
-						state = 138;
+						state = 139;
 						break;
 					case '0':
 					case '1':
-						// state = 139;
+						// state = 140;
 						break;
 					default:
 						{
@@ -3392,10 +3402,10 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 140:
+				case 141:
 					if ( ( character >= '0' && character <= '9' ) )
 					{
-						state = 141;
+						state = 142;
 						break;
 					}
 					else
@@ -3403,22 +3413,22 @@ export namespace minairo
 						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
-				case 141:
+				case 142:
 					switch (character)
 					{
 					case 'F':
 					case 'L':
 					case 'f':
 					case 'l':
-						state = 135;
+						state = 136;
 						break;
 					case '\'':
-						state = 140;
+						state = 141;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) )
 						{
-							// state = 141;
+							// state = 142;
 							break;
 						}
 						else
@@ -3428,29 +3438,16 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 142:
+				case 143:
 					{
 						return TerminalData(Terminal::INTEGER_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
-				case 143:
-					switch (character)
-					{
-					case 'L':
-						state = 142;
-						break;
-					default:
-						{
-							return TerminalData(Terminal::INTEGER_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
 					}
 					break;
 				case 144:
 					switch (character)
 					{
-					case 'l':
-						state = 142;
+					case 'L':
+						state = 143;
 						break;
 					default:
 						{
@@ -3460,14 +3457,16 @@ export namespace minairo
 					}
 					break;
 				case 145:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					switch (character)
 					{
-						state = 189;
+					case 'l':
+						state = 143;
 						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					default:
+						{
+							return TerminalData(Terminal::INTEGER_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
 					}
 					break;
 				case 146:
@@ -3482,36 +3481,47 @@ export namespace minairo
 					}
 					break;
 				case 147:
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					{
+						state = 191;
+						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
+				case 148:
 					switch (character)
 					{
 					case 'L':
-						state = 80;
+						state = 81;
 						break;
 					case 'U':
 					case 'u':
-						state = 81;
+						state = 82;
 						break;
 					case 'Z':
 					case 'z':
-						state = 83;
-						break;
-					case 'l':
 						state = 84;
 						break;
+					case 'l':
+						state = 85;
+						break;
 					case '\'':
-						state = 191;
+						state = 192;
 						break;
 					case '.':
-						state = 192;
+						state = 193;
 						break;
 					case 'P':
 					case 'p':
-						state = 193;
+						state = 194;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
 						{
-							// state = 147;
+							// state = 148;
 							break;
 						}
 						else
@@ -3521,7 +3531,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 148:
+				case 149:
 					switch (character)
 					{
 					case 195:
@@ -3550,38 +3560,6 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 149:
-					switch (character)
-					{
-					case 195:
-						state = 50;
-						break;
-					case 196:
-					case 197:
-					case 198:
-					case 199:
-					case 200:
-						state = 51;
-						break;
-					case 201:
-						state = 52;
-						break;
-					case 'l':
-						state = 194;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
-						{
-							state = 23;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
 				case 150:
 					switch (character)
 					{
@@ -3598,11 +3576,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'c':
+					case 'l':
 						state = 195;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'c' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3630,11 +3608,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'b':
+					case 'c':
 						state = 196;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'b' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'c' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3662,11 +3640,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'e':
+					case 'b':
 						state = 197;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'b' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3694,11 +3672,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'o':
+					case 'e':
 						state = 198;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3726,11 +3704,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 's':
-						state = 169;
+					case 'o':
+						state = 199;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 's' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3758,8 +3736,40 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
+					case 's':
+						state = 170;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 's' && character <= 'z' ) )
+						{
+							state = 23;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 156:
+					switch (character)
+					{
+					case 195:
+						state = 50;
+						break;
+					case 196:
+					case 197:
+					case 198:
+					case 199:
+					case 200:
+						state = 51;
+						break;
+					case 201:
+						state = 52;
+						break;
 					case 'a':
-						state = 199;
+						state = 200;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character <= '_' ) || ( character >= 'b' && character <= 'z' ) )
@@ -3774,7 +3784,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 156:
+				case 157:
 					switch (character)
 					{
 					case 195:
@@ -3803,38 +3813,6 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 157:
-					switch (character)
-					{
-					case 195:
-						state = 50;
-						break;
-					case 196:
-					case 197:
-					case 198:
-					case 199:
-					case 200:
-						state = 51;
-						break;
-					case 201:
-						state = 52;
-						break;
-					case 'c':
-						state = 200;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'c' && character <= 'z' ) )
-						{
-							state = 23;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
 				case 158:
 					switch (character)
 					{
@@ -3851,11 +3829,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'u':
+					case 'c':
 						state = 201;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'u' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'c' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3883,11 +3861,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'o':
+					case 'u':
 						state = 202;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'u' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3915,20 +3893,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case '1':
+					case 'o':
 						state = 203;
 						break;
-					case '3':
-						state = 204;
-						break;
-					case '6':
-						state = 205;
-						break;
-					case '8':
-						state = 206;
-						break;
 					default:
-						if ( ( character >= '0' && character != '1' && character != '3' && character != '6' && character != '8' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3956,11 +3925,20 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'n':
+					case '1':
+						state = 204;
+						break;
+					case '3':
+						state = 205;
+						break;
+					case '6':
+						state = 206;
+						break;
+					case '8':
 						state = 207;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'n' && character <= 'z' ) )
+						if ( ( character >= '0' && character != '1' && character != '3' && character != '6' && character != '8' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -3988,11 +3966,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'u':
+					case 'n':
 						state = 208;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'u' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'n' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4020,14 +3998,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'c':
+					case 'u':
 						state = 209;
 						break;
-					case 'j':
-						state = 210;
-						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'c' && character != 'j' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'u' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4055,11 +4030,14 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'l':
+					case 'c':
+						state = 210;
+						break;
+					case 'j':
 						state = 211;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'c' && character != 'j' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4087,11 +4065,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'u':
+					case 'l':
 						state = 212;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'u' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4119,11 +4097,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 't':
+					case 'u':
 						state = 213;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'u' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4151,11 +4129,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'l':
+					case 't':
 						state = 214;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4183,11 +4161,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'e':
+					case 'l':
 						state = 215;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4247,11 +4225,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'l':
+					case 'e':
 						state = 217;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4279,11 +4257,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'e':
+					case 'l':
 						state = 218;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4311,11 +4289,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 't':
+					case 'e':
 						state = 219;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4343,11 +4321,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'd':
+					case 't':
 						state = 220;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'd' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4375,11 +4353,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'r':
+					case 'd':
 						state = 221;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'd' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4407,11 +4385,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'l':
+					case 'r':
 						state = 222;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4456,20 +4434,41 @@ export namespace minairo
 					}
 					break;
 				case 177:
-					if ( ( character >= '0' && character <= '7' ) )
+					switch (character)
 					{
-						state = 3;
+					case 195:
+						state = 50;
 						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					case 196:
+					case 197:
+					case 198:
+					case 199:
+					case 200:
+						state = 51;
+						break;
+					case 201:
+						state = 52;
+						break;
+					case 'l':
+						state = 224;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
+						{
+							state = 23;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
 					}
 					break;
 				case 178:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					if ( ( character >= '0' && character <= '7' ) )
 					{
-						state = 224;
+						state = 3;
 						break;
 					}
 					else
@@ -4480,7 +4479,7 @@ export namespace minairo
 				case 179:
 					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
 					{
-						state = 126;
+						state = 225;
 						break;
 					}
 					else
@@ -4491,7 +4490,7 @@ export namespace minairo
 				case 180:
 					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
 					{
-						state = 3;
+						state = 127;
 						break;
 					}
 					else
@@ -4500,6 +4499,17 @@ export namespace minairo
 					}
 					break;
 				case 181:
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					{
+						state = 3;
+						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
+				case 182:
 					if ( ( character >= '0' && character <= '7' ) )
 					{
 						state = 61;
@@ -4510,21 +4520,10 @@ export namespace minairo
 						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
-				case 182:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-					{
-						state = 225;
-						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
 				case 183:
 					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
 					{
-						state = 131;
+						state = 226;
 						break;
 					}
 					else
@@ -4535,7 +4534,7 @@ export namespace minairo
 				case 184:
 					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
 					{
-						state = 61;
+						state = 132;
 						break;
 					}
 					else
@@ -4544,9 +4543,9 @@ export namespace minairo
 					}
 					break;
 				case 185:
-					if ( ( character >= '0' && character <= '9' ) )
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
 					{
-						state = 186;
+						state = 61;
 						break;
 					}
 					else
@@ -4555,34 +4554,9 @@ export namespace minairo
 					}
 					break;
 				case 186:
-					switch (character)
-					{
-					case 'F':
-					case 'L':
-					case 'f':
-					case 'l':
-						state = 135;
-						break;
-					case '\'':
-						state = 185;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) )
-						{
-							// state = 186;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::FLOAT_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
-				case 187:
 					if ( ( character >= '0' && character <= '9' ) )
 					{
-						state = 188;
+						state = 187;
 						break;
 					}
 					else
@@ -4590,22 +4564,22 @@ export namespace minairo
 						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 					}
 					break;
-				case 188:
+				case 187:
 					switch (character)
 					{
 					case 'F':
 					case 'L':
 					case 'f':
 					case 'l':
-						state = 135;
+						state = 136;
 						break;
 					case '\'':
-						state = 187;
+						state = 186;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) )
 						{
-							// state = 188;
+							// state = 187;
 							break;
 						}
 						else
@@ -4615,35 +4589,38 @@ export namespace minairo
 						break;
 					}
 					break;
+				case 188:
+					if ( ( character >= '0' && character <= '9' ) )
+					{
+						state = 189;
+						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
 				case 189:
 					switch (character)
 					{
+					case 'F':
 					case 'L':
-						state = 80;
-						break;
-					case 'U':
-					case 'u':
-						state = 81;
-						break;
-					case 'Z':
-					case 'z':
-						state = 83;
-						break;
+					case 'f':
 					case 'l':
-						state = 84;
+						state = 136;
 						break;
 					case '\'':
-						state = 145;
+						state = 188;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+						if ( ( character >= '0' && character <= '9' ) )
 						{
 							// state = 189;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::INTEGER_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::FLOAT_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -4652,15 +4629,21 @@ export namespace minairo
 					switch (character)
 					{
 					case 'L':
+						state = 81;
+						break;
+					case 'U':
+					case 'u':
+						state = 82;
+						break;
+					case 'Z':
+					case 'z':
+						state = 84;
+						break;
 					case 'l':
-						state = 135;
+						state = 85;
 						break;
 					case '\'':
 						state = 146;
-						break;
-					case 'P':
-					case 'p':
-						state = 226;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
@@ -4670,28 +4653,20 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::FLOAT_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::INTEGER_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
 					break;
 				case 191:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-					{
-						state = 147;
-						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
-				case 192:
 					switch (character)
 					{
 					case 'L':
 					case 'l':
-						state = 135;
+						state = 136;
+						break;
+					case '\'':
+						state = 147;
 						break;
 					case 'P':
 					case 'p':
@@ -4700,7 +4675,7 @@ export namespace minairo
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
 						{
-							state = 190;
+							// state = 191;
 							break;
 						}
 						else
@@ -4710,17 +4685,52 @@ export namespace minairo
 						break;
 					}
 					break;
+				case 192:
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					{
+						state = 148;
+						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
 				case 193:
 					switch (character)
 					{
-					case '+':
-					case '-':
+					case 'L':
+					case 'l':
+						state = 136;
+						break;
+					case 'P':
+					case 'p':
 						state = 228;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
 						{
-							state = 229;
+							state = 191;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::FLOAT_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 194:
+					switch (character)
+					{
+					case '+':
+					case '-':
+						state = 229;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+						{
+							state = 230;
 							break;
 						}
 						else
@@ -4730,7 +4740,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 194:
+				case 195:
 					switch (character)
 					{
 					case 195:
@@ -4747,7 +4757,7 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'e':
-						state = 230;
+						state = 231;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
@@ -4762,7 +4772,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 195:
+				case 196:
 					switch (character)
 					{
 					case 195:
@@ -4791,7 +4801,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 196:
+				case 197:
 					switch (character)
 					{
 					case 195:
@@ -4808,7 +4818,7 @@ export namespace minairo
 						state = 52;
 						break;
 					case 'l':
-						state = 231;
+						state = 232;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
@@ -4823,7 +4833,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 197:
+				case 198:
 					switch (character)
 					{
 					case 195:
@@ -4852,38 +4862,6 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 198:
-					switch (character)
-					{
-					case 195:
-						state = 50;
-						break;
-					case 196:
-					case 197:
-					case 198:
-					case 199:
-					case 200:
-						state = 51;
-						break;
-					case 201:
-						state = 52;
-						break;
-					case 'r':
-						state = 232;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
-						{
-							state = 23;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
 				case 199:
 					switch (character)
 					{
@@ -4900,11 +4878,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 't':
+					case 'r':
 						state = 233;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4964,11 +4942,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'p':
+					case 't':
 						state = 235;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'p' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -4996,11 +4974,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'r':
+					case 'p':
 						state = 236;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'p' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -5028,11 +5006,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case '6':
+					case 'r':
 						state = 237;
 						break;
 					default:
-						if ( ( character >= '0' && character != '6' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -5060,11 +5038,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case '2':
+					case '6':
 						state = 238;
 						break;
 					default:
-						if ( ( character >= '0' && character != '2' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character != '6' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -5092,11 +5070,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case '4':
+					case '2':
 						state = 239;
 						break;
 					default:
-						if ( ( character >= '0' && character != '4' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character != '2' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -5124,15 +5102,18 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
+					case '4':
+						state = 240;
+						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character != '4' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_INT8, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5161,7 +5142,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_JOIN, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_INT8, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5182,18 +5163,15 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'l':
-						state = 240;
-						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_JOIN, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5214,11 +5192,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'e':
+					case 'l':
 						state = 241;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'l' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -5278,11 +5256,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'i':
+					case 'e':
 						state = 243;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'i' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -5310,8 +5288,40 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'r':
+					case 'i':
 						state = 244;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'i' && character <= 'z' ) )
+						{
+							state = 23;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 213:
+					switch (character)
+					{
+					case 195:
+						state = 50;
+						break;
+					case 196:
+					case 197:
+					case 198:
+					case 199:
+					case 200:
+						state = 51;
+						break;
+					case 201:
+						state = 52;
+						break;
+					case 'r':
+						state = 245;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
@@ -5326,7 +5336,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 213:
+				case 214:
 					switch (character)
 					{
 					case 195:
@@ -5355,97 +5365,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 214:
-					switch (character)
-					{
-					case 195:
-						state = 50;
-						break;
-					case 196:
-					case 197:
-					case 198:
-					case 199:
-					case 200:
-						state = 51;
-						break;
-					case 201:
-						state = 52;
-						break;
-					case 'e':
-						state = 245;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
-						{
-							state = 23;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
 				case 215:
-					switch (character)
-					{
-					case 195:
-						state = 50;
-						break;
-					case 196:
-					case 197:
-					case 198:
-					case 199:
-					case 200:
-						state = 51;
-						break;
-					case 201:
-						state = 52;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
-						{
-							state = 23;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::WK_TAKE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
-				case 216:
-					switch (character)
-					{
-					case 195:
-						state = 50;
-						break;
-					case 196:
-					case 197:
-					case 198:
-					case 199:
-					case 200:
-						state = 51;
-						break;
-					case 201:
-						state = 52;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
-						{
-							state = 23;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::BOOL_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
-				case 217:
 					switch (character)
 					{
 					case 195:
@@ -5477,6 +5397,64 @@ export namespace minairo
 						break;
 					}
 					break;
+				case 216:
+					switch (character)
+					{
+					case 195:
+						state = 50;
+						break;
+					case 196:
+					case 197:
+					case 198:
+					case 199:
+					case 200:
+						state = 51;
+						break;
+					case 201:
+						state = 52;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						{
+							state = 23;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::WK_TAKE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 217:
+					switch (character)
+					{
+					case 195:
+						state = 50;
+						break;
+					case 196:
+					case 197:
+					case 198:
+					case 199:
+					case 200:
+						state = 51;
+						break;
+					case 201:
+						state = 52;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						{
+							state = 23;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::BOOL_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
 				case 218:
 					switch (character)
 					{
@@ -5493,11 +5471,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'd':
+					case 'e':
 						state = 247;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'd' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -5525,20 +5503,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case '1':
+					case 'd':
 						state = 248;
 						break;
-					case '3':
-						state = 249;
-						break;
-					case '6':
-						state = 250;
-						break;
-					case '8':
-						state = 251;
-						break;
 					default:
-						if ( ( character >= '0' && character != '1' && character != '3' && character != '6' && character != '8' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'd' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -5566,15 +5535,27 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
+					case '1':
+						state = 249;
+						break;
+					case '3':
+						state = 250;
+						break;
+					case '6':
+						state = 251;
+						break;
+					case '8':
+						state = 252;
+						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character != '1' && character != '3' && character != '6' && character != '8' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_VOID, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5595,18 +5576,15 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'e':
-						state = 252;
-						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_VOID, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5659,11 +5637,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'd':
+					case 'e':
 						state = 254;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'd' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -5676,102 +5654,6 @@ export namespace minairo
 					}
 					break;
 				case 224:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-					{
-						state = 255;
-						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
-				case 225:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-					{
-						state = 256;
-						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
-				case 226:
-					switch (character)
-					{
-					case '+':
-					case '-':
-						state = 257;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-						{
-							state = 258;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
-				case 227:
-					switch (character)
-					{
-					case '+':
-					case '-':
-						state = 259;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-						{
-							state = 260;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
-				case 228:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-					{
-						state = 229;
-						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
-				case 229:
-					switch (character)
-					{
-					case 'L':
-					case 'l':
-						state = 135;
-						break;
-					case '\'':
-						state = 228;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-						{
-							// state = 229;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::FLOAT_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
-				case 230:
 					switch (character)
 					{
 					case 195:
@@ -5787,11 +5669,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'a':
-						state = 261;
+					case 'd':
+						state = 255;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character <= '_' ) || ( character >= 'b' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'd' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -5799,6 +5681,102 @@ export namespace minairo
 						else
 						{
 							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 225:
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					{
+						state = 256;
+						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
+				case 226:
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					{
+						state = 257;
+						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
+				case 227:
+					switch (character)
+					{
+					case '+':
+					case '-':
+						state = 258;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+						{
+							state = 259;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 228:
+					switch (character)
+					{
+					case '+':
+					case '-':
+						state = 260;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+						{
+							state = 261;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 229:
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					{
+						state = 230;
+						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
+				case 230:
+					switch (character)
+					{
+					case 'L':
+					case 'l':
+						state = 136;
+						break;
+					case '\'':
+						state = 229;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+						{
+							// state = 230;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::FLOAT_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5819,11 +5797,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'e':
+					case 'a':
 						state = 262;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character <= '_' ) || ( character >= 'b' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -5851,11 +5829,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 't':
+					case 'e':
 						state = 263;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -5883,21 +5861,18 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case '3':
+					case 't':
 						state = 264;
 						break;
-					case '6':
-						state = 265;
-						break;
 					default:
-						if ( ( character >= '0' && character != '3' && character != '6' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_FLOAT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5918,8 +5893,43 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'i':
+					case '3':
+						state = 265;
+						break;
+					case '6':
 						state = 266;
+						break;
+					default:
+						if ( ( character >= '0' && character != '3' && character != '6' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						{
+							state = 23;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::WK_FLOAT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 235:
+					switch (character)
+					{
+					case 195:
+						state = 50;
+						break;
+					case 196:
+					case 197:
+					case 198:
+					case 199:
+					case 200:
+						state = 51;
+						break;
+					case 201:
+						state = 52;
+						break;
+					case 'i':
+						state = 267;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'i' && character <= 'z' ) )
@@ -5934,7 +5944,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 235:
+				case 236:
 					switch (character)
 					{
 					case 195:
@@ -5963,38 +5973,6 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 236:
-					switch (character)
-					{
-					case 195:
-						state = 50;
-						break;
-					case 196:
-					case 197:
-					case 198:
-					case 199:
-					case 200:
-						state = 51;
-						break;
-					case 201:
-						state = 52;
-						break;
-					case 't':
-						state = 267;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
-						{
-							state = 23;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
 				case 237:
 					switch (character)
 					{
@@ -6011,15 +5989,18 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
+					case 't':
+						state = 268;
+						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_INT16, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6048,7 +6029,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_INT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_INT16, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6077,7 +6058,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_INT64, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_INT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6098,18 +6079,15 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'e':
-						state = 268;
-						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_INT64, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6130,11 +6108,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'd':
+					case 'e':
 						state = 269;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'd' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -6162,11 +6140,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'c':
+					case 'd':
 						state = 270;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'c' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'd' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -6226,11 +6204,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'n':
+					case 'c':
 						state = 272;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'n' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'c' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -6258,15 +6236,18 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
+					case 'n':
+						state = 273;
+						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'n' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_TABLE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6295,7 +6276,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_TUPLE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_TABLE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6316,18 +6297,15 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'e':
-						state = 273;
-						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_TUPLE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6348,11 +6326,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case '6':
+					case 'e':
 						state = 274;
 						break;
 					default:
-						if ( ( character >= '0' && character != '6' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -6380,11 +6358,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case '2':
+					case '6':
 						state = 275;
 						break;
 					default:
-						if ( ( character >= '0' && character != '2' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character != '6' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -6412,11 +6390,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case '4':
+					case '2':
 						state = 276;
 						break;
 					default:
-						if ( ( character >= '0' && character != '4' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character != '2' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -6444,15 +6422,18 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
+					case '4':
+						state = 277;
+						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character != '4' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_UINT8, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6481,7 +6462,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_WHERE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_UINT8, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6510,7 +6491,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_WHILE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_WHERE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6539,134 +6520,12 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_YIELD, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_WHILE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
 					break;
 				case 255:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-					{
-						state = 125;
-						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
-				case 256:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-					{
-						state = 130;
-						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
-				case 257:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-					{
-						state = 258;
-						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
-				case 258:
-					switch (character)
-					{
-					case 'L':
-					case 'l':
-						state = 135;
-						break;
-					case '\'':
-						state = 257;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-						{
-							// state = 258;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::FLOAT_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
-				case 259:
-					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-					{
-						state = 260;
-						break;
-					}
-					else
-					{
-						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-					}
-					break;
-				case 260:
-					switch (character)
-					{
-					case 'L':
-					case 'l':
-						state = 135;
-						break;
-					case '\'':
-						state = 259;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
-						{
-							// state = 260;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::FLOAT_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
-				case 261:
-					switch (character)
-					{
-					case 195:
-						state = 50;
-						break;
-					case 196:
-					case 197:
-					case 198:
-					case 199:
-					case 200:
-						state = 51;
-						break;
-					case 201:
-						state = 52;
-						break;
-					case 'n':
-						state = 277;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'n' && character <= 'z' ) )
-						{
-							state = 23;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
-				case 262:
 					switch (character)
 					{
 					case 195:
@@ -6690,7 +6549,129 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_FLOAT64, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_YIELD, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 256:
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					{
+						state = 126;
+						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
+				case 257:
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					{
+						state = 131;
+						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
+				case 258:
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					{
+						state = 259;
+						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
+				case 259:
+					switch (character)
+					{
+					case 'L':
+					case 'l':
+						state = 136;
+						break;
+					case '\'':
+						state = 258;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+						{
+							// state = 259;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::FLOAT_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 260:
+					if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+					{
+						state = 261;
+						break;
+					}
+					else
+					{
+						return TerminalData(Terminal::ERROR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+					}
+					break;
+				case 261:
+					switch (character)
+					{
+					case 'L':
+					case 'l':
+						state = 136;
+						break;
+					case '\'':
+						state = 260;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'F' ) || ( character >= 'a' && character <= 'f' ) )
+						{
+							// state = 261;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::FLOAT_LITERAL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 262:
+					switch (character)
+					{
+					case 195:
+						state = 50;
+						break;
+					case 196:
+					case 197:
+					case 198:
+					case 199:
+					case 200:
+						state = 51;
+						break;
+					case 201:
+						state = 52;
+						break;
+					case 'n':
+						state = 278;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'n' && character <= 'z' ) )
+						{
+							state = 23;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6719,7 +6700,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_EXPORT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_FLOAT64, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6740,18 +6721,15 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case '2':
-						state = 278;
-						break;
 					default:
-						if ( ( character >= '0' && character != '2' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_EXPORT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6772,11 +6750,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case '4':
-						state = 262;
+					case '2':
+						state = 279;
 						break;
 					default:
-						if ( ( character >= '0' && character != '4' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character != '2' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -6804,11 +6782,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'o':
-						state = 279;
+					case '4':
+						state = 263;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
+						if ( ( character >= '0' && character != '4' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -6836,15 +6814,18 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
+					case 'o':
+						state = 280;
+						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'o' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_IMPORT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6873,7 +6854,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_MODULE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_IMPORT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6894,18 +6875,15 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'u':
-						state = 280;
-						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'u' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_MODULE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6926,11 +6904,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 't':
+					case 'u':
 						state = 281;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'u' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -6958,15 +6936,18 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
+					case 't':
+						state = 282;
+						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 't' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_PUBLIC, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6995,44 +6976,12 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_RETURN, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_PUBLIC, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
 					break;
 				case 273:
-					switch (character)
-					{
-					case 195:
-						state = 50;
-						break;
-					case 196:
-					case 197:
-					case 198:
-					case 199:
-					case 200:
-						state = 51;
-						break;
-					case 201:
-						state = 52;
-						break;
-					case 'f':
-						state = 282;
-						break;
-					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'f' && character <= 'z' ) )
-						{
-							state = 23;
-							break;
-						}
-						else
-						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
-						}
-						break;
-					}
-					break;
-				case 274:
 					switch (character)
 					{
 					case 195:
@@ -7056,7 +7005,39 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_UINT16, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_RETURN, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 274:
+					switch (character)
+					{
+					case 195:
+						state = 50;
+						break;
+					case 196:
+					case 197:
+					case 198:
+					case 199:
+					case 200:
+						state = 51;
+						break;
+					case 201:
+						state = 52;
+						break;
+					case 'f':
+						state = 283;
+						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'f' && character <= 'z' ) )
+						{
+							state = 23;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7085,7 +7066,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_UINT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_UINT16, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7114,7 +7095,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_UINT64, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_UINT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7143,7 +7124,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_BOOL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_UINT64, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7172,7 +7153,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_FLOAT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_BOOL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7193,18 +7174,15 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'n':
-						state = 283;
-						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'n' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_FLOAT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7225,11 +7203,11 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
-					case 'r':
+					case 'n':
 						state = 284;
 						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'n' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
@@ -7257,15 +7235,18 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
+					case 'r':
+						state = 285;
+						break;
 					default:
-						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'r' && character <= 'z' ) )
 						{
 							state = 23;
 							break;
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_PROJECT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::IDENTIFIER, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7294,7 +7275,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_TYPEDEF, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_PROJECT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7323,7 +7304,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_FUNCTION, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::WK_TYPEDEF, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7344,8 +7325,37 @@ export namespace minairo
 					case 201:
 						state = 52;
 						break;
+					default:
+						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character <= 'z' ) )
+						{
+							state = 23;
+							break;
+						}
+						else
+						{
+							return TerminalData(Terminal::WK_FUNCTION, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+						}
+						break;
+					}
+					break;
+				case 285:
+					switch (character)
+					{
+					case 195:
+						state = 50;
+						break;
+					case 196:
+					case 197:
+					case 198:
+					case 199:
+					case 200:
+						state = 51;
+						break;
+					case 201:
+						state = 52;
+						break;
 					case 'e':
-						state = 285;
+						state = 286;
 						break;
 					default:
 						if ( ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= '_' && character != '`' && character != 'e' && character <= 'z' ) )
@@ -7360,7 +7370,7 @@ export namespace minairo
 						break;
 					}
 					break;
-				case 285:
+				case 286:
 					switch (character)
 					{
 					case 195:

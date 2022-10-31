@@ -28,6 +28,8 @@ namespace minairo
 	export StatementPtr generate_AST(Scanner code);
 	export struct ParseException;
 
+	StatementPtr statement(Scanner& scanner);
+
 	// ------------------------------------------------------------------------------------
 	// ------------------------------------------------------------------------------------
 	// ------------------------------------------------------------------------------------
@@ -275,10 +277,89 @@ namespace minairo
 		return result;
 	}
 
-	//ExpressionPtr function(Scanner& scanner)
-	//{
-	//	WK_FUNCTION
-	//}
+	ExpressionPtr procedure_declaration(Scanner& scanner)
+	{
+		auto result = std::make_unique<ProcedureDeclaration>();
+		if (scanner.peek_next_symbol().type == Terminal::WK_FUNCTION)
+		{
+			result->type = consume(Terminal::WK_FUNCTION, scanner);
+		}
+		else
+		{
+			result->type = consume(Terminal::WK_PROCEDURE, scanner);
+		}
+
+		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
+
+		while (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
+		{
+			result->parameter_names.push_back(consume(Terminal::IDENTIFIER, scanner));
+
+			while (scanner.peek_next_symbol().type == Terminal::OP_COMMA)
+			{
+				consume(Terminal::OP_COMMA, scanner);
+				result->parameter_names.push_back(consume(Terminal::IDENTIFIER, scanner));
+			}
+
+			consume(Terminal::OP_COLON, scanner);
+
+			if (scanner.peek_next_symbol().type == Terminal::OP_ASSIGN)
+			{
+				consume(Terminal::OP_ASSIGN, scanner);
+				result->parameter_types.push_back(nullptr);
+				result->parameter_initializers.push_back(expression(scanner));
+			}
+			else
+			{
+				result->parameter_types.push_back(type_declaration(scanner));
+
+				if (scanner.peek_next_symbol().type == Terminal::OP_ASSIGN)
+				{
+					consume(Terminal::OP_ASSIGN, scanner);
+					result->parameter_initializers.push_back(expression(scanner));
+					// TODO uninitialized(?)
+				}
+				else
+				{
+					result->parameter_initializers.push_back(nullptr);
+				}
+			}
+
+			assert(result->parameter_initializers.size() == result->parameter_types.size());
+
+			while (result->parameter_types.size() < result->parameter_names.size())
+			{
+				result->parameter_types.push_back(nullptr);
+				result->parameter_initializers.push_back(nullptr);
+			}
+
+			assert(result->parameter_types.size() == result->parameter_names.size());
+			assert(result->parameter_initializers.size() == result->parameter_names.size());
+
+			// -----------------
+
+			if (scanner.peek_next_symbol().type == Terminal::OP_COMMA)
+			{
+				consume(Terminal::OP_COMMA, scanner);
+				if (scanner.peek_next_symbol().type != Terminal::BRACKET_CURLY_CLOSE && scanner.peek_next_symbol().type != Terminal::IDENTIFIER)
+				{
+					consume(Terminal::IDENTIFIER, scanner); // little hack to produce correct error
+				}
+			}
+		}
+
+		consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
+
+		if (result->type.type == Terminal::WK_FUNCTION || scanner.peek_next_symbol().type == Terminal::OP_ARROW)
+		{
+			consume(Terminal::OP_ARROW, scanner);
+			result->return_type = expression(scanner);
+		}
+
+		result->body = statement(scanner);
+
+		return result;
+	}
 
 	ExpressionPtr grouping(Scanner& scanner)
 	{
@@ -672,6 +753,8 @@ namespace minairo
 		pratt_prefixes[(int)Terminal::WK_TYPEDEF] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::WK_TABLE] = &table_type_declaration;
 		pratt_prefixes[(int)Terminal::WK_TUPLE] = &tuple_type_declaration;
+		pratt_prefixes[(int)Terminal::WK_FUNCTION] = &procedure_declaration;
+		pratt_prefixes[(int)Terminal::WK_PROCEDURE] = &procedure_declaration;
 
 
 		pratt_infixes[(int)Terminal::OP_ADD] = &binary;
@@ -720,10 +803,6 @@ namespace minairo
 
 	// ------------------------------------------------------------------------------------
 	// ------------------------------------------------------------------------------------
-	// ------------------------------------------------------------------------------------
-
-	StatementPtr statement(Scanner& scanner);
-
 	// ------------------------------------------------------------------------------------
 
 	StatementPtr expression_statement(Scanner& scanner)

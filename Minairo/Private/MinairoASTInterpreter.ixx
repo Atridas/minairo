@@ -123,6 +123,11 @@ export namespace minairo
 			last_expression_value = result;
 		}
 
+		void visit(ProcedureDeclaration const& procedure_declaration) override
+		{
+			assert(false); // TODO
+		}
+
 		void visit(TableDeclaration const& table_declaration) override
 		{
 			last_expression_value = table_declaration.table;

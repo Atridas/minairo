@@ -284,6 +284,11 @@ export namespace minairo
 			}
 		}
 
+		void visit(ProcedureDeclaration& procedure_declaration) override
+		{
+			assert(false); // TODO
+		}
+
 		void visit(TableDeclaration& table_declaration) override
 		{
 			if (table_declaration.inner_tuple == nullptr)

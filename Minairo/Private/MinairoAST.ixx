@@ -21,10 +21,6 @@ export namespace minairo
 	class StatementVisitor;
 	class StatementConstVisitor;
 
-	// -----------------------------------------------------------------------------------------------
-	// EXPRESSIONS -----------------------------------------------------------------------------------
-	// -----------------------------------------------------------------------------------------------
-
 	class Expression
 	{
 	public:
@@ -37,6 +33,20 @@ export namespace minairo
 		virtual TerminalData get_first_terminal() const = 0;
 		virtual TerminalData get_last_terminal() const = 0;
 	};
+
+	class Statement
+	{
+	public:
+		virtual void accept(StatementVisitor& visitor) = 0;
+		virtual void accept(StatementConstVisitor& visitor) const = 0;
+
+		virtual TerminalData get_first_terminal() const = 0;
+		virtual TerminalData get_last_terminal() const = 0;
+	};
+
+	// -----------------------------------------------------------------------------------------------
+	// EXPRESSIONS -----------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------------------
 
 	class Binary final : public Expression
 	{
@@ -222,11 +232,15 @@ export namespace minairo
 		}
 	};
 	
-	/*class ProcedureDeclaration final : public Expression
+	class ProcedureDeclaration final : public Expression
 	{
 	public:
 		TerminalData type;
 		std::unique_ptr<Statement> body;
+		std::vector<TerminalData> parameter_names;
+		std::vector<std::unique_ptr<Expression>> parameter_types;
+		std::vector<std::unique_ptr<Expression>> parameter_initializers;
+		std::unique_ptr<Expression> return_type;
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
@@ -242,7 +256,7 @@ export namespace minairo
 		{
 			return body->get_last_terminal();
 		}
-	};*/
+	};
 
 	class TableDeclaration final : public Expression
 	{
@@ -410,16 +424,6 @@ export namespace minairo
 	// STATEMENTS ------------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------------------
 
-	class Statement
-	{
-	public:
-		virtual void accept(StatementVisitor& visitor) = 0;
-		virtual void accept(StatementConstVisitor& visitor) const = 0;
-
-		virtual TerminalData get_first_terminal() const = 0;
-		virtual TerminalData get_last_terminal() const = 0;
-	};
-
 	// TODO "global" block?
 	class Block final : public Statement
 	{
@@ -502,6 +506,7 @@ export namespace minairo
 		virtual void visit(Literal& literal) = 0;
 		virtual void visit(MemberRead& literal) = 0;
 		virtual void visit(MemberWrite& literal) = 0;
+		virtual void visit(ProcedureDeclaration& unary_pre) = 0;
 		virtual void visit(TableDeclaration& unary_pre) = 0;
 		virtual void visit(TupleDeclaration& unary_pre) = 0;
 		virtual void visit(UnaryPre& unary_pre) = 0;
@@ -519,6 +524,7 @@ export namespace minairo
 		virtual void visit(Literal const& literal) = 0;
 		virtual void visit(MemberRead const& literal) = 0;
 		virtual void visit(MemberWrite const& literal) = 0;
+		virtual void visit(ProcedureDeclaration const& unary_pre) = 0;
 		virtual void visit(TableDeclaration const& unary_pre) = 0;
 		virtual void visit(TupleDeclaration const& unary_pre) = 0;
 		virtual void visit(UnaryPre const& unary_pre) = 0;
@@ -572,7 +578,7 @@ void minairo::MemberWrite::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::UnaryPre::accept(ExpressionVisitor& visitor)
+void minairo::ProcedureDeclaration::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
@@ -581,6 +587,10 @@ void minairo::TableDeclaration::accept(ExpressionVisitor& visitor)
 	visitor.visit(*this);
 }
 void minairo::TupleDeclaration::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+void minairo::UnaryPre::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
@@ -622,6 +632,10 @@ void minairo::MemberRead::accept(ExpressionConstVisitor& visitor) const
 	visitor.visit(*this);
 }
 void minairo::MemberWrite::accept(ExpressionConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void minairo::ProcedureDeclaration::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
