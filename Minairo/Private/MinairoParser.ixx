@@ -282,23 +282,24 @@ namespace minairo
 		auto result = std::make_unique<ProcedureDeclaration>();
 		if (scanner.peek_next_symbol().type == Terminal::WK_FUNCTION)
 		{
-			result->type = consume(Terminal::WK_FUNCTION, scanner);
+			result->kind = consume(Terminal::WK_FUNCTION, scanner);
 		}
 		else
 		{
-			result->type = consume(Terminal::WK_PROCEDURE, scanner);
+			result->kind = consume(Terminal::WK_PROCEDURE, scanner);
 		}
 
 		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
+		result->parameter_tuple = std::make_unique<TupleDeclaration>();
 
 		while (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
 		{
-			result->parameter_names.push_back(consume(Terminal::IDENTIFIER, scanner));
+			result->parameter_tuple->field_names.push_back(consume(Terminal::IDENTIFIER, scanner));
 
 			while (scanner.peek_next_symbol().type == Terminal::OP_COMMA)
 			{
 				consume(Terminal::OP_COMMA, scanner);
-				result->parameter_names.push_back(consume(Terminal::IDENTIFIER, scanner));
+				result->parameter_tuple->field_names.push_back(consume(Terminal::IDENTIFIER, scanner));
 			}
 
 			consume(Terminal::OP_COLON, scanner);
@@ -306,35 +307,35 @@ namespace minairo
 			if (scanner.peek_next_symbol().type == Terminal::OP_ASSIGN)
 			{
 				consume(Terminal::OP_ASSIGN, scanner);
-				result->parameter_types.push_back(nullptr);
-				result->parameter_initializers.push_back(expression(scanner));
+				result->parameter_tuple->field_types.push_back(nullptr);
+				result->parameter_tuple->field_initializers.push_back(expression(scanner));
 			}
 			else
 			{
-				result->parameter_types.push_back(type_declaration(scanner));
+				result->parameter_tuple->field_types.push_back(type_declaration(scanner));
 
 				if (scanner.peek_next_symbol().type == Terminal::OP_ASSIGN)
 				{
 					consume(Terminal::OP_ASSIGN, scanner);
-					result->parameter_initializers.push_back(expression(scanner));
+					result->parameter_tuple->field_initializers.push_back(expression(scanner));
 					// TODO uninitialized(?)
 				}
 				else
 				{
-					result->parameter_initializers.push_back(nullptr);
+					result->parameter_tuple->field_initializers.push_back(nullptr);
 				}
 			}
 
-			assert(result->parameter_initializers.size() == result->parameter_types.size());
+			assert(result->parameter_tuple->field_initializers.size() == result->parameter_tuple->field_types.size());
 
-			while (result->parameter_types.size() < result->parameter_names.size())
+			while (result->parameter_tuple->field_types.size() < result->parameter_tuple->field_names.size())
 			{
-				result->parameter_types.push_back(nullptr);
-				result->parameter_initializers.push_back(nullptr);
+				result->parameter_tuple->field_types.push_back(nullptr);
+				result->parameter_tuple->field_initializers.push_back(nullptr);
 			}
 
-			assert(result->parameter_types.size() == result->parameter_names.size());
-			assert(result->parameter_initializers.size() == result->parameter_names.size());
+			assert(result->parameter_tuple->field_types.size() == result->parameter_tuple->field_names.size());
+			assert(result->parameter_tuple->field_initializers.size() == result->parameter_tuple->field_names.size());
 
 			// -----------------
 
@@ -350,7 +351,7 @@ namespace minairo
 
 		consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
 
-		if (result->type.type == Terminal::WK_FUNCTION || scanner.peek_next_symbol().type == Terminal::OP_ARROW)
+		if (result->kind.type == Terminal::WK_FUNCTION || scanner.peek_next_symbol().type == Terminal::OP_ARROW)
 		{
 			consume(Terminal::OP_ARROW, scanner);
 			result->return_type = expression(scanner);

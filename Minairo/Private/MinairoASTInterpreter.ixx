@@ -28,17 +28,18 @@ export namespace minairo
 			, number_of_tuples(_number_of_tuples)
 		{}
 
-		struct GlobalStack
+		struct Globals
 		{
-			std::vector<Value> variables;
+			// TODO not a string map please. I'm just lazy rn
+			std::unordered_map<std::string, Value> variables;
 		};
 
-		void set_globals(GlobalStack const& _globals)
+		void set_globals(Globals const& _globals)
 		{
 			globals = _globals;
 		}
 
-		GlobalStack const& get_globals() const
+		Globals const& get_globals() const
 		{
 			return globals;
 		}
@@ -166,19 +167,26 @@ export namespace minairo
 
 		void visit(VariableAssign const& variable_assign) override
 		{
-			assert(variable_assign.index < variables.size());
+			assert(variable_assign.index < (int)variables.size());
 			variable_assign.exp->accept(*this);
 
 			switch (variable_assign.op.type)
 			{
 			case Terminal::OP_ASSIGN:
-				variables[variable_assign.index] = last_expression_value;
+				if (variable_assign.index == -1)
+				{
+					globals.variables[(std::string)variable_assign.identifier.text] = last_expression_value;
+				}
+				else
+				{
+					variables[variable_assign.index] = last_expression_value;
+				}
 				break;
 			case Terminal::OP_ASSIGN_ADD:
 				if (variable_assign.type->is_table())
 				{
 					TableType table_type = *variable_assign.type->as_table();
-					Table& table = std::get<Table>(variables[variable_assign.index]);
+					Table& table = std::get<Table>((variable_assign.index == -1) ? globals.variables[(std::string)variable_assign.identifier.text] : variables[variable_assign.index]);
 					Tuple& tuple = std::get<Tuple>(last_expression_value);
 					for (int i = 0; i < table_type.base_tuple.get_num_fields(); ++i)
 					{
@@ -186,7 +194,14 @@ export namespace minairo
 					}
 					++table.rows;
 					// TODO table reference
-					last_expression_value = variables[variable_assign.index];
+					if (variable_assign.index == -1)
+					{
+						last_expression_value = globals.variables[(std::string)variable_assign.identifier.text];
+					}
+					else
+					{
+						last_expression_value = variables[variable_assign.index];
+					}
 				}
 				else
 				{
@@ -217,6 +232,11 @@ export namespace minairo
 				tuple_ref.tuple = &std::get<Tuple>(variables[variable_read.index]);
 				last_expression_value = tuple_ref;
 			}
+			else if (variable_read.index == -1)
+			{
+				assert(globals.variables.find((std::string)variable_read.identifier.text) != globals.variables.end());
+				last_expression_value = globals.variables[(std::string)variable_read.identifier.text];
+			}
 			else
 			{
 				assert(variable_read.index >= 0 && variable_read.index < variables.size());
@@ -232,19 +252,9 @@ export namespace minairo
 		{
 			int current_stack_size = (int)variables.size();
 
-			if (block.is_global)
-			{
-				variables = std::move(globals.variables);
-			}
-
 			for (auto& statement : block.statements)
 			{
 				statement->accept(*this);
-			}
-
-			if (block.is_global)
-			{
-				globals.variables = std::move(variables);
 			}
 
 			variables.resize(current_stack_size);
@@ -266,6 +276,30 @@ export namespace minairo
 			{
 				assert(variable_definition.index == -1);
 				last_expression_value = *variable_definition.initialization->get_type_value();
+			}
+			else if(variable_definition.index == -1)
+			{
+				if (variable_definition.initialization)
+				{
+					variable_definition.initialization->accept(*this);
+					globals.variables[(std::string)variable_definition.variable.text] = last_expression_value;
+				}
+				else if (!variable_definition.explicitly_uninitialized)
+				{
+					last_expression_value = get_default_value(*variable_definition.type);
+					globals.variables[(std::string)variable_definition.variable.text] = last_expression_value;
+				}
+				else if (std::holds_alternative<TupleType>(*variable_definition.type))
+				{
+					Tuple tuple;
+					tuple.type = std::get<TupleType>(*variable_definition.type);
+					last_expression_value = std::move(tuple);
+					globals.variables[(std::string)variable_definition.variable.text] = last_expression_value;
+				}
+				else
+				{
+					globals.variables[(std::string)variable_definition.variable.text] = {};
+				}
 			}
 			else
 			{
@@ -300,7 +334,7 @@ export namespace minairo
 		Value last_expression_value;
 
 		std::vector<Value> variables;
-		GlobalStack globals;
+		Globals globals;
 
 		int number_of_globals;
 		int number_of_tuples;

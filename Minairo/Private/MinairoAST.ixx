@@ -235,11 +235,9 @@ export namespace minairo
 	class ProcedureDeclaration final : public Expression
 	{
 	public:
-		TerminalData type;
+		TerminalData kind;
 		std::unique_ptr<Statement> body;
-		std::vector<TerminalData> parameter_names;
-		std::vector<std::unique_ptr<Expression>> parameter_types;
-		std::vector<std::unique_ptr<Expression>> parameter_initializers;
+		std::unique_ptr<class TupleDeclaration> parameter_tuple;
 		std::unique_ptr<Expression> return_type;
 
 		void accept(ExpressionVisitor& visitor) override;
@@ -250,7 +248,7 @@ export namespace minairo
 		}
 		virtual TerminalData get_first_terminal() const override
 		{
-			return type;
+			return kind;
 		}
 		virtual TerminalData get_last_terminal() const override
 		{

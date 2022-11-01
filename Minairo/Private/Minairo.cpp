@@ -79,7 +79,7 @@ namespace minairo
 	{
 		FunctionMap fm;
 		TypePass::GlobalMap global_types;
-		Interpreter::GlobalStack globals;
+		Interpreter::Globals globals;
 	};
 
 

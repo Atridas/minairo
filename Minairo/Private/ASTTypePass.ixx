@@ -286,7 +286,38 @@ export namespace minairo
 
 		void visit(ProcedureDeclaration& procedure_declaration) override
 		{
-			assert(false); // TODO
+			procedure_declaration.parameter_tuple->accept(*this);
+			if (procedure_declaration.return_type)
+				procedure_declaration.return_type->accept(*this);
+
+			std::vector<VariableBlock> old_locals = std::move(variable_blocks);
+			variable_blocks.resize(0);
+
+			VariableBlock parameter_block = {};
+			parameter_block.stack_size_at_beginning = 0;
+			TypeRepresentation last_type;
+			for (int i = 0; i < (int)procedure_declaration.parameter_tuple->field_names.size(); ++i)
+			{
+				VariableInfo info;
+				if (procedure_declaration.parameter_tuple->field_types[i] == nullptr)
+				{
+					info.type = last_type;
+				}
+				else
+				{
+					last_type = info.type = *procedure_declaration.parameter_tuple->field_types[i]->get_type_value();
+				}
+				info.index = parameter_block.stack_size_at_beginning + i;
+				info.constant = true; // TODO(?)
+				parameter_block.variables[(std::string)procedure_declaration.parameter_tuple->field_names[i].text] = info;
+			}
+
+			variable_blocks.push_back(std::move(parameter_block));
+
+			procedure_declaration.body->accept(*this);
+
+			assert(variable_blocks.size() == 1);
+			variable_blocks = std::move(old_locals);
 		}
 
 		void visit(TableDeclaration& table_declaration) override
@@ -467,15 +498,14 @@ export namespace minairo
 
 		void visit(Block& block) override
 		{
-			push_variable_block();
 
 			if (block.is_global)
 			{
-				assert(variable_blocks.size() == 1);
-
-				// set up inhereted globals
-				variable_blocks.back().variables = std::move(globals.variables);
-				variable_blocks.back().types = std::move(globals.types);
+				assert(variable_blocks.size() == 0);
+			}
+			else
+			{
+				push_variable_block();
 			}
 
 			for (auto& statement : block.statements)
@@ -486,13 +516,12 @@ export namespace minairo
 
 			if (block.is_global)
 			{
-				assert(variable_blocks.size() == 1);
-				// store the globals back
-				globals.variables = std::move(variable_blocks.back().variables);
-				globals.types = std::move(variable_blocks.back().types);
+				assert(variable_blocks.size() == 0);
 			}
-
-			pop_variable_block();
+			else
+			{
+				pop_variable_block();
+			}
 		}
 
 		void visit(ExpressionStatement& expression_statement) override
@@ -502,13 +531,19 @@ export namespace minairo
 
 		void visit(VariableDefinition& variable_definition) override
 		{
-			assert(!variable_blocks.empty());
-
-			VariableBlock& current_block = variable_blocks.back();
-
-			if (current_block.variables.contains((std::string)variable_definition.variable.text))
+			if (variable_blocks.empty())
 			{
-				throw variable_redefinition_exception(variable_definition.variable);
+				if (globals.variables.contains((std::string)variable_definition.variable.text))
+				{
+					throw variable_redefinition_exception(variable_definition.variable);
+				}
+			}
+			else
+			{
+				if (variable_blocks.back().variables.contains((std::string)variable_definition.variable.text))
+				{
+					throw variable_redefinition_exception(variable_definition.variable);
+				}
 			}
 
 			assert(variable_definition.type_definition != nullptr || variable_definition.initialization != nullptr);
@@ -545,15 +580,30 @@ export namespace minairo
 					throw message_exception("typedefs must be constant\n", variable_definition);
 				}
 
-				current_block.types[(std::string)variable_definition.variable.text] = *variable_definition.initialization->get_type_value();
+				if (variable_blocks.empty())
+				{
+					globals.types[(std::string)variable_definition.variable.text] = *variable_definition.initialization->get_type_value();
+				}
+				else
+				{
+					variable_blocks.back().types[(std::string)variable_definition.variable.text] = *variable_definition.initialization->get_type_value();
+				}
 			}
 			else
 			{
 				VariableInfo info;
 				info.type = *variable_definition.type;
-				variable_definition.index = info.index = current_block.stack_size_at_beginning + (int)current_block.variables.size();
 				info.constant = variable_definition.constant;
-				current_block.variables[(std::string)variable_definition.variable.text] = info;
+				if (variable_blocks.empty())
+				{
+					info.index = -1;
+					globals.variables[(std::string)variable_definition.variable.text] = info;
+				}
+				else
+				{
+					variable_definition.index = info.index = variable_blocks.back().stack_size_at_beginning + (int)variable_blocks.back().variables.size();
+					variable_blocks.back().variables[(std::string)variable_definition.variable.text] = info;
+				}
 			}
 		}
 
@@ -598,6 +648,13 @@ export namespace minairo
 					return info->second;
 				}
 			}
+
+			auto info = globals.variables.find((std::string)identifier.text);
+			if (info != globals.variables.end())
+			{
+				return info->second;
+			}
+
 			throw unknown_literal_exception(identifier);
 		}
 
@@ -611,6 +668,13 @@ export namespace minairo
 					return info->second;
 				}
 			}
+
+			auto info = globals.types.find((std::string)identifier.text);
+			if (info != globals.types.end())
+			{
+				return info->second;
+			}
+
 			return std::nullopt;
 		}
 
