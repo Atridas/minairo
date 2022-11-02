@@ -1,5 +1,6 @@
 module;
 
+#include <cassert>
 #include <cinttypes>
 
 #include <memory>
@@ -27,6 +28,7 @@ export namespace minairo
 		virtual void accept(ExpressionVisitor& visitor) = 0;
 		virtual void accept(ExpressionConstVisitor& visitor) const = 0;
 
+		virtual std::unique_ptr<Expression> deep_copy() const = 0;
 		virtual std::optional<TypeRepresentation> get_type_value() const { return std::nullopt; }
 		virtual std::optional<TypeRepresentation> get_expression_type() const = 0;
 		virtual std::optional<uint64_t> get_constant_value() const { return std::nullopt; }
@@ -40,6 +42,7 @@ export namespace minairo
 		virtual void accept(StatementVisitor& visitor) = 0;
 		virtual void accept(StatementConstVisitor& visitor) const = 0;
 
+		virtual std::unique_ptr<Statement> deep_copy() const = 0;
 		virtual TerminalData get_first_terminal() const = 0;
 		virtual TerminalData get_last_terminal() const = 0;
 	};
@@ -55,20 +58,44 @@ export namespace minairo
 		FunctionRepresentation const* function_to_call = nullptr;
 		Terminal op;
 
+		Binary() = default;
+		Binary(Binary&&) = default;
+		Binary& operator=(Binary&&) = default;
+		Binary(Binary const& b) : left(b.left->deep_copy()), right(b.right->deep_copy()), function_to_call(b.function_to_call), op(b.op) {}
+		Binary& operator=(Binary const& b)
+		{
+			if (this != &b)
+			{
+				left = b.left->deep_copy();
+				right = b.right->deep_copy();
+				function_to_call = b.function_to_call;
+				op = b.op;
+			}
+			return *this;
+		}
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<Binary> typed_deep_copy() const
+		{
+			return std::make_unique<Binary>(*this);
+		}
+
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		virtual std::optional<TypeRepresentation> get_expression_type() const override
+		std::optional<TypeRepresentation> get_expression_type() const override
 		{
 			if (function_to_call == nullptr)
 				return std::nullopt;
 			else
 				return function_to_call->get_return_type();
 		}
-		virtual TerminalData get_first_terminal() const override
+		TerminalData get_first_terminal() const override
 		{
 			return left->get_first_terminal();
 		}
-		virtual TerminalData get_last_terminal() const override
+		TerminalData get_last_terminal() const override
 		{
 			return right->get_last_terminal();
 		}
@@ -79,6 +106,15 @@ export namespace minairo
 	public:
 		BuildInType type;
 		TerminalData terminal;
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<BuildInTypeDeclaration> typed_deep_copy() const
+		{
+			return std::make_unique<BuildInTypeDeclaration>(*this);
+		}
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
@@ -106,6 +142,35 @@ export namespace minairo
 		std::unique_ptr<Expression> expr;
 		TerminalData open, close;
 
+		Grouping() = default;
+		Grouping(Grouping&&) = default;
+		Grouping& operator=(Grouping&&) = default;
+		Grouping(Grouping const& b)
+			: expr(b.expr->deep_copy())
+			, open(b.open)
+			, close(b.close)
+		{
+		}
+		Grouping& operator=(Grouping const& b)
+		{
+			if (this != &b)
+			{
+				expr = b.expr->deep_copy();
+				open = b.open;
+				close = b.close;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<Grouping> typed_deep_copy() const
+		{
+			return std::make_unique<Grouping>(*this);
+		}
+
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
 		virtual std::optional<TypeRepresentation> get_expression_type() const override
@@ -132,6 +197,50 @@ export namespace minairo
 		TupleType destination_type;
 		TerminalData open, close;
 
+		InitializerList() = default;
+		InitializerList(InitializerList&&) = default;
+		InitializerList& operator=(InitializerList&&) = default;
+		InitializerList(InitializerList const& b) 
+			: names(b.names)
+			, indexes(b.indexes)
+			, default_initializers(b.default_initializers)
+			, destination_type(b.destination_type)
+			, open(b.open)
+			, close(b.close)
+		{
+			expressions.resize(b.expressions.size());
+			for (int i = 0; i < (int)expressions.size(); ++i)
+			{
+				expressions[i] = b.expressions[i]->deep_copy();
+			}
+		}
+		InitializerList& operator=(InitializerList const& b)
+		{
+			if (this != &b)
+			{
+				indexes = b.indexes;
+				default_initializers = b.default_initializers;
+				destination_type = b.destination_type;
+				open = b.open;
+				close = b.close;
+
+				expressions.resize(b.expressions.size());
+				for (int i = 0; i < (int)expressions.size(); ++i)
+				{
+					expressions[i] = b.expressions[i]->deep_copy();
+				}
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<InitializerList> typed_deep_copy() const
+		{
+			return std::make_unique<InitializerList>(*this);
+		}
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
@@ -155,6 +264,15 @@ export namespace minairo
 		std::variant<uint64_t, double, std::string, char32_t, bool> value;
 		TypeRepresentation type_representation;
 		TerminalData terminal;
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<Literal> typed_deep_copy() const
+		{
+			return std::make_unique<Literal>(*this);
+		}
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
@@ -191,6 +309,37 @@ export namespace minairo
 		int index = -1;
 		std::optional<TypeRepresentation> type;
 
+		MemberRead() = default;
+		MemberRead(MemberRead&&) = default;
+		MemberRead& operator=(MemberRead&&) = default;
+		MemberRead(MemberRead const& b)
+			: left(b.left->deep_copy())
+			, member(b.member)
+			, index(b.index)
+			, type(b.type)
+		{
+		}
+		MemberRead& operator=(MemberRead const& b)
+		{
+			if (this != &b)
+			{
+				left = b.left->deep_copy();
+				member = b.member;
+				index = b.index;
+				type = b.type;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<MemberRead> typed_deep_copy() const
+		{
+			return std::make_unique<MemberRead>(*this);
+		}
+
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
 		std::optional<TypeRepresentation> get_expression_type() const override
@@ -216,6 +365,41 @@ export namespace minairo
 		int index = -1;
 		std::optional<TypeRepresentation> type;
 
+		MemberWrite() = default;
+		MemberWrite(MemberWrite&&) = default;
+		MemberWrite& operator=(MemberWrite&&) = default;
+		MemberWrite(MemberWrite const& b)
+			: left(b.left->deep_copy())
+			, member(b.member)
+			, op(b.op)
+			, right(b.right->deep_copy())
+			, index(b.index)
+			, type(b.type)
+		{
+		}
+		MemberWrite& operator=(MemberWrite const& b)
+		{
+			if (this != &b)
+			{
+				left = b.left->deep_copy();
+				member = b.member;
+				op = b.op;
+				right = b.right->deep_copy();
+				index = b.index;
+				type = b.type;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<MemberWrite> typed_deep_copy() const
+		{
+			return std::make_unique<MemberWrite>(*this);
+		}
+
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
 		std::optional<TypeRepresentation> get_expression_type() const override
@@ -231,14 +415,129 @@ export namespace minairo
 			return member;
 		}
 	};
+
+	class TupleDeclaration final : public Expression
+	{
+	public:
+		TupleType tuple;
+		TerminalData tuple_terminal, closing_bracket;
+
+		std::vector<TerminalData> field_names;
+		std::vector<std::unique_ptr<Expression>> field_types;
+		std::vector<std::unique_ptr<Expression>> field_initializers;
+
+		TupleDeclaration() = default;
+		TupleDeclaration(TupleDeclaration&&) = default;
+		TupleDeclaration& operator=(TupleDeclaration&&) = default;
+		TupleDeclaration(TupleDeclaration const& b)
+			: tuple(b.tuple)
+			, tuple_terminal(b.tuple_terminal)
+			, closing_bracket(b.closing_bracket)
+			, field_names(b.field_names)
+		{
+			assert(field_names.size() == b.field_types.size());
+			assert(field_names.size() == b.field_initializers.size());
+
+			field_types.resize(field_names.size());
+			field_initializers.resize(field_names.size());
+
+			for (int i = 0; i < field_names.size(); ++i)
+			{
+				if (b.field_types[i] != nullptr)
+					field_types[i] = b.field_types[i]->deep_copy();
+				if (b.field_initializers[i] != nullptr)
+					field_initializers[i] = b.field_initializers[i]->deep_copy();
+			}
+		}
+		TupleDeclaration& operator=(TupleDeclaration const& b)
+		{
+			if (this != &b)
+			{
+				tuple = b.tuple;
+				tuple_terminal = b.tuple_terminal;
+				closing_bracket = b.closing_bracket;
+				field_names = b.field_names;
+
+				field_types.resize(field_names.size());
+				field_initializers.resize(field_names.size());
+
+				for (int i = 0; i < field_names.size(); ++i)
+				{
+					if (b.field_types[i] != nullptr)
+						field_types[i] = b.field_types[i]->deep_copy();
+					if (b.field_initializers[i] != nullptr)
+						field_initializers[i] = b.field_initializers[i]->deep_copy();
+				}
+			}
+			return *this;
+		}
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<TupleDeclaration> typed_deep_copy() const
+		{
+			return std::make_unique<TupleDeclaration>(*this);
+		}
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		std::optional<TypeRepresentation> get_type_value() const override
+		{
+			return tuple;
+		}
+		std::optional<TypeRepresentation> get_expression_type() const override
+		{
+			return BuildInType::Typedef;
+		}
+		virtual TerminalData get_first_terminal() const override
+		{
+			return tuple_terminal;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return closing_bracket;
+		}
+	};
 	
 	class ProcedureDeclaration final : public Expression
 	{
 	public:
 		TerminalData kind;
 		std::unique_ptr<Statement> body;
-		std::unique_ptr<class TupleDeclaration> parameter_tuple;
+		std::unique_ptr<TupleDeclaration> parameter_tuple;
 		std::unique_ptr<Expression> return_type;
+
+		ProcedureDeclaration() = default;
+		ProcedureDeclaration(ProcedureDeclaration&&) = default;
+		ProcedureDeclaration& operator=(ProcedureDeclaration&&) = default;
+		ProcedureDeclaration(ProcedureDeclaration const& b)
+			: kind(b.kind)
+			, body(b.body->deep_copy())
+			, parameter_tuple(b.parameter_tuple->typed_deep_copy())
+			, return_type(b.return_type->deep_copy())
+		{
+		}
+		ProcedureDeclaration& operator=(ProcedureDeclaration const& b)
+		{
+			if (this != &b)
+			{
+				kind = b.kind;
+				body = b.body->deep_copy();
+				parameter_tuple = b.parameter_tuple->typed_deep_copy();
+				return_type = b.return_type->deep_copy();
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<ProcedureDeclaration> typed_deep_copy() const
+		{
+			return std::make_unique<ProcedureDeclaration>(*this);
+		}
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
@@ -261,8 +560,41 @@ export namespace minairo
 	public:
 		TableType table;
 		TerminalData table_terminal, last_terminal;
-		std::unique_ptr<class TupleDeclaration> inner_tuple;
+		std::unique_ptr<TupleDeclaration> inner_tuple;
 		TerminalData tuple_name;
+
+		TableDeclaration() = default;
+		TableDeclaration(TableDeclaration&&) = default;
+		TableDeclaration& operator=(TableDeclaration&&) = default;
+		TableDeclaration(TableDeclaration const& b)
+			: table(b.table)
+			, table_terminal(b.table_terminal)
+			, last_terminal(b.last_terminal)
+			, inner_tuple(b.inner_tuple->typed_deep_copy())
+			, tuple_name(b.tuple_name)
+		{
+		}
+		TableDeclaration& operator=(TableDeclaration const& b)
+		{
+			if (this != &b)
+			{
+				table = b.table;
+				table_terminal = b.table_terminal;
+				last_terminal = b.last_terminal;
+				inner_tuple = b.inner_tuple->typed_deep_copy();
+				tuple_name = b.tuple_name;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<TableDeclaration> typed_deep_copy() const
+		{
+			return std::make_unique<TableDeclaration>(*this);
+		}
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
@@ -284,42 +616,41 @@ export namespace minairo
 		}
 	};
 
-	class TupleDeclaration final : public Expression
-	{
-	public:
-		TupleType tuple;
-		TerminalData tuple_terminal, closing_bracket;
-
-		std::vector<TerminalData> field_names;
-		std::vector<std::unique_ptr<Expression>> field_types;
-		std::vector<std::unique_ptr<Expression>> field_initializers;
-
-		void accept(ExpressionVisitor& visitor) override;
-		void accept(ExpressionConstVisitor& visitor) const override;
-		std::optional<TypeRepresentation> get_type_value() const override
-		{
-			return tuple;
-		}
-		std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return BuildInType::Typedef;
-		}
-		virtual TerminalData get_first_terminal() const override
-		{
-			return tuple_terminal;
-		}
-		virtual TerminalData get_last_terminal() const override
-		{
-			return closing_bracket;
-		}
-	};
-
 	class UnaryPre final : public Expression
 	{
 	public:
 		TerminalData op;
 		std::unique_ptr<Expression> exp;
 		FunctionRepresentation const* function_to_call = nullptr;
+
+		UnaryPre() = default;
+		UnaryPre(UnaryPre&&) = default;
+		UnaryPre& operator=(UnaryPre&&) = default;
+		UnaryPre(UnaryPre const& b)
+			: op(b.op)
+			, exp(b.exp->deep_copy())
+			, function_to_call(b.function_to_call)
+		{
+		}
+		UnaryPre& operator=(UnaryPre const& b)
+		{
+			if (this != &b)
+			{
+				op = b.op;
+				exp = b.exp->deep_copy();
+				function_to_call = b.function_to_call;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<UnaryPre> typed_deep_copy() const
+		{
+			return std::make_unique<UnaryPre>(*this);
+		}
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
@@ -346,6 +677,35 @@ export namespace minairo
 		std::unique_ptr<Expression> exp;
 		TerminalData op;
 		FunctionRepresentation const* function_to_call = nullptr;
+
+		UnaryPost() = default;
+		UnaryPost(UnaryPost&&) = default;
+		UnaryPost& operator=(UnaryPost&&) = default;
+		UnaryPost(UnaryPost const& b)
+			: op(b.op)
+			, exp(b.exp->deep_copy())
+			, function_to_call(b.function_to_call)
+		{
+		}
+		UnaryPost& operator=(UnaryPost const& b)
+		{
+			if (this != &b)
+			{
+				op = b.op;
+				exp = b.exp->deep_copy();
+				function_to_call = b.function_to_call;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<UnaryPost> typed_deep_copy() const
+		{
+			return std::make_unique<UnaryPost>(*this);
+		}
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
@@ -374,6 +734,39 @@ export namespace minairo
 		std::optional<TypeRepresentation> type;
 		int index = -1;
 
+		VariableAssign() = default;
+		VariableAssign(VariableAssign&&) = default;
+		VariableAssign& operator=(VariableAssign&&) = default;
+		VariableAssign(VariableAssign const& b)
+			: identifier(b.identifier)
+			, op(b.op)
+			, exp(b.exp->deep_copy())
+			, type(b.type)
+			, index(b.index)
+		{
+		}
+		VariableAssign& operator=(VariableAssign const& b)
+		{
+			if (this != &b)
+			{
+				identifier = b.identifier;
+				op = b.op;
+				exp = b.exp->deep_copy();
+				type = b.type;
+				index = b.index;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<VariableAssign> typed_deep_copy() const
+		{
+			return std::make_unique<VariableAssign>(*this);
+		}
+
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
 		virtual std::optional<TypeRepresentation> get_expression_type() const override
@@ -397,6 +790,37 @@ export namespace minairo
 		std::optional<TypeRepresentation> static_type;
 		std::optional<TypeRepresentation> type;
 		int index = -1;
+
+		VariableRead() = default;
+		VariableRead(VariableRead&&) = default;
+		VariableRead& operator=(VariableRead&&) = default;
+		VariableRead(VariableRead const& b)
+			: identifier(b.identifier)
+			, static_type(b.static_type)
+			, type(b.type)
+			, index(b.index)
+		{
+		}
+		VariableRead& operator=(VariableRead const& b)
+		{
+			if (this != &b)
+			{
+				identifier = b.identifier;
+				static_type = b.static_type;
+				type = b.type;
+				index = b.index;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<VariableRead> typed_deep_copy() const
+		{
+			return std::make_unique<VariableRead>(*this);
+		}
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
@@ -422,13 +846,54 @@ export namespace minairo
 	// STATEMENTS ------------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------------------
 
-	// TODO "global" block?
 	class Block final : public Statement
 	{
 	public:
 		std::vector<std::unique_ptr<Statement>> statements;
 		std::optional<TerminalData> open, close;
 		bool is_global = false;
+
+		Block() = default;
+		Block(Block&&) = default;
+		Block& operator=(Block&&) = default;
+		Block(Block const& b)
+			: open(b.open)
+			, close(b.close)
+			, is_global(b.is_global)
+		{
+			statements.resize(b.statements.size());
+
+			for (int i = 0; i < statements.size(); ++i)
+			{
+				statements[i] = b.statements[i]->deep_copy();
+			}
+		}
+		Block& operator=(Block const& b)
+		{
+			if (this != &b)
+			{
+				open = b.open;
+				close = b.close;
+				is_global = b.is_global;
+
+				statements.resize(b.statements.size());
+
+				for (int i = 0; i < statements.size(); ++i)
+				{
+					statements[i] = b.statements[i]->deep_copy();
+				}
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Statement> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<Block> typed_deep_copy() const
+		{
+			return std::make_unique<Block>(*this);
+		}
 
 		void accept(StatementVisitor& visitor) override;
 		void accept(StatementConstVisitor& visitor) const override;
@@ -454,6 +919,33 @@ export namespace minairo
 		std::unique_ptr<Expression> exp;
 		TerminalData semicolon;
 
+		ExpressionStatement() = default;
+		ExpressionStatement(ExpressionStatement&&) = default;
+		ExpressionStatement& operator=(ExpressionStatement&&) = default;
+		ExpressionStatement(ExpressionStatement const& b)
+			: exp(b.exp->deep_copy())
+			, semicolon(b.semicolon)
+		{
+		}
+		ExpressionStatement& operator=(ExpressionStatement const& b)
+		{
+			if (this != &b)
+			{
+				exp = b.exp->deep_copy();
+				semicolon = b.semicolon;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Statement> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<ExpressionStatement> typed_deep_copy() const
+		{
+			return std::make_unique<ExpressionStatement>(*this);
+		}
+
 		void accept(StatementVisitor& visitor) override;
 		void accept(StatementConstVisitor& visitor) const override;
 		virtual TerminalData get_first_terminal() const override
@@ -469,13 +961,49 @@ export namespace minairo
 	class VariableDefinition final : public Statement
 	{
 	public:
-		// TODO store precomputed hash(?)
 		TerminalData variable, semicolon;
 		std::optional<TypeRepresentation> type;
 		std::unique_ptr<Expression> type_definition;
 		std::unique_ptr<Expression> initialization;
 		int index = -1;
 		bool constant = false, explicitly_uninitialized = false;
+
+		VariableDefinition() = default;
+		VariableDefinition(VariableDefinition&&) = default;
+		VariableDefinition& operator=(VariableDefinition&&) = default;
+		VariableDefinition(VariableDefinition const& b)
+			: variable(b.variable)
+			, type(b.type)
+			, type_definition(b.type_definition->deep_copy())
+			, initialization(b.type_definition->deep_copy())
+			, index(b.index)
+			, constant(b.constant)
+			, explicitly_uninitialized(b.explicitly_uninitialized)
+		{
+		}
+		VariableDefinition& operator=(VariableDefinition const& b)
+		{
+			if (this != &b)
+			{
+				variable = b.variable;
+				type = b.type;
+				type_definition = b.type_definition->deep_copy();
+				initialization = b.initialization->deep_copy();
+				index = b.index;
+				constant = b.constant;
+				explicitly_uninitialized = b.explicitly_uninitialized;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Statement> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<VariableDefinition> typed_deep_copy() const
+		{
+			return std::make_unique<VariableDefinition>(*this);
+		}
 
 		void accept(StatementVisitor& visitor) override;
 		void accept(StatementConstVisitor& visitor) const override;
