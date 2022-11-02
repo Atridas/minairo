@@ -3,7 +3,9 @@ module;
 #include <cassert>
 
 #include <algorithm>
+#include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -13,6 +15,7 @@ export module Minairo.TypesAndValues:Structures;
 
 export namespace minairo
 {
+	class FunctionRepresentation;
 	class TypeRepresentation;
 	class Value;
 
@@ -29,130 +32,81 @@ export namespace minairo
 		F32, F64,
 
 		InitializerList,
-		Typedef,
-		ProcedureDef
+		Typedef
 	};
 
-	class TupleType
+	class ComplexType
 	{
 	public:
-		bool has_field(std::string_view name) const noexcept;
-
-		TypeRepresentation const& get_field_type(std::string_view name) const;
-		int get_field_index(std::string_view name) const;
-
-		int get_num_fields() const { return (int)fields.size(); }
-		std::string_view get_field_name(int index) const { return fields[index]; }
-		TypeRepresentation const& get_field_type(int index) const { return types[index]; }
-		Value const& get_field_init_value(int index) const { return init_values[index]; }
-
-		void add_field(std::string_view name, TypeRepresentation const& type, Value const &init_value);
-
-		bool operator==(TupleType const&) const noexcept;
-	private:
-
-		std::vector<std::string> fields;
-		std::vector<TypeRepresentation> types;
-		std::vector<Value> init_values;
-	};
-
-	class TupleReferenceType
-	{
-	public:
-		TupleType tuple;
-		bool constant;
-	};
-
-	class TableType
-	{
-	public:
-		TupleType base_tuple;
-
-		bool operator==(TableType const& other) const noexcept
+		bool operator==(ComplexType const& o) const
 		{
-			return base_tuple == other.base_tuple;
+			return equals(o);
 		}
+
+	protected:
+		virtual bool equals(ComplexType const&) const = 0;
 	};
 
-
-	class TypeRepresentation : public std::variant<BuildInType, TupleType, TupleReferenceType, TableType>
+	class TypeRepresentation : public std::variant<BuildInType, std::shared_ptr<ComplexType>>
 	{
-		using Base = std::variant<BuildInType, TupleType, TupleReferenceType, TableType>;
+		using Base = std::variant<BuildInType, std::shared_ptr<ComplexType>>;
 	public:
 		TypeRepresentation() = default;
 		TypeRepresentation(BuildInType const& b) : Base{ b } {};
-		TypeRepresentation(TupleType const& t) : Base{ t } {};
-		TypeRepresentation(TupleReferenceType const& t) : Base{ t } {};
-		TypeRepresentation(TableType const& t) : Base{ t } {};
+		TypeRepresentation(std::shared_ptr<ComplexType> const& i) : Base{ i } {};
+		TypeRepresentation(std::shared_ptr<ComplexType>&& i) : Base{ std::move(i) } {};
 
 		TypeRepresentation(TypeRepresentation const&) = default;
 		TypeRepresentation(TypeRepresentation&&) = default;
 		TypeRepresentation& operator=(TypeRepresentation const&) = default;
 		TypeRepresentation& operator=(TypeRepresentation&&) = default;
-
-		bool is_build_in() const;
-		std::optional<BuildInType> as_build_in() const;
-
-		bool is_tuple() const;
-		std::optional<TupleType> as_tuple() const;
-
-		bool is_tuple_reference() const;
-		std::optional<TupleReferenceType> as_tuple_reference() const;
-
-		bool is_table() const;
-		std::optional<TableType> as_table() const;
 	};
+
+	bool operator==(TypeRepresentation const& a, TypeRepresentation const& b)
+	{
+		if (std::holds_alternative<BuildInType>(a) && std::holds_alternative<BuildInType>(b))
+		{
+			return std::get<BuildInType>(a) == std::get<BuildInType>(b);
+		}
+		else if (std::holds_alternative<std::shared_ptr<ComplexType>>(a) && std::holds_alternative<std::shared_ptr<ComplexType>>(b))
+		{
+			auto& self = std::get<std::shared_ptr<ComplexType>>(a);
+			auto& othe = std::get<std::shared_ptr<ComplexType>>(b);
+			if (self != nullptr && othe != nullptr)
+			{
+				return *self == *othe;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else
+		{
+			//assert(false);
+			return false;
+		}
+	}
+
+	bool operator!=(TypeRepresentation const& a, TypeRepresentation const& b)
+	{
+		return !(a == b);
+	}
 
 	// -----------------------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------------------
 	// -----------------------------------------------------------------------------------------------
 
-	struct Table
+	class ComplexValue
 	{
-		TableType type;
-		int rows = 0;
-		// TODO allocate this in one go as we know the table type(?)
-		std::vector<std::vector<Value>> fields;
-	};
-
-	struct Tuple
-	{
-		TupleType type;
-		std::vector<Value> fields;
-	};
-
-	struct TupleReferenceOnStack
-	{
-		Tuple* tuple;
-
-		Value& get_field(int index)
+	public:
+		bool operator=(ComplexValue const& o) const
 		{
-			return tuple->fields[index];
+			return equals(o);
 		}
 
-		Tuple& as_tuple() const
-		{
-			return *tuple;
-		}
-	};
-
-	struct TupleReference : public std::variant<TupleReferenceOnStack>
-	{
-		Value& get_field(int index)
-		{
-			return std::visit([index](auto self) -> Value&
-				{
-					return self.get_field(index);
-				}, *this);
-		}
-
-		Tuple as_tuple() const
-		{
-			return std::visit([](auto self) -> Tuple&
-				{
-					return self.as_tuple();
-				}, *this);
-		}
+	protected:
+		virtual bool equals(ComplexValue const&) const = 0;
 	};
 
 	class Value : public std::variant<
@@ -163,9 +117,7 @@ export namespace minairo
 		char32_t,
 		bool,
 		TypeRepresentation,
-		Table,
-		Tuple,
-		TupleReference>
+		std::shared_ptr<ComplexValue>>
 	{
 		using Base = std::variant<
 			int8_t, int16_t, int32_t, int64_t,
@@ -175,9 +127,7 @@ export namespace minairo
 			char32_t,
 			bool,
 			TypeRepresentation,
-			Table,
-			Tuple,
-			TupleReference>;
+			std::shared_ptr<ComplexValue>>;
 
 
 	public:
@@ -193,17 +143,17 @@ export namespace minairo
 		Value(float const& i) : Base{ i } {};
 		Value(double const& i) : Base{ i } {};
 		Value(bool const& i) : Base{ i } {};
-		Value(TypeRepresentation const& i) : Base{ i } {};
 		Value(BuildInType const& i) : Base{ (TypeRepresentation)i } {};
-		Value(TableType const& i) : Base{ (TypeRepresentation)i } {};
-		Value(TupleType const& i) : Base{ (TypeRepresentation)i } {};
-		Value(Table const& i) : Base{ i } {};
-		Value(Tuple const& i) : Base{ i } {};
-		Value(TupleReferenceOnStack const& i) : Base{ (TupleReference)i } {};
+		Value(std::shared_ptr<ComplexType> const& i) : Base{ (TypeRepresentation)i } {};
+		Value(std::shared_ptr<ComplexType>&& i) : Base{ (TypeRepresentation)std::move(i) } {};
+		Value(TypeRepresentation const& i) : Base{ i } {};
+		Value(std::shared_ptr<ComplexValue> const& i) : Base{ i } {};
+		Value(std::shared_ptr<ComplexValue>&& i) : Base{ std::move(i) } {};
 
 		Value(Value const&) = default;
 		Value(Value&&) = default;
 		Value& operator=(Value const&) = default;
 		Value& operator=(Value&&) = default;
 	};
+
 }

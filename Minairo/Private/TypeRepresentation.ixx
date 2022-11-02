@@ -3,9 +3,11 @@ module;
 #include <cassert>
 
 #include <algorithm>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include <variant>
 
@@ -15,31 +17,93 @@ import :Structures;
 
 export namespace minairo
 {
-	bool operator==(TypeRepresentation const& a, TypeRepresentation const &b)
+	class TupleType final : public ComplexType
 	{
-		if (std::holds_alternative<BuildInType>(a) && std::holds_alternative<BuildInType>(b))
-		{
-			return std::get<BuildInType>(a) == std::get<BuildInType>(b);
-		}
-		else if (std::holds_alternative<TupleType>(a) && std::holds_alternative<TupleType>(b))
-		{
-			return std::get<TupleType>(a) == std::get<TupleType>(b);
-		}
-		else if (std::holds_alternative<TableType>(a) && std::holds_alternative<TableType>(b))
-		{
-			return std::get<TableType>(a) == std::get<TableType>(b);
-		}
-		else
-		{
-			//assert(false);
-			return false;
-		}
-	}
+	public:
+		bool has_field(std::string_view name) const noexcept;
 
-	bool operator!=(TypeRepresentation const& a, TypeRepresentation const& b)
+		TypeRepresentation const& get_field_type(std::string_view name) const;
+		int get_field_index(std::string_view name) const;
+
+		int get_num_fields() const { return (int)fields.size(); }
+		std::string_view get_field_name(int index) const { return fields[index]; }
+		TypeRepresentation const& get_field_type(int index) const { return types[index]; }
+		Value const& get_field_init_value(int index) const { return init_values[index]; }
+
+		void add_field(std::string_view name, TypeRepresentation const& type, Value const& init_value);
+
+		bool operator==(TupleType const&) const noexcept;
+
+		operator TypeRepresentation() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<TupleType>(*this);
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<TupleType>(*this);
+		}
+
+	protected:
+		bool equals(ComplexType const& other) const override
+		{
+			return *this == other;
+		}
+	private:
+
+		std::vector<std::string> fields;
+		std::vector<TypeRepresentation> types;
+		std::vector<Value> init_values;
+	};
+
+	class TupleReferenceType : public ComplexType
 	{
-		return !(a == b);
-	}
+	public:
+		TupleType tuple;
+		bool constant;
+
+		operator TypeRepresentation() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<TupleReferenceType>(*this);
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<TupleReferenceType>(*this);
+		}
+
+	protected:
+		bool equals(ComplexType const& other) const override
+		{
+			return *this == other;
+		}
+	};
+
+	class TableType : public ComplexType
+	{
+	public:
+		TupleType base_tuple;
+
+		bool operator==(TableType const& other) const noexcept
+		{
+			return base_tuple == other.base_tuple;
+		}
+
+		operator TypeRepresentation() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<TableType>(*this);
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<TableType>(*this);
+		}
+	protected:
+		bool equals(ComplexType const& other) const override
+		{
+			return *this == other;
+		}
+	};
 
 	bool TupleType::has_field(std::string_view name) const noexcept
 	{
@@ -57,7 +121,7 @@ export namespace minairo
 		return (int)(std::lower_bound(fields.begin(), fields.end(), name) - fields.begin());
 	}
 
-	void TupleType::add_field(std::string_view name, TypeRepresentation const& type, Value const &init_value)
+	void TupleType::add_field(std::string_view name, TypeRepresentation const& type, Value const& init_value)
 	{
 		assert(!has_field(name));
 		auto it = fields.insert(std::upper_bound(fields.begin(), fields.end(), name), (std::string)name);
@@ -164,71 +228,28 @@ export namespace minairo
 		return BuildInType::Bool;
 	}
 
-	bool TypeRepresentation::is_build_in() const
+	template<typename T>
+	auto get(TypeRepresentation const& type_representation)
 	{
-		return std::holds_alternative<BuildInType>(*this);
-	}
-
-	std::optional<BuildInType> TypeRepresentation::as_build_in() const
-	{
-		if (std::holds_alternative<BuildInType>(*this))
+		if constexpr (std::is_same_v<T, BuildInType>)
 		{
-			return std::get<BuildInType>(*this);
+			if (std::holds_alternative<BuildInType>(type_representation))
+			{
+				return std::optional<BuildInType>(std::get<BuildInType>(type_representation));
+			}
+			else
+			{
+				return std::optional<BuildInType>(std::nullopt);
+			}
 		}
-		else
+		else if constexpr (std::is_base_of_v<ComplexType, T>)
 		{
-			return std::nullopt;
-		}
-	}
-
-	bool TypeRepresentation::is_tuple() const
-	{
-		return std::holds_alternative<TupleType>(*this);
-	}
-
-	std::optional<TupleType> TypeRepresentation::as_tuple() const
-	{
-		if (std::holds_alternative<TupleType>(*this))
-		{
-			return std::get<TupleType>(*this);
-		}
-		else
-		{
-			return std::nullopt;
-		}
-	}
-
-	bool TypeRepresentation::is_tuple_reference() const
-	{
-		return std::holds_alternative<TupleReferenceType>(*this);
-	}
-
-	std::optional<TupleReferenceType> TypeRepresentation::as_tuple_reference() const
-	{
-		if (std::holds_alternative<TupleReferenceType>(*this))
-		{
-			return std::get<TupleReferenceType>(*this);
-		}
-		else
-		{
-			return std::nullopt;
-		}
-	}
-
-	bool TypeRepresentation::is_table() const
-	{
-		return std::holds_alternative<TableType>(*this);
-	}
-
-	std::optional<TableType> TypeRepresentation::as_table() const
-	{
-		if (std::holds_alternative<TableType>(*this))
-		{
-			return std::get<TableType>(*this);
-		}
-		else
-		{
-			return std::nullopt;
+			if (std::holds_alternative<std::shared_ptr<ComplexType>>(type_representation))
+			{
+				if (std::shared_ptr<T> p = std::dynamic_pointer_cast<T>(std::get< std::shared_ptr<ComplexType>>(type_representation)))
+					return p;
+			}
+			return std::shared_ptr<T>{};
 		}
 	}
 }

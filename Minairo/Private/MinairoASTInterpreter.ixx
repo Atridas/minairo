@@ -110,7 +110,7 @@ export namespace minairo
 		void visit(MemberRead const& member_read) override
 		{
 			member_read.left->accept(*this);
-			Value result = std::get<TupleReference>(last_expression_value).get_field(member_read.index);
+			Value result = get<TupleReference>(last_expression_value)->get_field(member_read.index);
 			last_expression_value = result;
 		}
 
@@ -120,7 +120,7 @@ export namespace minairo
 			Value value = last_expression_value;
 
 			member_write.left->accept(*this);
-			Value result = std::get<TupleReference>(last_expression_value).get_field(member_write.index) = value;
+			Value result = get<TupleReference>(last_expression_value)->get_field(member_write.index) = value;
 			last_expression_value = result;
 		}
 
@@ -183,16 +183,15 @@ export namespace minairo
 				}
 				break;
 			case Terminal::OP_ASSIGN_ADD:
-				if (variable_assign.type->is_table())
+				if (auto table_type = get<TableType>(*variable_assign.type))
 				{
-					TableType table_type = *variable_assign.type->as_table();
-					Table& table = std::get<Table>((variable_assign.index == -1) ? globals.variables[(std::string)variable_assign.identifier.text] : variables[variable_assign.index]);
-					Tuple& tuple = std::get<Tuple>(last_expression_value);
-					for (int i = 0; i < table_type.base_tuple.get_num_fields(); ++i)
+					std::shared_ptr<Table> table = get<Table>((variable_assign.index == -1) ? globals.variables[(std::string)variable_assign.identifier.text] : variables[variable_assign.index]);
+					std::shared_ptr<Tuple> tuple = get<Tuple>(last_expression_value);
+					for (int i = 0; i < table_type->base_tuple.get_num_fields(); ++i)
 					{
-						table.fields[i].push_back(tuple.fields[i]);
+						table->fields[i].push_back(tuple->fields[i]);
 					}
-					++table.rows;
+					++table->rows;
 					// TODO table reference
 					if (variable_assign.index == -1)
 					{
@@ -225,11 +224,20 @@ export namespace minairo
 				assert(variable_read.index == -1);
 				last_expression_value = *variable_read.static_type;
 			}
-			else if (variable_read.type->is_tuple_reference())
+			else if (get<TupleReferenceType>(*variable_read.type))
 			{
 				TupleReferenceOnStack tuple_ref;
-				assert(variable_read.index >= 0 && variable_read.index < variables.size());
-				tuple_ref.tuple = &std::get<Tuple>(variables[variable_read.index]);
+				if (variable_read.index == -1)
+				{
+					assert(globals.variables.find((std::string)variable_read.identifier.text) != globals.variables.end());
+					tuple_ref.tuple = get<Tuple>(globals.variables[(std::string)variable_read.identifier.text]);
+				}
+				else
+				{
+					assert(variable_read.index >= 0 && variable_read.index < variables.size());
+					tuple_ref.tuple = get<Tuple>(variables[variable_read.index]);
+				}
+				assert(tuple_ref.tuple != nullptr);
 				last_expression_value = tuple_ref;
 			}
 			else if (variable_read.index == -1)
@@ -264,9 +272,9 @@ export namespace minairo
 		{
 			expression_statement.exp->accept(*this);
 
-			if (std::holds_alternative<TupleReference>(last_expression_value))
+			if (auto tuple_reference = get<TupleReference>(last_expression_value))
 			{
-				last_expression_value = std::get<TupleReference>(last_expression_value).as_tuple();
+				last_expression_value = tuple_reference->as_tuple();
 			}
 		}
 
@@ -289,10 +297,10 @@ export namespace minairo
 					last_expression_value = get_default_value(*variable_definition.type);
 					globals.variables[(std::string)variable_definition.variable.text] = last_expression_value;
 				}
-				else if (std::holds_alternative<TupleType>(*variable_definition.type))
+				else if (auto tuple_type = get<TupleType>(*variable_definition.type))
 				{
 					Tuple tuple;
-					tuple.type = std::get<TupleType>(*variable_definition.type);
+					tuple.type = *tuple_type;
 					last_expression_value = std::move(tuple);
 					globals.variables[(std::string)variable_definition.variable.text] = last_expression_value;
 				}
@@ -315,10 +323,10 @@ export namespace minairo
 					last_expression_value = get_default_value(*variable_definition.type);
 					variables.push_back(last_expression_value);
 				}
-				else if (std::holds_alternative<TupleType>(*variable_definition.type))
+				else if (auto tuple_type = get<TupleType>(*variable_definition.type))
 				{
 					Tuple tuple;
-					tuple.type = std::get<TupleType>(*variable_definition.type); 
+					tuple.type = *tuple_type;
 					last_expression_value = std::move(tuple);
 					variables.push_back(last_expression_value);
 				}

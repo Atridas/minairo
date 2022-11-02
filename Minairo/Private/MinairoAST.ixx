@@ -543,7 +543,7 @@ export namespace minairo
 		void accept(ExpressionConstVisitor& visitor) const override;
 		std::optional<TypeRepresentation> get_expression_type() const override
 		{
-			return BuildInType::ProcedureDef;
+			return BuildInType::Void; // TODO
 		}
 		virtual TerminalData get_first_terminal() const override
 		{

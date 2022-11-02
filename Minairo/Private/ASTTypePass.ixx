@@ -224,7 +224,7 @@ export namespace minairo
 		{
 			member_read.left->accept(*this);
 			TypeRepresentation left_type = *member_read.left->get_expression_type();
-			if (auto tupleopt = left_type.as_tuple_reference())
+			if (auto tupleopt = get<TupleReferenceType>(left_type))
 			{
 				TupleReferenceType tuple_ref = *std::move(tupleopt);
 				if (tuple_ref.tuple.has_field(member_read.member.text))
@@ -247,7 +247,7 @@ export namespace minairo
 		{
 			member_write.left->accept(*this);
 			TypeRepresentation left_type = *member_write.left->get_expression_type();
-			if (auto tupleopt = left_type.as_tuple_reference())
+			if (auto tupleopt = get<TupleReferenceType>(left_type))
 			{
 				TupleReferenceType tuple_ref = *std::move(tupleopt);
 				if (!tuple_ref.tuple.has_field(member_write.member.text))
@@ -328,9 +328,9 @@ export namespace minairo
 
 				if (auto type = find_typedef(table_declaration.tuple_name))
 				{
-					if (type->is_tuple())
+					if (auto t = get<TupleType>(*type))
 					{
-						table_declaration.table.base_tuple = *type->as_tuple();
+						table_declaration.table.base_tuple = *t;
 					}
 					else
 					{
@@ -385,7 +385,7 @@ export namespace minairo
 
 					if (auto init = tuple_declaration.field_initializers[i]->get_constant_value())
 					{
-						initial_value = cast(*field_type.as_build_in(), *init);
+						initial_value = cast(*get<BuildInType>(field_type), *init);
 					}
 					else
 					{
@@ -444,9 +444,9 @@ export namespace minairo
 				}
 				break;
 			case Terminal::OP_ASSIGN_ADD:
-				if (variable_assign.type->is_table())
+				if (auto t = get<TableType>(*variable_assign.type))
 				{
-					if (!implicit_cast(variable_assign.type->as_table()->base_tuple, variable_assign.exp))
+					if (!implicit_cast(t->base_tuple, variable_assign.exp))
 					{
 						throw message_exception("table insertion needs a tuple of the right type", *variable_assign.exp);
 					}
@@ -477,10 +477,10 @@ export namespace minairo
 			else
 			{
 				auto variable = find_variable(variable_read.identifier);
-				if (variable.type.is_tuple())
+				if (auto t = get<TupleType>(variable.type))
 				{
 					TupleReferenceType as_reference;
-					as_reference.tuple = *variable.type.as_tuple();
+					as_reference.tuple = *t;
 					as_reference.constant = variable.constant;
 					variable_read.type = as_reference;
 				}
@@ -682,11 +682,11 @@ export namespace minairo
 		{
 			if (target == origin->get_expression_type())
 				return true;
-			else if (target.is_tuple() && origin->get_expression_type() == BuildInType::InitializerList)
+			else if (get<TupleType>(target) && origin->get_expression_type() == BuildInType::InitializerList)
 			{
 				assert(dynamic_cast<InitializerList*>(origin.get()));
 				InitializerList* initializer_list = static_cast<InitializerList*>(origin.get());
-				initializer_list->destination_type = *target.as_tuple();
+				initializer_list->destination_type = *get<TupleType>(target);
 
 				int last_index = -1;
 				for (int i = 0; i < (int)initializer_list->expressions.size(); ++i)

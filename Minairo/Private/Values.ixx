@@ -2,6 +2,8 @@ module;
 
 #include <cassert>
 
+#include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -14,6 +16,93 @@ import :TypeRepresentation;
 
 export namespace minairo
 {
+	struct Table final: public ComplexValue
+	{
+		TableType type;
+		int rows = 0;
+		// TODO allocate this in one go as we know the table type(?)
+		std::vector<std::vector<Value>> fields;
+
+		bool operator==(Table const& other) const noexcept
+		{
+			return rows == other.rows && type == other.type && fields == other.fields;
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexValue>)std::make_shared<Table>(*this);
+		}
+
+	protected:
+		bool equals(ComplexValue const& other) const override
+		{
+			if (auto t = dynamic_cast<Table const*>(&other))
+				return *this == *t;
+			else
+				return false;
+		}
+	};
+
+	struct Tuple final: public ComplexValue
+	{
+		TupleType type;
+		std::vector<Value> fields;
+
+		bool operator==(Tuple const& other) const noexcept
+		{
+			return type == other.type && fields == other.fields;
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexValue>)std::make_shared<Tuple>(*this);
+		}
+
+	protected:
+		bool equals(ComplexValue const& other) const override
+		{
+			if (auto t = dynamic_cast<Tuple const*>(&other))
+				return *this == *t;
+			else
+				return false;
+		}
+	};
+
+	struct TupleReference : public ComplexValue
+	{
+		virtual Value& get_field(int index) = 0;
+
+		virtual Tuple& as_tuple() const = 0;
+	};
+
+	struct TupleReferenceOnStack final: public TupleReference
+	{
+		std::shared_ptr<Tuple> tuple;
+
+		Value& get_field(int index) override
+		{
+			return tuple->fields[index];
+		}
+
+		Tuple& as_tuple() const override
+		{
+			return *tuple;
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexValue>)std::make_shared<TupleReferenceOnStack>(*this);
+		}
+
+	protected:
+		bool equals(ComplexValue const& other) const override
+		{
+			if (auto t = dynamic_cast<TupleReferenceOnStack const*>(&other))
+				return this->tuple == t->tuple;
+			else
+				return false;
+		}
+	};
 
 	TypeRepresentation get_type_representation(Value value)
 	{
@@ -146,27 +235,34 @@ export namespace minairo
 		}
 	}
 
-	Value get_default_value(TableType const& type)
+	Value get_default_value(std::shared_ptr<ComplexType> const& type)
 	{
-		Table result;
-		result.type = type;
-
-		result.fields.resize(type.base_tuple.get_num_fields());
-
-		return result;
-	}
-
-	Value get_default_value(TupleType const& type)
-	{
-		Tuple result;
-		result.type = type;
-
-		for (int i = 0; i < type.get_num_fields(); ++i)
+		if (TableType const* table_type = dynamic_cast<TableType*>(type.get()))
 		{
-			result.fields.push_back(type.get_field_init_value(i));
-		}
+			Table result;
+			result.type = *table_type;
 
-		return result;
+			result.fields.resize(table_type->base_tuple.get_num_fields());
+
+			return result;
+		}
+		else if (TupleType const* tuple_type = dynamic_cast<TupleType*>(type.get()))
+		{
+			Tuple result;
+			result.type = *tuple_type;
+
+			for (int i = 0; i < tuple_type->get_num_fields(); ++i)
+			{
+				result.fields.push_back(tuple_type->get_field_init_value(i));
+			}
+
+			return result;
+		}
+		else
+		{
+			assert(false);
+			return {};
+		}
 	}
 
 	Value get_default_value(TypeRepresentation const& type)
@@ -233,6 +329,42 @@ export namespace minairo
 		{
 			assert(false);
 			return nullptr;
+		}
+	}
+
+	template<typename T>
+	auto get(Value const& value)
+	{
+		if constexpr (std::is_same_v<T, BuildInType> || std::is_base_of_v<ComplexType, T>)
+		{
+			if (std::holds_alternative<TypeRepresentation>(value))
+			{
+				return get<T>(std::get<TypeRepresentation>(value));
+			}
+			else
+			{
+				return {};
+			}
+		}
+		else if constexpr (std::is_base_of_v<ComplexValue, T>)
+		{
+			if (std::holds_alternative<std::shared_ptr<ComplexValue>>(value))
+			{
+				if (std::shared_ptr<T> p = std::dynamic_pointer_cast<T>(std::get< std::shared_ptr<ComplexValue>>(value)))
+					return p;
+			}
+			return std::shared_ptr<T>{};
+		}
+		else
+		{
+			if (std::holds_alternative<T>(value))
+			{
+				return (std::optional<T>)std::get<T>(value);
+			}
+			else
+			{
+				return std::optional<T>{};
+			}
 		}
 	}
 }

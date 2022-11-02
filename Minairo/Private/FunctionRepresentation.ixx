@@ -14,7 +14,7 @@ import :TypeRepresentation;
 
 export namespace minairo
 {
-	class FunctionRepresentation
+	class FunctionRepresentation : public ComplexValue
 	{
 	public:
 		virtual ~FunctionRepresentation() = default;
@@ -28,8 +28,6 @@ export namespace minairo
 	private:
 		friend class FunctionMap;
 	};
-
-
 
 	template<typename Ret, typename... Params>
 	class TypedFunctionRepresentation final : public FunctionRepresentation
@@ -87,6 +85,14 @@ export namespace minairo
 			{
 				*((Ret*)return_value) = call_internal(_arguments);
 			}
+		}
+
+
+	protected:
+		virtual bool equals(ComplexValue const&) const
+		{
+			assert(false); // TODO
+			return false;
 		}
 
 	private:
