@@ -5,6 +5,7 @@ module;
 #include <algorithm>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -20,13 +21,17 @@ export namespace minairo
 	class TupleType final : public ComplexType
 	{
 	public:
+		void set_name(std::string_view _name) noexcept override { name = (std::string)_name; }
+		std::string_view get_name() const noexcept { return name; }
+
 		bool has_field(std::string_view name) const noexcept;
 
 		TypeRepresentation const& get_field_type(std::string_view name) const;
 		int get_field_index(std::string_view name) const;
+		int get_original_order(std::string_view name) const;
 
-		int get_num_fields() const { return (int)fields.size(); }
-		std::string_view get_field_name(int index) const { return fields[index]; }
+		int get_num_fields() const { return (int)sorded_fields.size(); }
+		std::string_view get_field_name(int index) const { return field_names[index]; }
 		TypeRepresentation const& get_field_type(int index) const { return types[index]; }
 		Value const& get_field_init_value(int index) const { return init_values[index]; }
 
@@ -50,8 +55,10 @@ export namespace minairo
 			return *this == other;
 		}
 	private:
-
-		std::vector<std::string> fields;
+		std::string name;
+		std::vector<std::string> sorded_fields;
+		std::vector<std::string> field_names;
+		std::vector<int> indexes;
 		std::vector<TypeRepresentation> types;
 		std::vector<Value> init_values;
 	};
@@ -61,6 +68,11 @@ export namespace minairo
 	public:
 		TupleType tuple;
 		bool constant;
+
+		void set_name(std::string_view _name) override
+		{
+			// TODO ??
+		}
 
 		operator TypeRepresentation() const
 		{
@@ -82,11 +94,20 @@ export namespace minairo
 	class TableType : public ComplexType
 	{
 	public:
+		std::string name;
 		TupleType base_tuple;
+
+		void set_name(std::string_view _name) override
+		{
+			name = _name;
+		}
 
 		bool operator==(TableType const& other) const noexcept
 		{
-			return base_tuple == other.base_tuple;
+			if (name.empty() && other.name.empty())
+				return base_tuple == other.base_tuple;
+			else
+				return name == other.name;
 		}
 
 		operator TypeRepresentation() const
@@ -105,9 +126,54 @@ export namespace minairo
 		}
 	};
 
+	class ProcedureType : public ComplexType
+	{
+	public:
+		std::string name;
+		std::vector<std::string> parameter_names;
+		std::vector<TypeRepresentation> parameter_types;
+		std::vector<std::optional<Value>> parameter_default_values;
+
+		TypeRepresentation return_type;
+		bool is_function;
+
+		void set_name(std::string_view _name) override
+		{
+			name = _name;
+		}
+
+		bool operator==(ProcedureType const& other) const noexcept
+		{
+			if (name.empty() && other.name.empty())
+				return parameter_names == other.parameter_names &&
+					parameter_types == other.parameter_types &&
+					parameter_default_values == other.parameter_default_values &&
+					return_type == other.return_type &&
+					is_function == other.is_function;
+			else
+				return name == other.name;
+
+		}
+
+		operator TypeRepresentation() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<ProcedureType>(*this);
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<ProcedureType>(*this);
+		}
+	protected:
+		bool equals(ComplexType const& other) const override
+		{
+			return *this == other;
+		}
+	};
+
 	bool TupleType::has_field(std::string_view name) const noexcept
 	{
-		return std::binary_search(fields.begin(), fields.end(), name);
+		return std::binary_search(sorded_fields.begin(), sorded_fields.end(), name);
 	}
 
 	TypeRepresentation const& TupleType::get_field_type(std::string_view name) const
@@ -118,35 +184,42 @@ export namespace minairo
 	int TupleType::get_field_index(std::string_view name) const
 	{
 		assert(has_field(name));
-		return (int)(std::lower_bound(fields.begin(), fields.end(), name) - fields.begin());
+		return indexes[(int)(std::lower_bound(sorded_fields.begin(), sorded_fields.end(), name) - sorded_fields.begin())];
 	}
 
 	void TupleType::add_field(std::string_view name, TypeRepresentation const& type, Value const& init_value)
 	{
 		assert(!has_field(name));
-		auto it = fields.insert(std::upper_bound(fields.begin(), fields.end(), name), (std::string)name);
-		types.insert(types.begin() + (it - fields.begin()), type);
-		init_values.insert(init_values.begin() + (it - fields.begin()), init_value);
+		auto it = sorded_fields.insert(std::upper_bound(sorded_fields.begin(), sorded_fields.end(), name), (std::string)name);
+		indexes.insert(indexes.begin() + (it - sorded_fields.begin()), (int)indexes.size());
+		field_names.push_back((std::string)name);
+		types.push_back(type);
+		init_values.push_back(init_value);
 	}
 
 	bool TupleType::operator==(TupleType const& other) const noexcept
 	{
-		if (fields.size() != other.fields.size())
+		if (name.empty() && other.name.empty())
 		{
-			return false;
-		}
-		for (int i = 0; i < fields.size(); ++i)
-		{
-			if (fields[i] != other.fields[i])
+			if (sorded_fields.size() != other.sorded_fields.size())
 			{
 				return false;
 			}
-			else if (types[i] != other.types[i])
+			for (int i = 0; i < sorded_fields.size(); ++i)
 			{
-				return false;
+				if (field_names[i] != other.field_names[i])
+				{
+					return false;
+				}
+				else if (types[i] != other.types[i])
+				{
+					return false;
+				}
 			}
+			return true;
 		}
-		return true;
+		else
+			return name == other.name;
 	}
 
 	template<typename T>

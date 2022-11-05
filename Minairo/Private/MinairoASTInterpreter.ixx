@@ -4,6 +4,7 @@ module;
 #include <cinttypes>
 
 #include <memory>
+#include <span>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -126,7 +127,7 @@ export namespace minairo
 
 		void visit(ProcedureDeclaration const& procedure_declaration) override
 		{
-			assert(false); // TODO
+			last_expression_value = (std::shared_ptr<ComplexValue>)std::make_shared<Procedure>(procedure_declaration.type, procedure_declaration.body->deep_copy());
 		}
 
 		void visit(TableDeclaration const& table_declaration) override

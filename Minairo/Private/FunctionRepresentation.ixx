@@ -20,10 +20,12 @@ export namespace minairo
 		virtual ~FunctionRepresentation() = default;
 
 		virtual TypeRepresentation get_return_type() const noexcept = 0;
-		virtual bool has_parameter_types(std::span<TypeRepresentation> _parameter_types) const noexcept = 0;
-		virtual std::span<TypeRepresentation> get_parameter_types() const noexcept = 0;
+		virtual bool has_parameter_types(std::span<const TypeRepresentation> _parameter_types) const noexcept = 0;
+		virtual std::span<const TypeRepresentation> get_parameter_types() const noexcept = 0;
 
 		virtual void call(void* return_value, std::span<void*> _arguments) const noexcept = 0;
+
+		virtual std::unique_ptr<FunctionRepresentation> deep_copy() const = 0;
 
 	private:
 		friend class FunctionMap;
@@ -45,7 +47,7 @@ export namespace minairo
 			callable = std::move(_callable);
 		}
 
-		bool has_parameter_types(std::span<TypeRepresentation> _parameter_types) const noexcept final override
+		bool has_parameter_types(std::span<const TypeRepresentation> _parameter_types) const noexcept final override
 		{
 			if (_parameter_types.size() != sizeof...(Params))
 			{
@@ -62,7 +64,7 @@ export namespace minairo
 				return true;
 			}
 		}
-		std::span<TypeRepresentation> get_parameter_types() const noexcept final override
+		std::span<const TypeRepresentation> get_parameter_types() const noexcept final override
 		{
 			static TypeRepresentation params[sizeof...(Params)] = { get_type_representation<Params>()... };
 			return params;
@@ -87,6 +89,10 @@ export namespace minairo
 			}
 		}
 
+		std::unique_ptr<FunctionRepresentation> deep_copy() const override
+		{
+			return std::make_unique<TypedFunctionRepresentation<Ret, Params...>>(*this);
+		}
 
 	protected:
 		virtual bool equals(ComplexValue const&) const

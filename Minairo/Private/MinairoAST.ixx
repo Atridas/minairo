@@ -101,6 +101,12 @@ export namespace minairo
 		}
 	};
 
+	class Call final : public Expression
+	{
+	public:
+		std::unique_ptr<Expression> callee;
+	};
+
 	class BuildInTypeDeclaration final : public Expression
 	{
 	public:
@@ -507,6 +513,7 @@ export namespace minairo
 		std::unique_ptr<Statement> body;
 		std::unique_ptr<TupleDeclaration> parameter_tuple;
 		std::unique_ptr<Expression> return_type;
+		ProcedureType type;
 
 		ProcedureDeclaration() = default;
 		ProcedureDeclaration(ProcedureDeclaration&&) = default;
@@ -516,6 +523,7 @@ export namespace minairo
 			, body(b.body->deep_copy())
 			, parameter_tuple(b.parameter_tuple->typed_deep_copy())
 			, return_type(b.return_type->deep_copy())
+			, type(b.type)
 		{
 		}
 		ProcedureDeclaration& operator=(ProcedureDeclaration const& b)
@@ -526,6 +534,7 @@ export namespace minairo
 				body = b.body->deep_copy();
 				parameter_tuple = b.parameter_tuple->typed_deep_copy();
 				return_type = b.return_type->deep_copy();
+				type = b.type;
 			}
 			return *this;
 		}
@@ -543,7 +552,7 @@ export namespace minairo
 		void accept(ExpressionConstVisitor& visitor) const override;
 		std::optional<TypeRepresentation> get_expression_type() const override
 		{
-			return BuildInType::Void; // TODO
+			return type;
 		}
 		virtual TerminalData get_first_terminal() const override
 		{

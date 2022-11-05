@@ -114,6 +114,7 @@ namespace minairo
 
 	std::string print_table(Table const& table);
 	std::string print_tuple(Tuple const& tuple);
+	std::string print_function(FunctionRepresentation const& function);
 
 	std::string print_value(Value const& value)
 	{
@@ -202,13 +203,24 @@ namespace minairo
 				}, value);
 				return ss.str();
 			}
-			else if constexpr (std::is_same_v<T, Table>)
+			else if constexpr (std::is_same_v<T, std::shared_ptr<ComplexValue>>)
 			{
-				return print_table(value);
-			}
-			else if constexpr (std::is_same_v<T, Tuple>)
-			{
-				return print_tuple(value);
+				if (auto table = get<Table>(value))
+				{
+					return print_table(*table);
+				}
+				else if (auto tuple = get<Tuple>(value))
+				{
+					return print_tuple(*tuple);
+				}
+				else if (auto function_representation = get<FunctionRepresentation>(value))
+				{
+					return print_function(*function_representation);
+				}
+				else
+				{
+					return "unknown complex value";
+				}
 			}
 			else
 			{
@@ -249,7 +261,7 @@ namespace minairo
 	std::string print_tuple(Tuple const& tuple)
 	{
 		std::stringstream ss;
-		ss << "tuple { ";
+		ss << "tuple " << tuple.type.get_name() << "{ ";
 		const char* comma = "";
 		for (int i = 0; i < tuple.type.get_num_fields(); ++i)
 		{
@@ -258,6 +270,11 @@ namespace minairo
 		}
 		ss << " }";
 		return ss.str();
+	}
+
+	std::string print_function(FunctionRepresentation const& function)
+	{
+		return "function TODO";
 	}
 
 	void interpret(VMImpl* vm, std::string_view code)

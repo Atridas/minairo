@@ -123,6 +123,68 @@ export namespace minairo
 	// --------------------------------------------------------------------------------------------
 	// --------------------------------------------------------------------------------------------
 
+	struct Procedure final : public FunctionRepresentation
+	{
+		ProcedureType type;
+		std::shared_ptr<Statement> body;
+
+		Procedure() = default;
+		Procedure(ProcedureType const& _type, std::shared_ptr<Statement> const& _body) : type(_type), body(_body) {}
+		Procedure(ProcedureType const& _type, std::shared_ptr<Statement>&& _body) : type(_type), body(std::move(_body)) {}
+		Procedure(ProcedureType const& _type, std::unique_ptr<Statement>&& _body) : type(_type), body(std::move(_body)) {}
+
+		TypeRepresentation get_return_type() const noexcept override
+		{
+			return type.return_type;
+		}
+		bool has_parameter_types(std::span<const TypeRepresentation> _parameter_types) const noexcept
+		{
+			if (_parameter_types.size() != type.parameter_types.size())
+				return false;
+			else
+			{
+				for (int i = 0; i < (int)type.parameter_types.size(); ++i)
+				{
+					if (_parameter_types[i] != type.parameter_types[i])
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+		std::span<const TypeRepresentation> get_parameter_types() const noexcept override
+		{
+			return type.parameter_types;
+		}
+
+		void call(void* return_value, std::span<void*> _arguments) const noexcept override
+		{
+			// TODO
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexValue>)std::make_shared<Procedure>(*this);
+		}
+
+		std::unique_ptr<FunctionRepresentation> deep_copy() const override
+		{
+			return std::make_unique<Procedure>(*this);
+		}
+
+	protected:
+		virtual bool equals(ComplexValue const&) const
+		{
+			assert(false); // TODO
+			return false;
+		}
+	};
+
+	// --------------------------------------------------------------------------------------------
+	// --------------------------------------------------------------------------------------------
+	// --------------------------------------------------------------------------------------------
+
 	class TypePass final : public ExpressionVisitor, public StatementVisitor
 	{
 		struct VariableInfo
@@ -286,9 +348,46 @@ export namespace minairo
 
 		void visit(ProcedureDeclaration& procedure_declaration) override
 		{
+			procedure_declaration.type.is_function = (procedure_declaration.kind.type == Terminal::WK_FUNCTION);
 			procedure_declaration.parameter_tuple->accept(*this);
+
+			procedure_declaration.type.parameter_names.reserve(procedure_declaration.parameter_tuple->field_names.size());
+			std::optional<Value> last_default_argument;
+			for (int i = 0; i < (int)procedure_declaration.parameter_tuple->field_names.size(); ++i)
+			{
+				auto name = procedure_declaration.parameter_tuple->field_names[i].text;
+				int index = procedure_declaration.parameter_tuple->tuple.get_field_index(name);
+				procedure_declaration.type.parameter_names.push_back((std::string)name);
+				procedure_declaration.type.parameter_types.push_back(procedure_declaration.parameter_tuple->tuple.get_field_type(index));
+				
+				if (procedure_declaration.parameter_tuple->field_initializers[i] == nullptr)
+				{
+					if (procedure_declaration.parameter_tuple->field_types[i] != nullptr)
+					{
+						last_default_argument = std::nullopt;
+					}
+				}
+				else
+				{
+					last_default_argument = procedure_declaration.parameter_tuple->tuple.get_field_init_value(index);
+				}
+
+				procedure_declaration.type.parameter_default_values.push_back(last_default_argument);
+			}
+
 			if (procedure_declaration.return_type)
+			{
 				procedure_declaration.return_type->accept(*this);
+				if (procedure_declaration.return_type->get_expression_type())
+					procedure_declaration.type.return_type = *procedure_declaration.return_type->get_type_value();
+				else
+					throw message_exception("Expected a type", *procedure_declaration.return_type);
+			}
+			else
+			{
+				procedure_declaration.type.return_type = BuildInType::Void;
+			}
+
 
 			std::vector<VariableBlock> old_locals = std::move(variable_blocks);
 			variable_blocks.resize(0);
@@ -583,10 +682,12 @@ export namespace minairo
 				if (variable_blocks.empty())
 				{
 					globals.types[(std::string)variable_definition.variable.text] = *variable_definition.initialization->get_type_value();
+					globals.types[(std::string)variable_definition.variable.text].set_name(variable_definition.variable.text);
 				}
 				else
 				{
 					variable_blocks.back().types[(std::string)variable_definition.variable.text] = *variable_definition.initialization->get_type_value();
+					variable_blocks.back().types[(std::string)variable_definition.variable.text].set_name(variable_definition.variable.text);
 				}
 			}
 			else
