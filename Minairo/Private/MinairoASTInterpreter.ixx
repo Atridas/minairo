@@ -21,6 +21,8 @@ import Minairo.TypesAndValues;
 
 export namespace minairo
 {
+	class ReturnException {};
+
 	class Interpreter final : public ExpressionConstVisitor, public StatementConstVisitor
 	{
 	public:
@@ -81,7 +83,17 @@ export namespace minairo
 
 			variables = std::move(arguments->fields);
 
-			procedure->body->accept(*this);
+			bool returned = false;
+
+			try {
+				procedure->body->accept(*this);
+			}
+			catch (ReturnException e)
+			{
+				returned = true;
+			}
+
+			assert(returned || procedure->get_return_type() == BuildInType::Void);
 
 			variables = std::move(outer_variables);
 		}
@@ -299,6 +311,12 @@ export namespace minairo
 			{
 				last_expression_value = tuple_reference->as_tuple();
 			}
+		}
+
+		void visit(ReturnStatement const &return_statement) override
+		{
+			return_statement.exp->accept(*this);
+			throw ReturnException{};
 		}
 
 		void visit(VariableDefinition const& variable_definition) override

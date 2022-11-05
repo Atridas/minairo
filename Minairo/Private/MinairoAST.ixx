@@ -1019,6 +1019,54 @@ export namespace minairo
 		}
 	};
 
+	class ReturnStatement final : public Statement
+	{
+	public:
+		TerminalData return_keyword;
+		std::unique_ptr<Expression> exp;
+		TerminalData semicolon;
+
+		ReturnStatement() = default;
+		ReturnStatement(ReturnStatement&&) = default;
+		ReturnStatement& operator=(ReturnStatement&&) = default;
+		ReturnStatement(ReturnStatement const& b)
+			: return_keyword(b.return_keyword)
+			, exp(b.exp->deep_copy())
+			, semicolon(b.semicolon)
+		{
+		}
+		ReturnStatement& operator=(ReturnStatement const& b)
+		{
+			if (this != &b)
+			{
+				return_keyword = b.return_keyword;
+				exp = b.exp->deep_copy();
+				semicolon = b.semicolon;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Statement> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<ReturnStatement> typed_deep_copy() const
+		{
+			return std::make_unique<ReturnStatement>(*this);
+		}
+
+		void accept(StatementVisitor& visitor) override;
+		void accept(StatementConstVisitor& visitor) const override;
+		virtual TerminalData get_first_terminal() const override
+		{
+			return return_keyword;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return semicolon;
+		}
+	};
+
 	class VariableDefinition final : public Statement
 	{
 	public:
@@ -1126,6 +1174,7 @@ export namespace minairo
 	public:
 		virtual void visit(Block& binary) = 0;
 		virtual void visit(ExpressionStatement& binary) = 0;
+		virtual void visit(ReturnStatement& binary) = 0;
 		virtual void visit(VariableDefinition& binary) = 0;
 	};
 	class StatementConstVisitor
@@ -1133,6 +1182,7 @@ export namespace minairo
 	public:
 		virtual void visit(Block const& binary) = 0;
 		virtual void visit(ExpressionStatement const& binary) = 0;
+		virtual void visit(ReturnStatement const& binary) = 0;
 		virtual void visit(VariableDefinition const& binary) = 0;
 	};
 }
@@ -1269,6 +1319,10 @@ void minairo::ExpressionStatement::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
 }
+void minairo::ReturnStatement::accept(StatementVisitor& visitor)
+{
+	visitor.visit(*this);
+}
 void minairo::VariableDefinition::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
@@ -1279,6 +1333,10 @@ void minairo::Block::accept(StatementConstVisitor& visitor) const
 	visitor.visit(*this);
 }
 void minairo::ExpressionStatement::accept(StatementConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void minairo::ReturnStatement::accept(StatementConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

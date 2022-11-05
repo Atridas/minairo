@@ -410,8 +410,40 @@ export namespace minairo
 			}
 
 			variable_blocks.push_back(std::move(parameter_block));
+			bool was_in_function_context = in_function_context;
+			bool did_allow_return = allow_return;
+			std::optional<TypeRepresentation> outer_return_type = return_type;
+
+			if (procedure_declaration.type.is_function)
+				in_function_context = true;
+
+			if (procedure_declaration.return_type)
+			{
+				return_type = procedure_declaration.type.return_type;
+			}
+
+			assert(!has_found_return);
+			allow_return = true;
 
 			procedure_declaration.body->accept(*this);
+
+			allow_return = did_allow_return;
+
+			if (procedure_declaration.return_type == nullptr)
+			{
+				if(return_type)
+					procedure_declaration.type.return_type = *return_type;
+				else if (procedure_declaration.type.is_function)
+					throw message_exception("Can't deduce return type of a function", procedure_declaration);
+			}
+			else if (!has_found_return)
+			{
+				throw message_exception("All paths must end in a return statement", procedure_declaration);
+			}
+			has_found_return = false;
+
+			return_type = outer_return_type;
+			in_function_context = was_in_function_context;
 
 			assert(variable_blocks.size() == 1);
 			variable_blocks = std::move(old_locals);
@@ -529,6 +561,10 @@ export namespace minairo
 			{
 				throw const_write_exception(variable_assign.identifier);
 			}
+			else if (in_function_context && variable.index == -1)
+			{
+				throw message_exception("Can't write to a global inside a function!", variable_assign);
+			}
 			variable_assign.type = variable.type;
 			variable_assign.index = variable.index;
 
@@ -574,6 +610,11 @@ export namespace minairo
 			else
 			{
 				auto variable = find_variable(variable_read.identifier);
+				if (in_function_context && variable.index == -1 && !variable.constant)
+				{
+					throw message_exception("Can't read from non-constant global inside a function!", variable_read);
+				}
+
 				if (auto t = get<TupleType>(variable.type))
 				{
 					TupleReferenceType as_reference;
@@ -607,6 +648,9 @@ export namespace minairo
 
 			for (auto& statement : block.statements)
 			{
+				if (has_found_return)
+					throw message_exception("You can't have statements after a return statement.", *statement);
+
 				statement->accept(*this);
 			}
 			// TODO throw(?)
@@ -624,6 +668,34 @@ export namespace minairo
 		void visit(ExpressionStatement& expression_statement) override
 		{
 			expression_statement.exp->accept(*this);
+		}
+
+		void visit(ReturnStatement& return_statement) override
+		{
+			if(!allow_return)
+				throw message_exception("Can't use a return outside of a function", return_statement);
+
+			if(return_statement.exp)
+				return_statement.exp->accept(*this);
+
+			if (!return_type)
+			{
+				if (!return_statement.exp)
+					return_type = BuildInType::Void;
+				else
+					return_type = *return_statement.exp->get_expression_type();
+			}
+			else if (return_statement.exp == nullptr)
+			{
+				if(*return_type != BuildInType::Void)
+					throw message_exception("Expected an expression", return_statement);
+			}
+			else if (!implicit_cast(*return_type, return_statement.exp))
+			{
+				throw message_exception("Wrong return type", *return_statement.exp);
+			}
+
+			has_found_return = true;
 		}
 
 		void visit(VariableDefinition& variable_definition) override
@@ -720,6 +792,8 @@ export namespace minairo
 		std::vector<VariableBlock> variable_blocks;
 
 		GlobalMap globals;
+		bool allow_return = false, in_function_context = false, has_found_return = false;
+		std::optional<TypeRepresentation> return_type;
 
 		void push_variable_block()
 		{

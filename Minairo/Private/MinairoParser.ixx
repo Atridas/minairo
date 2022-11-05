@@ -351,7 +351,7 @@ namespace minairo
 
 		consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
 
-		if (result->kind.type == Terminal::WK_FUNCTION || scanner.peek_next_symbol().type == Terminal::OP_ARROW)
+		if (scanner.peek_next_symbol().type == Terminal::OP_ARROW)
 		{
 			consume(Terminal::OP_ARROW, scanner);
 			result->return_type = expression(scanner);
@@ -860,6 +860,18 @@ namespace minairo
 
 	// ------------------------------------------------------------------------------------
 
+	StatementPtr return_statement(Scanner& scanner)
+	{
+		auto result = std::make_unique<ReturnStatement>();
+		result->return_keyword = consume(Terminal::WK_RETURN, scanner);
+		result->exp = expression(scanner);
+		result->semicolon = consume(Terminal::OP_SEMICOLON, scanner);
+
+		return result;
+	}
+
+	// ------------------------------------------------------------------------------------
+
 	StatementPtr variable_definition(Scanner& scanner)
 	{
 		auto result = std::make_unique<VariableDefinition>();
@@ -928,15 +940,19 @@ namespace minairo
 
 	StatementPtr statement(Scanner& scanner)
 	{
-		if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER && scanner.peek_next_symbol(1).type == Terminal::OP_COLON)
+		if (scanner.peek_next_symbol().type == Terminal::WK_RETURN)
 		{
-			return variable_definition(scanner);
+			return return_statement(scanner);
 		}
 		else if (scanner.peek_next_symbol().type == Terminal::BRACKET_CURLY_OPEN)
 		{
 			return block(scanner);
 		}
-		else
+		else if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER && scanner.peek_next_symbol(1).type == Terminal::OP_COLON)
+		{
+			return variable_definition(scanner);
+		}
+		else 
 		{
 			return expression_statement(scanner);
 		}
