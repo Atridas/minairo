@@ -43,6 +43,8 @@ export namespace minairo
 			return equals(o);
 		}
 
+		virtual void set_name(std::string_view _name) = 0;
+
 	protected:
 		virtual bool equals(ComplexType const&) const = 0;
 	};
@@ -60,6 +62,14 @@ export namespace minairo
 		TypeRepresentation(TypeRepresentation&&) = default;
 		TypeRepresentation& operator=(TypeRepresentation const&) = default;
 		TypeRepresentation& operator=(TypeRepresentation&&) = default;
+
+		void set_name(std::string_view _name)
+		{
+			if (std::holds_alternative<std::shared_ptr<ComplexType>>(*this))
+			{
+				std::get<std::shared_ptr<ComplexType>>(*this)->set_name(_name);
+			}
+		}
 	};
 
 	bool operator==(TypeRepresentation const& a, TypeRepresentation const& b)

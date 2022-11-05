@@ -678,6 +678,45 @@ namespace minairo
 		return result;
 	}
 
+	ExpressionPtr call(ExpressionPtr left, Precedence current_precendence, Scanner& scanner)
+	{
+		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
+
+		if (scanner.peek_next_symbol().type != Terminal::BRACKET_CURLY_CLOSE)
+		{
+			for (;;)
+			{
+				if (scanner.peek_next_symbol(0).type == Terminal::IDENTIFIER && scanner.peek_next_symbol(1).type == Terminal::OP_ASSIGN)
+				{
+					//result->names.push_back(consume(Terminal::IDENTIFIER, scanner));
+					consume(Terminal::OP_ASSIGN, scanner);
+				}
+				else
+				{
+					//result->names.push_back(std::nullopt);
+				}
+
+				//result->expressions.push_back(expression(scanner));
+
+				if (scanner.peek_next_symbol().type != Terminal::OP_COMMA)
+				{
+					break;
+				}
+				else
+				{
+					consume(Terminal::OP_COMMA, scanner);
+					if (scanner.peek_next_symbol().type == Terminal::BRACKET_CURLY_CLOSE)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
+		return left;
+	}
+
 	ExpressionPtr member_read(ExpressionPtr left, Precedence current_precendence, Scanner& scanner)
 	{
 		auto result = std::make_unique<MemberRead>();
@@ -768,6 +807,8 @@ namespace minairo
 		pratt_precedences[(int)Terminal::OP_DIV] = Precedence::Factor;
 		pratt_infixes[(int)Terminal::OP_MOD] = &binary;
 		pratt_precedences[(int)Terminal::OP_MOD] = Precedence::Factor;
+		pratt_infixes[(int)Terminal::BRACKET_ROUND_OPEN] = &call;
+		pratt_precedences[(int)Terminal::BRACKET_ROUND_OPEN] = Precedence::Call;
 		pratt_infixes[(int)Terminal::OP_DOT] = &member_read;
 		pratt_precedences[(int)Terminal::OP_DOT] = Precedence::Call;
 	}
