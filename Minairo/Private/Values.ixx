@@ -253,7 +253,10 @@ export namespace minairo
 
 			for (int i = 0; i < tuple_type->get_num_fields(); ++i)
 			{
-				result.fields.push_back(tuple_type->get_field_init_value(i));
+				if (auto default_value = tuple_type->get_field_init_value(i))
+					result.fields.push_back(*default_value);
+				else
+					result.fields.push_back(get_default_value(tuple_type->get_field_type(i)));
 			}
 
 			return result;

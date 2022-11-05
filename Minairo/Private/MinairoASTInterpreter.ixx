@@ -67,6 +67,25 @@ export namespace minairo
 			last_expression_value = build_tn_type_declaration.type;
 		}
 
+		void visit(Call const& call) override
+		{
+			call.callee->accept(*this);
+			std::shared_ptr<FunctionRepresentation> callee = get<FunctionRepresentation>(last_expression_value);
+			assert(callee != nullptr);
+			assert(dynamic_cast<Procedure*>(callee.get()) != nullptr);
+			Procedure* procedure = static_cast<Procedure*>(callee.get());
+			call.arguments.accept(*this);
+			std::shared_ptr<Tuple> arguments = get<Tuple>(last_expression_value);
+
+			std::vector<Value> outer_variables = std::move(variables);
+
+			variables = std::move(arguments->fields);
+
+			procedure->body->accept(*this);
+
+			variables = std::move(outer_variables);
+		}
+
 		void visit(Grouping const& grouping) override
 		{
 			grouping.expr->accept(*this);
@@ -83,7 +102,10 @@ export namespace minairo
 				int index = initializer_list.default_initializers[i];
 
 				auto field_type = temporary_tuple.type.get_field_type(index);
-				temporary_tuple.fields[index] = temporary_tuple.type.get_field_init_value(index);
+				if (auto default_value = temporary_tuple.type.get_field_init_value(index))
+					temporary_tuple.fields[index] = *default_value;
+				else
+					temporary_tuple.fields[index] = get_default_value(field_type);
 			}
 
 			for (int i = 0; i < (int)initializer_list.indexes.size(); ++i)

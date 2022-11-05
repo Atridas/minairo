@@ -20,8 +20,8 @@ export namespace minairo
 		virtual ~FunctionRepresentation() = default;
 
 		virtual TypeRepresentation get_return_type() const noexcept = 0;
-		virtual bool has_parameter_types(std::span<const TypeRepresentation> _parameter_types) const noexcept = 0;
-		virtual std::span<const TypeRepresentation> get_parameter_types() const noexcept = 0;
+		virtual bool has_parameter_types(std::span<TypeRepresentation const> _parameter_types) const noexcept = 0;
+		virtual std::span<TypeRepresentation const> get_parameter_types() const noexcept = 0;
 
 		virtual void call(void* return_value, std::span<void*> _arguments) const noexcept = 0;
 
@@ -47,7 +47,7 @@ export namespace minairo
 			callable = std::move(_callable);
 		}
 
-		bool has_parameter_types(std::span<const TypeRepresentation> _parameter_types) const noexcept final override
+		bool has_parameter_types(std::span<TypeRepresentation const> _parameter_types) const noexcept final override
 		{
 			if (_parameter_types.size() != sizeof...(Params))
 			{
@@ -64,7 +64,7 @@ export namespace minairo
 				return true;
 			}
 		}
-		std::span<const TypeRepresentation> get_parameter_types() const noexcept final override
+		std::span<TypeRepresentation const> get_parameter_types() const noexcept final override
 		{
 			static TypeRepresentation params[sizeof...(Params)] = { get_type_representation<Params>()... };
 			return params;

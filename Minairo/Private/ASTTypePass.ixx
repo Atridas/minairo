@@ -137,15 +137,15 @@ export namespace minairo
 		{
 			return type.return_type;
 		}
-		bool has_parameter_types(std::span<const TypeRepresentation> _parameter_types) const noexcept
+		bool has_parameter_types(std::span<TypeRepresentation const> _parameter_types) const noexcept
 		{
-			if (_parameter_types.size() != type.parameter_types.size())
+			if (_parameter_types.size() != type.parameters.get_num_fields())
 				return false;
 			else
 			{
-				for (int i = 0; i < (int)type.parameter_types.size(); ++i)
+				for (int i = 0; i < (int)type.parameters.get_num_fields(); ++i)
 				{
-					if (_parameter_types[i] != type.parameter_types[i])
+					if (_parameter_types[i] != type.parameters.get_field_type(i))
 					{
 						return false;
 					}
@@ -153,9 +153,9 @@ export namespace minairo
 				return true;
 			}
 		}
-		std::span<const TypeRepresentation> get_parameter_types() const noexcept override
+		std::span<TypeRepresentation const> get_parameter_types() const noexcept override
 		{
-			return type.parameter_types;
+			return type.parameters.get_types();
 		}
 
 		void call(void* return_value, std::span<void*> _arguments) const noexcept override
@@ -264,6 +264,26 @@ export namespace minairo
 			// -------
 		}
 
+		void visit(Call& call) override
+		{
+			call.callee->accept(*this);
+			call.arguments.accept(*this);
+
+			TypeRepresentation callee_type = *call.callee->get_expression_type();
+			std::shared_ptr<ProcedureType> as_procedure = get<ProcedureType>(callee_type);
+
+			if(as_procedure == nullptr)
+			{
+				throw message_exception("Expected a procedure\n", *call.callee);
+			}
+
+
+			if (!implicit_cast(as_procedure->parameters, call.arguments, false))
+			{
+				throw message_exception("Initializer has not the right type\n", call.arguments);
+			}
+		}
+
 		void visit(Grouping& grouping) override
 		{
 			grouping.expr->accept(*this);
@@ -351,29 +371,7 @@ export namespace minairo
 			procedure_declaration.type.is_function = (procedure_declaration.kind.type == Terminal::WK_FUNCTION);
 			procedure_declaration.parameter_tuple->accept(*this);
 
-			procedure_declaration.type.parameter_names.reserve(procedure_declaration.parameter_tuple->field_names.size());
-			std::optional<Value> last_default_argument;
-			for (int i = 0; i < (int)procedure_declaration.parameter_tuple->field_names.size(); ++i)
-			{
-				auto name = procedure_declaration.parameter_tuple->field_names[i].text;
-				int index = procedure_declaration.parameter_tuple->tuple.get_field_index(name);
-				procedure_declaration.type.parameter_names.push_back((std::string)name);
-				procedure_declaration.type.parameter_types.push_back(procedure_declaration.parameter_tuple->tuple.get_field_type(index));
-				
-				if (procedure_declaration.parameter_tuple->field_initializers[i] == nullptr)
-				{
-					if (procedure_declaration.parameter_tuple->field_types[i] != nullptr)
-					{
-						last_default_argument = std::nullopt;
-					}
-				}
-				else
-				{
-					last_default_argument = procedure_declaration.parameter_tuple->tuple.get_field_init_value(index);
-				}
-
-				procedure_declaration.type.parameter_default_values.push_back(last_default_argument);
-			}
+			procedure_declaration.type.parameters = *get<TupleType>(*procedure_declaration.parameter_tuple->get_type_value());
 
 			if (procedure_declaration.return_type)
 			{
@@ -454,7 +452,7 @@ export namespace minairo
 			assert(tuple_declaration.field_names.size() == tuple_declaration.field_types.size());
 
 			TypeRepresentation last_type;
-			Value last_initial_value = 0;
+			std::optional<Value> last_initial_value;
 
 			for (int i = 0; i < tuple_declaration.field_names.size(); ++i)
 			{
@@ -464,13 +462,13 @@ export namespace minairo
 				}
 
 				TypeRepresentation field_type;
-				Value initial_value = 0;
+				std::optional<Value> initial_value;
 
 				if (tuple_declaration.field_types[i])
 				{
 					tuple_declaration.field_types[i]->accept(*this);
 					field_type = *tuple_declaration.field_types[i]->get_type_value();
-					initial_value = get_default_value(field_type);
+					initial_value = std::nullopt;
 				}
 
 				if (tuple_declaration.field_initializers[i])
@@ -779,6 +777,65 @@ export namespace minairo
 			return std::nullopt;
 		}
 
+		bool implicit_cast(TupleType target, InitializerList &origin, bool let_undefined_fields)
+		{
+			origin.destination_type = target;
+
+			int last_index = -1;
+			for (int i = 0; i < (int)origin.expressions.size(); ++i)
+			{
+				int index;
+				if (origin.names[i])
+				{
+					if (!origin.destination_type.has_field(origin.names[i]->text))
+					{
+						throw message_exception("tuple doesn't have this field\n", *origin.names[i]);
+					}
+					index = origin.destination_type.get_field_index(origin.names[i]->text);
+					if (std::find(origin.indexes.begin(), origin.indexes.end(), index) != origin.indexes.end())
+					{
+						throw message_exception("this field has already been initialized", *origin.names[i]);
+					}
+				}
+				else
+				{
+					++last_index;
+					while (std::find(origin.indexes.begin(), origin.indexes.end(), last_index) != origin.indexes.end())
+					{
+						++last_index;
+					}
+					index = last_index;
+
+					if (index >= origin.destination_type.get_num_fields())
+					{
+						throw message_exception("too many initializer values for this tuple", *origin.expressions[i]);
+					}
+				}
+
+				if (!implicit_cast(origin.destination_type.get_field_type(index), origin.expressions[i]))
+				{
+					throw message_exception("initializer has the wrong type", *origin.expressions[i]);
+				}
+
+				origin.indexes.push_back(index);
+				last_index = index;
+			}
+
+			for (int i = 0; i < origin.destination_type.get_num_fields(); ++i)
+			{
+				if (std::find(origin.indexes.begin(), origin.indexes.end(), i) == origin.indexes.end())
+				{
+					origin.default_initializers.push_back(i);
+					if (!let_undefined_fields && !target.get_field_init_value(i).has_value())
+					{
+						throw message_exception("missing arguments!", origin);
+					}
+				}
+			}
+
+			return true;
+		}
+
 		bool implicit_cast(TypeRepresentation target, std::unique_ptr<Expression> &origin)
 		{
 			if (target == origin->get_expression_type())
@@ -786,58 +843,7 @@ export namespace minairo
 			else if (get<TupleType>(target) && origin->get_expression_type() == BuildInType::InitializerList)
 			{
 				assert(dynamic_cast<InitializerList*>(origin.get()));
-				InitializerList* initializer_list = static_cast<InitializerList*>(origin.get());
-				initializer_list->destination_type = *get<TupleType>(target);
-
-				int last_index = -1;
-				for (int i = 0; i < (int)initializer_list->expressions.size(); ++i)
-				{
-					int index;
-					if (initializer_list->names[i])
-					{
-						if (!initializer_list->destination_type.has_field(initializer_list->names[i]->text))
-						{
-							throw message_exception("tuple doesn't have this field\n", *initializer_list->names[i]);
-						}
-						index = initializer_list->destination_type.get_field_index(initializer_list->names[i]->text);
-						if (std::find(initializer_list->indexes.begin(), initializer_list->indexes.end(), index) != initializer_list->indexes.end())
-						{
-							throw message_exception("this field has already been initialized", *initializer_list->names[i]);
-						}
-					}
-					else
-					{
-						++last_index;
-						while (std::find(initializer_list->indexes.begin(), initializer_list->indexes.end(), last_index) != initializer_list->indexes.end())
-						{
-							++last_index;
-						}
-						index = last_index;
-
-						if (index >= initializer_list->destination_type.get_num_fields())
-						{
-							throw message_exception("too many initializer values for this tuple", *initializer_list->expressions[i]);
-						}
-					}
-
-					if (!implicit_cast(initializer_list->destination_type.get_field_type(index), initializer_list->expressions[i]))
-					{
-						throw message_exception("initializer has the wrong type", *initializer_list->expressions[i]);
-					}
-
-					initializer_list->indexes.push_back(index);
-					last_index = index;
-				}
-
-				for (int i = 0; i < initializer_list->destination_type.get_num_fields(); ++i)
-				{
-					if (std::find(initializer_list->indexes.begin(), initializer_list->indexes.end(), i) == initializer_list->indexes.end())
-					{
-						initializer_list->default_initializers.push_back(i);
-					}
-				}
-
-				return true;
+				return implicit_cast(*get<TupleType>(target), *static_cast<InitializerList*>(origin.get()), true);
 			}
 			else
 				return false;

@@ -33,9 +33,12 @@ export namespace minairo
 		int get_num_fields() const { return (int)sorded_fields.size(); }
 		std::string_view get_field_name(int index) const { return field_names[index]; }
 		TypeRepresentation const& get_field_type(int index) const { return types[index]; }
-		Value const& get_field_init_value(int index) const { return init_values[index]; }
+		std::optional<Value> get_field_init_value(int index) const { return init_values[index]; }
+		std::span<TypeRepresentation const> get_types() const { return types; }
 
-		void add_field(std::string_view name, TypeRepresentation const& type, Value const& init_value);
+		void add_field(std::string_view name, TypeRepresentation const& type, std::optional<Value> init_value);
+		void add_field(std::string_view name, TypeRepresentation const& type) { add_field(name, type, std::nullopt); }
+		void add_field(std::string_view name, TypeRepresentation const& type, Value const& init_value) { add_field(name, type, std::optional<Value>(init_value)); }
 
 		bool operator==(TupleType const&) const noexcept;
 
@@ -55,12 +58,14 @@ export namespace minairo
 			return *this == other;
 		}
 	private:
+
+
 		std::string name;
 		std::vector<std::string> sorded_fields;
 		std::vector<std::string> field_names;
 		std::vector<int> indexes;
 		std::vector<TypeRepresentation> types;
-		std::vector<Value> init_values;
+		std::vector<std::optional<Value>> init_values;
 	};
 
 	class TupleReferenceType : public ComplexType
@@ -130,9 +135,7 @@ export namespace minairo
 	{
 	public:
 		std::string name;
-		std::vector<std::string> parameter_names;
-		std::vector<TypeRepresentation> parameter_types;
-		std::vector<std::optional<Value>> parameter_default_values;
+		TupleType parameters;
 
 		TypeRepresentation return_type;
 		bool is_function;
@@ -145,11 +148,7 @@ export namespace minairo
 		bool operator==(ProcedureType const& other) const noexcept
 		{
 			if (name.empty() && other.name.empty())
-				return parameter_names == other.parameter_names &&
-					parameter_types == other.parameter_types &&
-					parameter_default_values == other.parameter_default_values &&
-					return_type == other.return_type &&
-					is_function == other.is_function;
+				return parameters == other.parameters;
 			else
 				return name == other.name;
 
@@ -187,7 +186,7 @@ export namespace minairo
 		return indexes[(int)(std::lower_bound(sorded_fields.begin(), sorded_fields.end(), name) - sorded_fields.begin())];
 	}
 
-	void TupleType::add_field(std::string_view name, TypeRepresentation const& type, Value const& init_value)
+	void TupleType::add_field(std::string_view name, TypeRepresentation const& type, std::optional<Value> init_value)
 	{
 		assert(!has_field(name));
 		auto it = sorded_fields.insert(std::upper_bound(sorded_fields.begin(), sorded_fields.end(), name), (std::string)name);

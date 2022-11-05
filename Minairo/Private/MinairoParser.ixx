@@ -680,23 +680,25 @@ namespace minairo
 
 	ExpressionPtr call(ExpressionPtr left, Precedence current_precendence, Scanner& scanner)
 	{
-		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
+		auto result = std::make_unique<Call>();
+		result->callee = std::move(left);
+		result->arguments.open = consume(Terminal::BRACKET_ROUND_OPEN, scanner);
 
-		if (scanner.peek_next_symbol().type != Terminal::BRACKET_CURLY_CLOSE)
+		if (scanner.peek_next_symbol().type != Terminal::BRACKET_ROUND_CLOSE)
 		{
 			for (;;)
 			{
 				if (scanner.peek_next_symbol(0).type == Terminal::IDENTIFIER && scanner.peek_next_symbol(1).type == Terminal::OP_ASSIGN)
 				{
-					//result->names.push_back(consume(Terminal::IDENTIFIER, scanner));
+					result->arguments.names.push_back(consume(Terminal::IDENTIFIER, scanner));
 					consume(Terminal::OP_ASSIGN, scanner);
 				}
 				else
 				{
-					//result->names.push_back(std::nullopt);
+					result->arguments.names.push_back(std::nullopt);
 				}
 
-				//result->expressions.push_back(expression(scanner));
+				result->arguments.expressions.push_back(expression(scanner));
 
 				if (scanner.peek_next_symbol().type != Terminal::OP_COMMA)
 				{
@@ -705,7 +707,7 @@ namespace minairo
 				else
 				{
 					consume(Terminal::OP_COMMA, scanner);
-					if (scanner.peek_next_symbol().type == Terminal::BRACKET_CURLY_CLOSE)
+					if (scanner.peek_next_symbol().type == Terminal::BRACKET_ROUND_CLOSE)
 					{
 						break;
 					}
@@ -713,8 +715,8 @@ namespace minairo
 			}
 		}
 
-		consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
-		return left;
+		result->arguments.close = consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
+		return result;
 	}
 
 	ExpressionPtr member_read(ExpressionPtr left, Precedence current_precendence, Scanner& scanner)

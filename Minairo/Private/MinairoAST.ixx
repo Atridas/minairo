@@ -101,12 +101,6 @@ export namespace minairo
 		}
 	};
 
-	class Call final : public Expression
-	{
-	public:
-		std::unique_ptr<Expression> callee;
-	};
-
 	class BuildInTypeDeclaration final : public Expression
 	{
 	public:
@@ -261,6 +255,64 @@ export namespace minairo
 		virtual TerminalData get_last_terminal() const override
 		{
 			return close;
+		}
+	};
+
+	class Call final : public Expression
+	{
+	public:
+		std::unique_ptr<Expression> callee;
+		InitializerList arguments;
+
+
+		Call() = default;
+		Call(Call&&) = default;
+		Call& operator=(Call&&) = default;
+		Call(Call const& b)
+			: callee(b.callee->deep_copy())
+			, arguments(b.arguments)
+		{
+		}
+		Call& operator=(Call const& b)
+		{
+			if (this != &b)
+			{
+				callee = b.callee->deep_copy();
+				arguments = b.arguments;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<Call> typed_deep_copy() const
+		{
+			return std::make_unique<Call>(*this);
+		}
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		virtual std::optional<TypeRepresentation> get_expression_type() const override
+		{
+			if (callee != nullptr)
+			{
+				std::shared_ptr<ProcedureType> c = get<ProcedureType>(*callee->get_expression_type());
+				if (c != nullptr)
+				{
+					return c->return_type;
+				}
+			}
+			return std::nullopt;
+		}
+		virtual TerminalData get_first_terminal() const override
+		{
+			return callee->get_first_terminal();
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return arguments.get_last_terminal();
 		}
 	};
 
@@ -1036,6 +1088,7 @@ export namespace minairo
 	public:
 		virtual void visit(Binary& binary) = 0;
 		virtual void visit(BuildInTypeDeclaration& binary) = 0;
+		virtual void visit(Call& call) = 0;
 		virtual void visit(Grouping& grouping) = 0;
 		virtual void visit(InitializerList& literal) = 0;
 		virtual void visit(Literal& literal) = 0;
@@ -1054,6 +1107,7 @@ export namespace minairo
 	public:
 		virtual void visit(Binary const& binary) = 0;
 		virtual void visit(BuildInTypeDeclaration const& binary) = 0;
+		virtual void visit(Call const& call) = 0;
 		virtual void visit(Grouping const& grouping) = 0;
 		virtual void visit(InitializerList const& literal) = 0;
 		virtual void visit(Literal const& literal) = 0;
@@ -1090,6 +1144,10 @@ void minairo::Binary::accept(ExpressionVisitor& visitor)
 	visitor.visit(*this);
 }
 void minairo::BuildInTypeDeclaration::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+void minairo::Call::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
@@ -1147,6 +1205,10 @@ void minairo::Binary::accept(ExpressionConstVisitor& visitor) const
 	visitor.visit(*this);
 }
 void minairo::BuildInTypeDeclaration::accept(ExpressionConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void minairo::Call::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
