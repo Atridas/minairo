@@ -190,6 +190,8 @@ export namespace minairo
 			return (double)std::get<double>(value);
 		case BuildInType::Bool:
 			return std::get<bool>(value);
+		case BuildInType::String:
+			return std::get<std::string>(value);
 		default:
 			assert(false);
 			return (int32_t)0;

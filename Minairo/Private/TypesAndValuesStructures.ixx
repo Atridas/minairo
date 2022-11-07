@@ -31,6 +31,8 @@ export namespace minairo
 		U8, U16, U32, U64,
 		F32, F64,
 
+		String,
+
 		InitializerList,
 		Typedef
 	};
@@ -153,6 +155,8 @@ export namespace minairo
 		Value(float const& i) : Base{ i } {};
 		Value(double const& i) : Base{ i } {};
 		Value(bool const& i) : Base{ i } {};
+		Value(std::string const& i) : Base{ i } {};
+		Value(std::string&& i) : Base{ std::move(i) } {};
 		Value(BuildInType const& i) : Base{ (TypeRepresentation)i } {};
 		Value(std::shared_ptr<ComplexType> const& i) : Base{ (TypeRepresentation)i } {};
 		Value(std::shared_ptr<ComplexType>&& i) : Base{ (TypeRepresentation)std::move(i) } {};

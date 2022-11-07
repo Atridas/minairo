@@ -143,6 +143,10 @@ namespace minairo
 				ss << value;
 				return ss.str();
 			}
+			else if constexpr (std::is_same_v<T, std::string>)
+			{
+				return value;
+			}
 			else if constexpr (std::is_same_v<T, TypeRepresentation>)
 			{
 				std::stringstream ss;

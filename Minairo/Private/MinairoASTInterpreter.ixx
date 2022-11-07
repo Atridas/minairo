@@ -88,7 +88,7 @@ export namespace minairo
 			try {
 				procedure->body->accept(*this);
 			}
-			catch (ReturnException e)
+			catch (ReturnException)
 			{
 				returned = true;
 			}

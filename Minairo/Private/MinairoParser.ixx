@@ -508,6 +508,34 @@ namespace minairo
 		return result;
 	}
 
+	ExpressionPtr string_literal(Scanner& scanner)
+	{
+		auto result = std::make_unique<Literal>();
+		result->terminal = consume(Terminal::STRING_LITERAL, scanner);
+
+		assert(result->terminal.text.size() >= 2);
+		assert(result->terminal.text[0] == '"');
+		assert(result->terminal.text[result->terminal.text.size() - 1] == '"');
+
+
+		std::stringstream ss;
+		for (int i = 1; i < (int)result->terminal.text.size() - 1; ++i)
+		{
+			if (result->terminal.text[i] == '\\')
+			{
+				assert(false); // TODO
+			}
+			else
+			{
+				ss << result->terminal.text[i];
+			}
+		}
+		result->value = std::move(ss).str();
+		result->type_representation = BuildInType::String;
+
+		return result;
+	}
+
 	ExpressionPtr table_type_declaration(Scanner& scanner)
 	{
 		auto result = std::make_unique<TableDeclaration>();
@@ -771,6 +799,7 @@ namespace minairo
 		pratt_prefixes[(int)Terminal::OP_NOT] = &unary;
 		pratt_prefixes[(int)Terminal::OP_BIT_NOT] = &unary;
 		pratt_prefixes[(int)Terminal::INTEGER_LITERAL] = &integer_literal;
+		pratt_prefixes[(int)Terminal::STRING_LITERAL] = &string_literal;
 		pratt_prefixes[(int)Terminal::IDENTIFIER] = &identifier_literal;
 		pratt_prefixes[(int)Terminal::BRACKET_CURLY_OPEN] = &initializer_list;
 
