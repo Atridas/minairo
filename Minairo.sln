@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Minairo", "Minairo\Minairo.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CM", "CM\CM.vcxproj", "{D0521A23-025F-4FBC-9751-CB681049A6E1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tests", "Tests\Tests.vcxproj", "{6BCAD955-0710-4779-815C-D9AAC1617840}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{D0521A23-025F-4FBC-9751-CB681049A6E1}.Release|x64.Build.0 = Release|x64
 		{D0521A23-025F-4FBC-9751-CB681049A6E1}.Release|x86.ActiveCfg = Release|Win32
 		{D0521A23-025F-4FBC-9751-CB681049A6E1}.Release|x86.Build.0 = Release|Win32
+		{6BCAD955-0710-4779-815C-D9AAC1617840}.Debug|x64.ActiveCfg = Debug|x64
+		{6BCAD955-0710-4779-815C-D9AAC1617840}.Debug|x64.Build.0 = Debug|x64
+		{6BCAD955-0710-4779-815C-D9AAC1617840}.Debug|x86.ActiveCfg = Debug|Win32
+		{6BCAD955-0710-4779-815C-D9AAC1617840}.Debug|x86.Build.0 = Debug|Win32
+		{6BCAD955-0710-4779-815C-D9AAC1617840}.Release|x64.ActiveCfg = Release|x64
+		{6BCAD955-0710-4779-815C-D9AAC1617840}.Release|x64.Build.0 = Release|x64
+		{6BCAD955-0710-4779-815C-D9AAC1617840}.Release|x86.ActiveCfg = Release|Win32
+		{6BCAD955-0710-4779-815C-D9AAC1617840}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

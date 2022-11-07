@@ -277,7 +277,7 @@ namespace minairo
 		return "function TODO";
 	}
 
-	void interpret(VMImpl* vm, std::string_view code)
+	void interpret(VMImpl* vm, std::string_view code, std::ostream &out)
 	{
 		assert(vm != nullptr);
 
@@ -297,7 +297,7 @@ namespace minairo
 			expression->accept(interpreter);
 			vm->globals = interpreter.get_globals();
 
-			std::cout << print_value(interpreter.get_last_expression_value()) << std::endl;
+			out << print_value(interpreter.get_last_expression_value()) << std::endl;
 			
 		}
 		catch (ParseException pe)
