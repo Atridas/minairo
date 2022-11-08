@@ -138,7 +138,7 @@ export namespace minairo
 		TupleType parameters;
 
 		TypeRepresentation return_type;
-		bool is_function;
+		bool is_function; // Change to "is_pure"
 
 		void set_name(std::string_view _name) override
 		{
@@ -298,6 +298,12 @@ export namespace minairo
 	TypeRepresentation get_type_representation<bool>()
 	{
 		return BuildInType::Bool;
+	}
+
+	template<>
+	TypeRepresentation get_type_representation<std::string>()
+	{
+		return BuildInType::String;
 	}
 
 	template<typename T>

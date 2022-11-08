@@ -325,6 +325,9 @@ export namespace minairo
 			case BuildInType::Typedef:
 				value = BuildInType::Void;
 				return (void*)&std::get<TypeRepresentation>(value);
+			case BuildInType::Void:
+				//value = BuildInType::Void;
+				return nullptr;
 			default:
 				assert(false);
 				return nullptr;

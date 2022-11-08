@@ -157,10 +157,14 @@ export namespace minairo
 		{
 			return type.parameters.get_types();
 		}
+		ProcedureType get_type() const noexcept override
+		{
+			return type;
+		}
 
 		void call(void* return_value, std::span<void*> _arguments) const noexcept override
 		{
-			// TODO
+			assert(false);
 		}
 
 		operator Value() const
@@ -826,6 +830,16 @@ export namespace minairo
 			if (info != globals.variables.end())
 			{
 				return info->second;
+			}
+
+			if (auto f = function_map.get(identifier.text))
+			{
+				assert(f->size() == 1);
+				VariableInfo result;
+				result.constant = true;
+				result.index = -1;
+				result.type = (*f)[0]->get_type();
+				return result;
 			}
 
 			throw unknown_literal_exception(identifier);

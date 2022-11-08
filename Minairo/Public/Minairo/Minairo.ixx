@@ -10,7 +10,7 @@ namespace minairo
 
 	export using VM = VMImpl*;
 
-	export API VM create_VM();
+	export API VM create_VM(std::ostream& out = std::cout);
 	export API void destroy_VM(VM state);
 
 	export API void interpret(std::string_view code);

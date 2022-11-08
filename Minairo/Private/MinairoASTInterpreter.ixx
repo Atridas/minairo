@@ -26,8 +26,9 @@ export namespace minairo
 	class Interpreter final : public ExpressionConstVisitor, public StatementConstVisitor
 	{
 	public:
-		explicit Interpreter(int _number_of_globals = 0, int _number_of_tuples = 0)
-			: number_of_globals(_number_of_globals)
+		explicit Interpreter(FunctionMap& _function_map, int _number_of_globals = 0, int _number_of_tuples = 0)
+			: function_map(_function_map)
+			, number_of_globals(_number_of_globals)
 			, number_of_tuples(_number_of_tuples)
 		{}
 
@@ -74,28 +75,42 @@ export namespace minairo
 			call.callee->accept(*this);
 			std::shared_ptr<FunctionRepresentation> callee = get<FunctionRepresentation>(last_expression_value);
 			assert(callee != nullptr);
-			assert(dynamic_cast<Procedure*>(callee.get()) != nullptr);
-			Procedure* procedure = static_cast<Procedure*>(callee.get());
+
 			call.arguments.accept(*this);
 			std::shared_ptr<Tuple> arguments = get<Tuple>(last_expression_value);
 
-			std::vector<Value> outer_variables = std::move(variables);
-
-			variables = std::move(arguments->fields);
-
-			bool returned = false;
-
-			try {
-				procedure->body->accept(*this);
-			}
-			catch (ReturnException)
+			if(Procedure* procedure = dynamic_cast<Procedure*>(callee.get()))
 			{
-				returned = true;
+				std::vector<Value> outer_variables = std::move(variables);
+				variables = std::move(arguments->fields);
+
+				bool returned = false;
+
+				try {
+					procedure->body->accept(*this);
+				}
+				catch (ReturnException)
+				{
+					returned = true;
+				}
+
+				assert(returned || procedure->get_return_type() == BuildInType::Void);
+				variables = std::move(outer_variables);
 			}
+			else
+			{
+				std::vector<void*> args;
+				args.reserve(arguments->fields.size());
+				for (Value& argument : arguments->fields)
+				{
+					args.push_back(get_ptr(argument));
+				}
 
-			assert(returned || procedure->get_return_type() == BuildInType::Void);
+				TypeRepresentation return_type = *call.get_expression_type();
+				void* result_ptr = set_to_type(last_expression_value, return_type);
 
-			variables = std::move(outer_variables);
+				callee->call(result_ptr, args);
+			}
 		}
 
 		void visit(Grouping const& grouping) override
@@ -277,8 +292,18 @@ export namespace minairo
 			}
 			else if (variable_read.index == -1)
 			{
-				assert(globals.variables.find((std::string)variable_read.identifier.text) != globals.variables.end());
-				last_expression_value = globals.variables[(std::string)variable_read.identifier.text];
+				auto global = globals.variables.find((std::string)variable_read.identifier.text);
+				if (global != globals.variables.end())
+				{
+					last_expression_value = globals.variables[(std::string)variable_read.identifier.text];
+				}
+				else
+				{
+					auto f = function_map.get(variable_read.identifier.text);
+					assert(f != nullptr);
+					assert(f->size() == 1);
+					last_expression_value = (Value)((*f)[0]->deep_copy());
+				}
 			}
 			else
 			{
@@ -385,6 +410,7 @@ export namespace minairo
 		std::vector<Value> variables;
 		Globals globals;
 
+		FunctionMap& function_map;
 		int number_of_globals;
 		int number_of_tuples;
 	};

@@ -22,6 +22,7 @@ export namespace minairo
 		virtual TypeRepresentation get_return_type() const noexcept = 0;
 		virtual bool has_parameter_types(std::span<TypeRepresentation const> _parameter_types) const noexcept = 0;
 		virtual std::span<TypeRepresentation const> get_parameter_types() const noexcept = 0;
+		virtual ProcedureType get_type() const noexcept = 0;
 
 		virtual void call(void* return_value, std::span<void*> _arguments) const noexcept = 0;
 
@@ -31,7 +32,7 @@ export namespace minairo
 		friend class FunctionMap;
 	};
 
-	template<typename Ret, typename... Params>
+	template<bool Pure, typename Ret, typename... Params>
 	class TypedFunctionRepresentation final : public FunctionRepresentation
 	{
 	public:
@@ -42,7 +43,7 @@ export namespace minairo
 			return get_type_representation<Ret>();
 		}
 
-		void set_callable(Ret(*_callable)(Params...))
+		void set_callable(std::function<Ret(Params...)> _callable)
 		{
 			callable = std::move(_callable);
 		}
@@ -69,6 +70,27 @@ export namespace minairo
 			static TypeRepresentation params[sizeof...(Params)] = { get_type_representation<Params>()... };
 			return params;
 		}
+		ProcedureType get_type() const noexcept override
+		{
+			ProcedureType result;
+			result.is_function = Pure;
+			result.return_type = get_type_representation<Ret>();
+			std::string c = "a";
+			for (TypeRepresentation const& t : get_parameter_types())
+			{
+				result.parameters.add_field(c, t);
+
+				if (c[0] == 'z')
+					c[0] = 'A';
+				else if (c[0] == 'Z')
+					assert(false); // TODO
+				else
+					++c[0];
+
+			}
+
+			return result;
+		}
 
 
 		void call(void* return_value, std::span<void*> _arguments) const noexcept override
@@ -91,7 +113,7 @@ export namespace minairo
 
 		std::unique_ptr<FunctionRepresentation> deep_copy() const override
 		{
-			return std::make_unique<TypedFunctionRepresentation<Ret, Params...>>(*this);
+			return std::make_unique<TypedFunctionRepresentation<Pure, Ret, Params...>>(*this);
 		}
 
 	protected:
@@ -102,7 +124,7 @@ export namespace minairo
 		}
 
 	private:
-		Ret(*callable)(Params...);
+		std::function<Ret(Params...)> callable;
 
 
 		template<typename... T>
