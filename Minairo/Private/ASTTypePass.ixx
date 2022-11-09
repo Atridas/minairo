@@ -674,6 +674,30 @@ export namespace minairo
 			expression_statement.exp->accept(*this);
 		}
 
+		void visit(IfStatement& if_statement) override
+		{
+			push_variable_block();
+
+			if(if_statement.initialization != nullptr)
+				if_statement.initialization->accept(*this);
+			if(if_statement.condition != nullptr)
+				if_statement.condition->accept(*this);
+
+			if_statement.yes->accept(*this);
+			if(if_statement.no != nullptr)
+				if_statement.no->accept(*this);
+			
+
+
+			if (if_statement.initialization != nullptr && if_statement.condition == nullptr && *if_statement.initialization->type != BuildInType::Bool)
+				throw message_exception("If statement condition must be of type boolean", *if_statement.initialization);
+
+			if (if_statement.condition != nullptr && if_statement.condition->get_expression_type() != BuildInType::Bool)
+				throw message_exception("If statement condition must be of type boolean", *if_statement.condition);
+
+			pop_variable_block();
+		}
+
 		void visit(ReturnStatement& return_statement) override
 		{
 			if(!allow_return)
@@ -780,6 +804,15 @@ export namespace minairo
 					variable_blocks.back().variables[(std::string)variable_definition.variable.text] = info;
 				}
 			}
+		}
+
+		void visit(WhileStatement& while_statement) override
+		{
+			while_statement.condition->accept(*this);
+			while_statement.code->accept(*this);
+
+			if (while_statement.condition->get_expression_type() != BuildInType::Bool)
+				throw message_exception("While statement condition must be of type boolean", *while_statement.condition);
 		}
 
 	private:

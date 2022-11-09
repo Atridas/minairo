@@ -338,6 +338,28 @@ export namespace minairo
 			}
 		}
 
+		void visit(IfStatement const& if_statement) override
+		{
+			int current_stack_size = (int)variables.size();
+
+			if (if_statement.initialization != nullptr)
+				if_statement.initialization->accept(*this);
+
+			if (if_statement.condition != nullptr)
+				if_statement.condition->accept(*this);
+
+			if(*get<bool>(last_expression_value))
+			{
+				if_statement.yes->accept(*this);
+			}
+			else if(if_statement.no != nullptr)
+			{
+				if_statement.no->accept(*this);
+			}
+
+			variables.resize(current_stack_size);
+		}
+
 		void visit(ReturnStatement const &return_statement) override
 		{
 			return_statement.exp->accept(*this);
@@ -403,6 +425,26 @@ export namespace minairo
 			}
 		}
 
+		void visit(WhileStatement const& while_statement) override
+		{
+			if (while_statement.do_while)
+			{
+				if (while_statement.condition != nullptr)
+					while_statement.condition->accept(*this);
+
+				if (!*get<bool>(last_expression_value))
+				{
+					return;
+				}
+			}
+
+			do
+			{
+				while_statement.code->accept(*this);
+				while_statement.condition->accept(*this);
+			} while (*get<bool>(last_expression_value));
+
+		}
 
 	private:
 		Value last_expression_value;

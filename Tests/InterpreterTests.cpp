@@ -73,4 +73,43 @@ namespace InterpreterTests
 			RunAndExpectPrint(R"codi-minairo(print("hola");)codi-minairo", "hola");
 		}
 	};
+
+
+	TEST_CLASS(Statements)
+	{
+	public:
+
+		TEST_METHOD(If)
+		{
+			RunAndExpectPrint(R"codi-minairo(if(true) print("yes");)codi-minairo", "yes");
+			RunAndExpectPrint(R"codi-minairo(if(false) print("yes");)codi-minairo", "");
+			RunAndExpectPrint(R"codi-minairo(if(true) print("yes"); else print("no");)codi-minairo", "yes");
+			RunAndExpectPrint(R"codi-minairo(if(false) print("yes"); else print("no");)codi-minairo", "no");
+		}
+
+		TEST_METHOD(If_BoolInitializer)
+		{
+			RunAndExpectPrint(R"codi-minairo(if(a :: true) print("yes");)codi-minairo", "yes");
+			RunAndExpectPrint(R"codi-minairo(if(a :: false) print("yes");)codi-minairo", "");
+			RunAndExpectPrint(R"codi-minairo(if(a :: true) print("yes"); else print("no");)codi-minairo", "yes");
+			RunAndExpectPrint(R"codi-minairo(if(a :: false) print("yes"); else print("no");)codi-minairo", "no");
+			RunAndExpectPrint(R"codi-minairo(if(a := true) print("yes");)codi-minairo", "yes");
+			RunAndExpectPrint(R"codi-minairo(if(a := false) print("yes");)codi-minairo", "");
+			RunAndExpectPrint(R"codi-minairo(if(a := true) print("yes"); else print("no");)codi-minairo", "yes");
+			RunAndExpectPrint(R"codi-minairo(if(a := false) print("yes"); else print("no");)codi-minairo", "no");
+		}
+
+		TEST_METHOD(If_StringInitializer)
+		{
+			RunAndExpectPrint(R"codi-minairo(if(a :: "catacrocker"; true) print(a);)codi-minairo", "catacrocker");
+			RunAndExpectPrint(R"codi-minairo(if(a :: "catacrocker"; false) print(a);)codi-minairo", "");
+			RunAndExpectPrint(R"codi-minairo(if(a :: "catacrocker"; true) print(a); else print("no");)codi-minairo", "catacrocker");
+			RunAndExpectPrint(R"codi-minairo(if(a :: "catacrocker"; false) print(a); else print("no");)codi-minairo", "no");
+
+			RunAndExpectPrint(R"codi-minairo(if(a :: "catacrocker"; true) print("yes");)codi-minairo", "yes");
+			RunAndExpectPrint(R"codi-minairo(if(a :: "catacrocker"; false) print("yes");)codi-minairo", "");
+			RunAndExpectPrint(R"codi-minairo(if(a :: "catacrocker"; true) print("yes"); else print(a);)codi-minairo", "yes");
+			RunAndExpectPrint(R"codi-minairo(if(a :: "catacrocker"; false) print("yes"); else print(a);)codi-minairo", "catacrocker");
+		}
+	};
 }

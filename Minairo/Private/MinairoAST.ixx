@@ -1011,55 +1011,7 @@ export namespace minairo
 		void accept(StatementConstVisitor& visitor) const override;
 		virtual TerminalData get_first_terminal() const override
 		{
-			return exp->get_last_terminal();
-		}
-		virtual TerminalData get_last_terminal() const override
-		{
-			return semicolon;
-		}
-	};
-
-	class ReturnStatement final : public Statement
-	{
-	public:
-		TerminalData return_keyword;
-		std::unique_ptr<Expression> exp;
-		TerminalData semicolon;
-
-		ReturnStatement() = default;
-		ReturnStatement(ReturnStatement&&) = default;
-		ReturnStatement& operator=(ReturnStatement&&) = default;
-		ReturnStatement(ReturnStatement const& b)
-			: return_keyword(b.return_keyword)
-			, exp(b.exp->deep_copy())
-			, semicolon(b.semicolon)
-		{
-		}
-		ReturnStatement& operator=(ReturnStatement const& b)
-		{
-			if (this != &b)
-			{
-				return_keyword = b.return_keyword;
-				exp = b.exp->deep_copy();
-				semicolon = b.semicolon;
-			}
-			return *this;
-		}
-
-		std::unique_ptr<Statement> deep_copy() const override
-		{
-			return typed_deep_copy();
-		}
-		std::unique_ptr<ReturnStatement> typed_deep_copy() const
-		{
-			return std::make_unique<ReturnStatement>(*this);
-		}
-
-		void accept(StatementVisitor& visitor) override;
-		void accept(StatementConstVisitor& visitor) const override;
-		virtual TerminalData get_first_terminal() const override
-		{
-			return return_keyword;
+			return exp->get_first_terminal();
 		}
 		virtual TerminalData get_last_terminal() const override
 		{
@@ -1070,7 +1022,8 @@ export namespace minairo
 	class VariableDefinition final : public Statement
 	{
 	public:
-		TerminalData variable, semicolon;
+		TerminalData variable;
+		std::optional<TerminalData> semicolon;
 		std::optional<TypeRepresentation> type;
 		std::unique_ptr<Expression> type_definition;
 		std::unique_ptr<Expression> initialization;
@@ -1122,7 +1075,162 @@ export namespace minairo
 		}
 		virtual TerminalData get_last_terminal() const override
 		{
+			return semicolon.has_value() ? *semicolon : initialization != nullptr ? initialization->get_last_terminal() : type_definition->get_last_terminal();
+		}
+	};
+
+	class IfStatement final : public Statement
+	{
+	public:
+		TerminalData if_keyword;
+		std::unique_ptr<VariableDefinition> initialization;
+		std::unique_ptr<Expression> condition;
+		std::unique_ptr<Statement> yes, no;
+
+		IfStatement() = default;
+		IfStatement(IfStatement&&) = default;
+		IfStatement& operator=(IfStatement&&) = default;
+		IfStatement(IfStatement const& b)
+			: if_keyword(b.if_keyword)
+			, initialization(b.initialization != nullptr ? b.initialization->typed_deep_copy() : nullptr)
+			, condition(b.condition != nullptr ? b.condition->deep_copy() : nullptr)
+			, yes(b.yes->deep_copy())
+			, no(b.no != nullptr ? b.no->deep_copy() : nullptr)
+		{
+		}
+		IfStatement& operator=(IfStatement const& b)
+		{
+			if (this != &b)
+			{
+				if_keyword = b.if_keyword;
+				initialization = b.initialization != nullptr ? b.initialization->typed_deep_copy() : nullptr;
+				condition = b.condition != nullptr ? b.condition->deep_copy() : nullptr;
+				yes = b.yes->deep_copy();
+				no = b.no != nullptr ? b.no->deep_copy() : nullptr;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Statement> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<IfStatement> typed_deep_copy() const
+		{
+			return std::make_unique<IfStatement>(*this);
+		}
+
+		void accept(StatementVisitor& visitor) override;
+		void accept(StatementConstVisitor& visitor) const override;
+		virtual TerminalData get_first_terminal() const override
+		{
+			return if_keyword;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return (no != nullptr ? no : yes)->get_last_terminal();
+		}
+	};
+
+	class ReturnStatement final : public Statement
+	{
+	public:
+		TerminalData return_keyword;
+		std::unique_ptr<Expression> exp;
+		TerminalData semicolon;
+
+		ReturnStatement() = default;
+		ReturnStatement(ReturnStatement&&) = default;
+		ReturnStatement& operator=(ReturnStatement&&) = default;
+		ReturnStatement(ReturnStatement const& b)
+			: return_keyword(b.return_keyword)
+			, exp(b.exp->deep_copy())
+			, semicolon(b.semicolon)
+		{
+		}
+		ReturnStatement& operator=(ReturnStatement const& b)
+		{
+			if (this != &b)
+			{
+				return_keyword = b.return_keyword;
+				exp = b.exp->deep_copy();
+				semicolon = b.semicolon;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Statement> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<ReturnStatement> typed_deep_copy() const
+		{
+			return std::make_unique<ReturnStatement>(*this);
+		}
+
+		void accept(StatementVisitor& visitor) override;
+		void accept(StatementConstVisitor& visitor) const override;
+		virtual TerminalData get_first_terminal() const override
+		{
+			return return_keyword;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
 			return semicolon;
+		}
+	};
+
+	class WhileStatement final : public Statement
+	{
+	public:
+		TerminalData while_keyword;
+		std::optional<TerminalData> close_parenthesis;
+		std::unique_ptr<Expression> condition;
+		std::unique_ptr<Statement> code;
+		bool do_while;
+
+		WhileStatement() = default;
+		WhileStatement(WhileStatement&&) = default;
+		WhileStatement& operator=(WhileStatement&&) = default;
+		WhileStatement(WhileStatement const& b)
+			: while_keyword(b.while_keyword)
+			, close_parenthesis(b.close_parenthesis)
+			, condition(b.condition->deep_copy())
+			, code(b.code->deep_copy())
+			, do_while(b.do_while)
+		{
+		}
+		WhileStatement& operator=(WhileStatement const& b)
+		{
+			if (this != &b)
+			{
+				while_keyword = b.while_keyword;
+				close_parenthesis = b.close_parenthesis;
+				condition = b.condition->deep_copy();
+				code = b.code->deep_copy();
+				do_while = b.do_while;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Statement> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<WhileStatement> typed_deep_copy() const
+		{
+			return std::make_unique<WhileStatement>(*this);
+		}
+
+		void accept(StatementVisitor& visitor) override;
+		void accept(StatementConstVisitor& visitor) const override;
+		virtual TerminalData get_first_terminal() const override
+		{
+			return while_keyword;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return do_while ? *close_parenthesis : code->get_last_terminal();
 		}
 	};
 
@@ -1174,16 +1282,20 @@ export namespace minairo
 	public:
 		virtual void visit(Block& binary) = 0;
 		virtual void visit(ExpressionStatement& binary) = 0;
+		virtual void visit(IfStatement& binary) = 0;
 		virtual void visit(ReturnStatement& binary) = 0;
 		virtual void visit(VariableDefinition& binary) = 0;
+		virtual void visit(WhileStatement& binary) = 0;
 	};
 	class StatementConstVisitor
 	{
 	public:
 		virtual void visit(Block const& binary) = 0;
 		virtual void visit(ExpressionStatement const& binary) = 0;
+		virtual void visit(IfStatement const& binary) = 0;
 		virtual void visit(ReturnStatement const& binary) = 0;
 		virtual void visit(VariableDefinition const& binary) = 0;
+		virtual void visit(WhileStatement const& binary) = 0;
 	};
 }
 
@@ -1319,11 +1431,19 @@ void minairo::ExpressionStatement::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
 }
+void minairo::IfStatement::accept(StatementVisitor& visitor)
+{
+	visitor.visit(*this);
+}
 void minairo::ReturnStatement::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
 }
 void minairo::VariableDefinition::accept(StatementVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+void minairo::WhileStatement::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
 }
@@ -1336,11 +1456,19 @@ void minairo::ExpressionStatement::accept(StatementConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
+void minairo::IfStatement::accept(StatementConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
 void minairo::ReturnStatement::accept(StatementConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
 void minairo::VariableDefinition::accept(StatementConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void minairo::WhileStatement::accept(StatementConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

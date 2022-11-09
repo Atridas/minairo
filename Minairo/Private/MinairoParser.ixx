@@ -29,6 +29,8 @@ namespace minairo
 	export struct ParseException;
 
 	StatementPtr statement(Scanner& scanner);
+	bool peek_variable_definition(Scanner& scanner);
+	std::unique_ptr<VariableDefinition> variable_definition(Scanner& scanner, bool consume_semicolon = true);
 
 	// ------------------------------------------------------------------------------------
 	// ------------------------------------------------------------------------------------
@@ -536,6 +538,19 @@ namespace minairo
 		return result;
 	}
 
+	ExpressionPtr bool_literal(Scanner& scanner)
+	{
+		auto result = std::make_unique<Literal>();
+		result->terminal = consume(Terminal::BOOL_LITERAL, scanner);
+		if (result->terminal.text == "true")
+			result->value = true;
+		else
+			result->value = false;
+		result->type_representation = BuildInType::Bool;
+		
+		return result;
+	}
+
 	ExpressionPtr table_type_declaration(Scanner& scanner)
 	{
 		auto result = std::make_unique<TableDeclaration>();
@@ -798,6 +813,7 @@ namespace minairo
 		pratt_prefixes[(int)Terminal::OP_ADD] = &unary;
 		pratt_prefixes[(int)Terminal::OP_NOT] = &unary;
 		pratt_prefixes[(int)Terminal::OP_BIT_NOT] = &unary;
+		pratt_prefixes[(int)Terminal::BOOL_LITERAL] = &bool_literal;
 		pratt_prefixes[(int)Terminal::INTEGER_LITERAL] = &integer_literal;
 		pratt_prefixes[(int)Terminal::STRING_LITERAL] = &string_literal;
 		pratt_prefixes[(int)Terminal::IDENTIFIER] = &identifier_literal;
@@ -878,11 +894,69 @@ namespace minairo
 	// ------------------------------------------------------------------------------------
 	// ------------------------------------------------------------------------------------
 
+	StatementPtr block(Scanner& scanner)
+	{
+		auto block = std::make_unique<Block>();
+		block->open = consume(Terminal::BRACKET_CURLY_OPEN, scanner);
+
+		while (scanner.peek_next_symbol().type != Terminal::BRACKET_CURLY_CLOSE)
+		{
+			block->statements.emplace_back(statement(scanner));
+
+			if (scanner.peek_next_symbol().type == Terminal::END)
+			{
+				throw unexpected_terminal_exception(Terminal::BRACKET_CURLY_CLOSE, scanner.peek_next_symbol());
+			}
+		}
+		block->close = consume(Terminal::BRACKET_CURLY_CLOSE, scanner);
+		return block;
+	}
+
+	// ------------------------------------------------------------------------------------
+
 	StatementPtr expression_statement(Scanner& scanner)
 	{
 		auto result = std::make_unique<ExpressionStatement>();
 		result->exp = expression(scanner);
 		result->semicolon = consume(Terminal::OP_SEMICOLON, scanner);
+
+		return result;
+	}
+
+	// ------------------------------------------------------------------------------------
+
+	StatementPtr if_statement(Scanner& scanner)
+	{
+		auto result = std::make_unique<IfStatement>();
+
+		result->if_keyword = consume(Terminal::WK_IF, scanner);
+
+		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
+
+
+		if (peek_variable_definition(scanner))
+		{
+			result->initialization = variable_definition(scanner, false);
+			if (scanner.peek_next_symbol().type == Terminal::OP_SEMICOLON)
+			{
+				result->initialization->semicolon = consume(Terminal::OP_SEMICOLON, scanner);
+				result->condition = expression(scanner); // TODO not variable definitions!
+			}
+		}
+		else
+		{
+			result->condition = expression(scanner); // TODO not variable definitions!
+		}
+
+		consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
+
+		result->yes = statement(scanner);
+
+		if (scanner.peek_next_symbol().type == Terminal::WK_ELSE)
+		{
+			consume(Terminal::WK_ELSE, scanner);
+			result->no = statement(scanner);
+		}
 
 		return result;
 	}
@@ -901,7 +975,48 @@ namespace minairo
 
 	// ------------------------------------------------------------------------------------
 
-	StatementPtr variable_definition(Scanner& scanner)
+	StatementPtr while_statement(Scanner& scanner)
+	{
+		auto result = std::make_unique<WhileStatement>();
+
+		if (scanner.peek_next_symbol().type == Terminal::WK_DO)
+		{
+			result->do_while = true;
+			result->while_keyword = consume(Terminal::WK_DO, scanner);
+		}
+		else
+		{
+			result->do_while = false;
+			result->while_keyword = consume(Terminal::WK_WHILE, scanner);
+
+			consume(Terminal::BRACKET_ROUND_OPEN, scanner);
+			result->condition = expression(scanner);
+			consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
+		}
+
+		result->code = statement(scanner);
+
+		if (result->do_while)
+		{
+			consume(Terminal::WK_WHILE, scanner);
+			consume(Terminal::BRACKET_ROUND_OPEN, scanner);
+			result->condition = expression(scanner);
+			result->close_parenthesis = consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
+			if(scanner.peek_next_symbol().type == Terminal::OP_SEMICOLON)
+				consume(Terminal::OP_SEMICOLON, scanner); // Optional(?)
+		}
+
+		return result;
+	}
+
+	// ------------------------------------------------------------------------------------
+
+	bool peek_variable_definition(Scanner& scanner)
+	{
+		return scanner.peek_next_symbol().type == Terminal::IDENTIFIER && scanner.peek_next_symbol(1).type == Terminal::OP_COLON;
+	}
+
+	std::unique_ptr<VariableDefinition> variable_definition(Scanner& scanner, bool consume_semicolon)
 	{
 		auto result = std::make_unique<VariableDefinition>();
 		result->variable = consume(Terminal::IDENTIFIER, scanner);
@@ -940,36 +1055,21 @@ namespace minairo
 			assert(result->type_definition != nullptr); // TODO make proper error?
 		}
 
-		result->semicolon = consume(Terminal::OP_SEMICOLON, scanner);
+		if(consume_semicolon)
+			result->semicolon = consume(Terminal::OP_SEMICOLON, scanner);
 
 		return result;
 	}
 
 	// ------------------------------------------------------------------------------------
 
-	StatementPtr block(Scanner& scanner)
-	{
-		auto block = std::make_unique<Block>();
-		block->open = consume(Terminal::BRACKET_CURLY_OPEN, scanner);
-
-		while (scanner.peek_next_symbol().type != Terminal::BRACKET_CURLY_CLOSE)
-		{
-			block->statements.emplace_back(statement(scanner));
-
-			if (scanner.peek_next_symbol().type == Terminal::END)
-			{
-				throw unexpected_terminal_exception(Terminal::BRACKET_CURLY_CLOSE, scanner.peek_next_symbol());
-			}
-		}
-		block->close = consume(Terminal::BRACKET_CURLY_CLOSE, scanner);
-		return block;
-	}
-
-	// ------------------------------------------------------------------------------------
-
 	StatementPtr statement(Scanner& scanner)
 	{
-		if (scanner.peek_next_symbol().type == Terminal::WK_RETURN)
+		if (scanner.peek_next_symbol().type == Terminal::WK_IF)
+		{
+			return if_statement(scanner);
+		}
+		else if (scanner.peek_next_symbol().type == Terminal::WK_RETURN)
 		{
 			return return_statement(scanner);
 		}
@@ -977,7 +1077,7 @@ namespace minairo
 		{
 			return block(scanner);
 		}
-		else if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER && scanner.peek_next_symbol(1).type == Terminal::OP_COLON)
+		else if (peek_variable_definition(scanner))
 		{
 			return variable_definition(scanner);
 		}
