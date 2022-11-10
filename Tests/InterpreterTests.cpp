@@ -111,5 +111,24 @@ namespace InterpreterTests
 			RunAndExpectPrint(R"codi-minairo(if(a :: "catacrocker"; true) print("yes"); else print(a);)codi-minairo", "yes");
 			RunAndExpectPrint(R"codi-minairo(if(a :: "catacrocker"; false) print("yes"); else print(a);)codi-minairo", "catacrocker");
 		}
+
+		TEST_METHOD(While)
+		{
+			RunAndExpect(R"codi-minairo(a:= 0; while(a == 0) a = a + 1; a;)codi-minairo", "1");
+			RunAndExpect(R"codi-minairo(a:= 0; while(a != 5) a = a + 1; a;)codi-minairo", "5");
+
+			RunAndExpectPrint(R"codi-minairo(a:= 0; while(a != 5) { print("a"); a = a + 1; })codi-minairo", "aaaaa");
+			RunAndExpectPrint(R"codi-minairo(a:= 0; while(a == 1) { print("a"); a = a + 1; })codi-minairo", "");
+		}
+
+		TEST_METHOD(DoWhile)
+		{
+			RunAndExpect(R"codi-minairo(a:= 0; do a = a + 1; while(a == 0) a;)codi-minairo", "1");
+			RunAndExpect(R"codi-minairo(a:= 0; do a = a + 1; while(a != 5); a;)codi-minairo", "5");
+
+			RunAndExpectPrint(R"codi-minairo(a:= 0; do { print("a"); a = a + 1; } while(a != 5))codi-minairo", "aaaaa");
+			RunAndExpectPrint(R"codi-minairo(a:= 0; do { print("a"); a = a + 1; } while(a == 1))codi-minairo", "aa");
+		}
+
 	};
 }

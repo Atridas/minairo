@@ -31,16 +31,22 @@ namespace minairo
 			auto sub = std::make_unique<TypedFunctionRepresentation<true, Ret, Param1, Param2>>();
 			auto mul = std::make_unique<TypedFunctionRepresentation<true, Ret, Param1, Param2>>();
 			auto div = std::make_unique<TypedFunctionRepresentation<true, Ret, Param1, Param2>>();
+			auto eq = std::make_unique<TypedFunctionRepresentation<true, bool, Param1, Param2>>();
+			auto neq = std::make_unique<TypedFunctionRepresentation<true, bool, Param1, Param2>>();
 
 			add->set_callable([](Param1 a, Param2 b) -> Ret { return (Ret)a + (Ret)b; });
 			sub->set_callable([](Param1 a, Param2 b) -> Ret { return (Ret)a - (Ret)b; });
 			mul->set_callable([](Param1 a, Param2 b) -> Ret { return (Ret)a * (Ret)b; });
 			div->set_callable([](Param1 a, Param2 b) -> Ret { return (Ret)a / (Ret)b; });
+			eq->set_callable([](Param1 a, Param2 b) -> bool { return (Ret)a == (Ret)b; });
+			neq->set_callable([](Param1 a, Param2 b) -> bool { return (Ret)a != (Ret)b; });
 
 			function_map.store("operator+", std::move(add));
 			function_map.store("operator-", std::move(sub));
 			function_map.store("operator*", std::move(mul));
 			function_map.store("operator/", std::move(div));
+			function_map.store("operator==", std::move(eq));
+			function_map.store("operator!=", std::move(neq));
 
 			if constexpr (Mod)
 			{

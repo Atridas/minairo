@@ -256,6 +256,16 @@ export namespace minairo
 				binary.function_to_call = function_map.get("operator%", argument_types);
 				break;
 			}
+			case Terminal::OP_EQ:
+			{
+				binary.function_to_call = function_map.get("operator==", argument_types);
+				break;
+			}
+			case Terminal::OP_NEQ:
+			{
+				binary.function_to_call = function_map.get("operator!=", argument_types);
+				break;
+			}
 			default:
 				assert(false); // TODO
 			}

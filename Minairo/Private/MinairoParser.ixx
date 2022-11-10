@@ -854,6 +854,10 @@ namespace minairo
 		pratt_precedences[(int)Terminal::OP_DIV] = Precedence::Factor;
 		pratt_infixes[(int)Terminal::OP_MOD] = &binary;
 		pratt_precedences[(int)Terminal::OP_MOD] = Precedence::Factor;
+		pratt_infixes[(int)Terminal::OP_EQ] = &binary;
+		pratt_precedences[(int)Terminal::OP_EQ] = Precedence::Equality;
+		pratt_infixes[(int)Terminal::OP_NEQ] = &binary;
+		pratt_precedences[(int)Terminal::OP_NEQ] = Precedence::Equality;
 		pratt_infixes[(int)Terminal::BRACKET_ROUND_OPEN] = &call;
 		pratt_precedences[(int)Terminal::BRACKET_ROUND_OPEN] = Precedence::Call;
 		pratt_infixes[(int)Terminal::OP_DOT] = &member_read;
@@ -1072,6 +1076,10 @@ namespace minairo
 		else if (scanner.peek_next_symbol().type == Terminal::WK_RETURN)
 		{
 			return return_statement(scanner);
+		}
+		else if (scanner.peek_next_symbol().type == Terminal::WK_WHILE || scanner.peek_next_symbol().type == Terminal::WK_DO)
+		{
+			return while_statement(scanner);
 		}
 		else if (scanner.peek_next_symbol().type == Terminal::BRACKET_CURLY_OPEN)
 		{

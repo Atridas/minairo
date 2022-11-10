@@ -427,7 +427,7 @@ export namespace minairo
 
 		void visit(WhileStatement const& while_statement) override
 		{
-			if (while_statement.do_while)
+			if (!while_statement.do_while)
 			{
 				if (while_statement.condition != nullptr)
 					while_statement.condition->accept(*this);
