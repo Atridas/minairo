@@ -189,6 +189,54 @@ export namespace minairo
 	// --------------------------------------------------------------------------------------------
 	// --------------------------------------------------------------------------------------------
 
+	class AllPathsLeadToReturn final : public StatementConstVisitor
+	{
+	public:
+		bool found_return = false;
+
+		virtual void visit(Block const& block)
+		{
+			for (auto& st : block.statements)
+			{
+				st->accept(*this);
+			}
+		}
+		virtual void visit(ExpressionStatement const& expression_statement)
+		{
+			// ---
+		}
+		virtual void visit(IfStatement const& if_statement)
+		{
+			if (found_return)
+				return;
+
+			if (if_statement.no != nullptr)
+			{
+				if_statement.yes->accept(*this);
+				if (found_return)
+				{
+					found_return = false;
+					if_statement.no->accept(*this);
+				}
+			}
+
+		}
+		virtual void visit(ReturnStatement const& return_statement)
+		{
+			found_return = true;
+		}
+		virtual void visit(VariableDefinition const& variable_definition)
+		{
+			// ---
+		}
+		virtual void visit(WhileStatement const& while_statement)
+		{
+			// ---
+		}
+
+	};
+
+
 	class TypePass final : public ExpressionVisitor, public StatementVisitor
 	{
 		struct VariableInfo
@@ -436,7 +484,6 @@ export namespace minairo
 				return_type = function_declaration.type.return_type;
 			}
 
-			assert(!has_found_return);
 			allow_return = true;
 
 			function_declaration.body->accept(*this);
@@ -450,11 +497,14 @@ export namespace minairo
 				else if (function_declaration.type.is_pure)
 					throw message_exception("Can't deduce return type of a function", function_declaration);
 			}
-			else if (!has_found_return)
+			
+			if (function_declaration.type.return_type != BuildInType::Void)
 			{
-				throw message_exception("All paths must end in a return statement", function_declaration);
+				AllPathsLeadToReturn return_finder;
+				function_declaration.body->accept(return_finder);
+				if(!return_finder.found_return)
+					throw message_exception("All paths must end in a return statement", *function_declaration.body);
 			}
-			has_found_return = false;
 
 			return_type = outer_return_type;
 			in_pure_function_context = was_in_pure_function_context;
@@ -662,9 +712,6 @@ export namespace minairo
 
 			for (auto& statement : block.statements)
 			{
-				if (has_found_return)
-					throw message_exception("You can't have statements after a return statement.", *statement);
-
 				statement->accept(*this);
 			}
 			// TODO throw(?)
@@ -694,7 +741,7 @@ export namespace minairo
 				if_statement.condition->accept(*this);
 
 			if_statement.yes->accept(*this);
-			if(if_statement.no != nullptr)
+			if (if_statement.no != nullptr)
 				if_statement.no->accept(*this);
 			
 
@@ -732,8 +779,6 @@ export namespace minairo
 			{
 				throw message_exception("Wrong return type", *return_statement.exp);
 			}
-
-			has_found_return = true;
 		}
 
 		void visit(VariableDefinition& variable_definition) override
@@ -839,7 +884,7 @@ export namespace minairo
 		std::vector<VariableBlock> variable_blocks;
 
 		GlobalMap globals;
-		bool allow_return = false, in_pure_function_context = false, has_found_return = false;
+		bool allow_return = false, in_pure_function_context = false;
 		std::optional<TypeRepresentation> return_type;
 
 		void push_variable_block()
