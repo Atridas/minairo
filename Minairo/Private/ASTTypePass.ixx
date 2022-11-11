@@ -382,7 +382,7 @@ export namespace minairo
 
 		void visit(ProcedureDeclaration& procedure_declaration) override
 		{
-			procedure_declaration.type.is_function = (procedure_declaration.kind.type == Terminal::WK_FUNCTION);
+			procedure_declaration.type.is_function = (procedure_declaration.kind.type == Terminal::KW_FUNCTION);
 			procedure_declaration.parameter_tuple->accept(*this);
 
 			procedure_declaration.type.parameters = *get<TupleType>(*procedure_declaration.parameter_tuple->get_type_value());

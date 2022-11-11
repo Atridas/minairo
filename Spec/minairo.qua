@@ -69,46 +69,46 @@ BOOL_LITERAL = "true" | "false";
 // keywords
 
 // identifiable keywords
-WK_ASC = "asc";
-WK_BY = "by";
-WK_DESC = "desc";
-WK_EXPORT = "export";
-WK_FUNCTION = "function";
-WK_IMPORT = "import";
-WK_MODULE = "module";
-WK_PROCEDURE = "procedure";
-WK_PUBLIC = "public";
-WK_TABLE = "table";
-WK_TUPLE = "tuple";
+KW_ASC = "asc";
+KW_BY = "by";
+KW_DESC = "desc";
+KW_EXPORT = "export";
+KW_FUNCTION = "function";
+KW_IMPORT = "import";
+KW_MODULE = "module";
+KW_PROCEDURE = "procedure";
+KW_PUBLIC = "public";
+KW_TABLE = "table";
+KW_TUPLE = "tuple";
 
 // reserved keywords
-WK_DO = "do";
-WK_ELSE = "else";
-WK_FOR = "for";
-WK_GROUP = "group";
-WK_IF = "if";
-WK_JOIN = "join";
-WK_PROJECT = "project";
-WK_RETURN = "return";
-WK_SORT = "sort";
-WK_TAKE = "take";
-WK_YIELD = "yield";
-WK_WHERE = "where";
-WK_WHILE = "while";
+KW_DO = "do";
+KW_ELSE = "else";
+KW_FOR = "for";
+KW_GROUP = "group";
+KW_IF = "if";
+KW_JOIN = "join";
+KW_PROJECT = "project";
+KW_RETURN = "return";
+KW_SORT = "sort";
+KW_TAKE = "take";
+KW_YIELD = "yield";
+KW_WHERE = "where";
+KW_WHILE = "while";
 
-WK_VOID = "void";
-WK_BOOL = "bool" | "boolean";
-WK_INT8 = "int8";
-WK_INT16 = "int16";
-WK_INT32 = "int32";
-WK_INT64 = "int64";
-WK_UINT8 = "uint8";
-WK_UINT16 = "uint16";
-WK_UINT32 = "uint32";
-WK_UINT64 = "uint64";
-WK_FLOAT32 = "float" | "float32" ;
-WK_FLOAT64 = "double" | "float64";
-WK_TYPEDEF = "typedef";
+KW_VOID = "void";
+KW_BOOL = "bool" | "boolean";
+KW_INT8 = "int8";
+KW_INT16 = "int16";
+KW_INT32 = "int32";
+KW_INT64 = "int64";
+KW_UINT8 = "uint8";
+KW_UINT16 = "uint16";
+KW_UINT32 = "uint32";
+KW_UINT64 = "uint64";
+KW_FLOAT32 = "float" | "float32" ;
+KW_FLOAT64 = "double" | "float64";
+KW_TYPEDEF = "typedef";
 
 // Operators
 

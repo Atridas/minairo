@@ -234,43 +234,43 @@ namespace minairo
 		result->terminal = scanner.get_next_symbol();
 		switch (result->terminal.type)
 		{
-		case Terminal::WK_VOID:
+		case Terminal::KW_VOID:
 			result->type = BuildInType::Void;
 			break;
-		case Terminal::WK_INT8:
+		case Terminal::KW_INT8:
 			result->type = BuildInType::I8;
 			break;
-		case Terminal::WK_INT16:
+		case Terminal::KW_INT16:
 			result->type = BuildInType::I16;
 			break;
-		case Terminal::WK_INT32:
+		case Terminal::KW_INT32:
 			result->type = BuildInType::I32;
 			break;
-		case Terminal::WK_INT64:
+		case Terminal::KW_INT64:
 			result->type = BuildInType::I64;
 			break;
-		case Terminal::WK_UINT8:
+		case Terminal::KW_UINT8:
 			result->type = BuildInType::U8;
 			break;
-		case Terminal::WK_UINT16:
+		case Terminal::KW_UINT16:
 			result->type = BuildInType::U16;
 			break;
-		case Terminal::WK_UINT32:
+		case Terminal::KW_UINT32:
 			result->type = BuildInType::U32;
 			break;
-		case Terminal::WK_UINT64:
+		case Terminal::KW_UINT64:
 			result->type = BuildInType::U64;
 			break;
-		case Terminal::WK_FLOAT32:
+		case Terminal::KW_FLOAT32:
 			result->type = BuildInType::U32;
 			break;
-		case Terminal::WK_FLOAT64:
+		case Terminal::KW_FLOAT64:
 			result->type = BuildInType::U64;
 			break;
-		case Terminal::WK_BOOL:
+		case Terminal::KW_BOOL:
 			result->type = BuildInType::Bool;
 			break;
-		case Terminal::WK_TYPEDEF:
+		case Terminal::KW_TYPEDEF:
 			result->type = BuildInType::Typedef;
 			break;
 		default:
@@ -282,13 +282,13 @@ namespace minairo
 	ExpressionPtr procedure_declaration(Scanner& scanner)
 	{
 		auto result = std::make_unique<ProcedureDeclaration>();
-		if (scanner.peek_next_symbol().type == Terminal::WK_FUNCTION)
+		if (scanner.peek_next_symbol().type == Terminal::KW_FUNCTION)
 		{
-			result->kind = consume(Terminal::WK_FUNCTION, scanner);
+			result->kind = consume(Terminal::KW_FUNCTION, scanner);
 		}
 		else
 		{
-			result->kind = consume(Terminal::WK_PROCEDURE, scanner);
+			result->kind = consume(Terminal::KW_PROCEDURE, scanner);
 		}
 
 		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
@@ -554,7 +554,7 @@ namespace minairo
 	ExpressionPtr table_type_declaration(Scanner& scanner)
 	{
 		auto result = std::make_unique<TableDeclaration>();
-		result->table_terminal = consume(Terminal::WK_TABLE, scanner);
+		result->table_terminal = consume(Terminal::KW_TABLE, scanner);
 
 		if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
 		{
@@ -631,7 +631,7 @@ namespace minairo
 	ExpressionPtr tuple_type_declaration(Scanner& scanner)
 	{
 		auto result = std::make_unique<TupleDeclaration>();
-		result->tuple_terminal = consume(Terminal::WK_TUPLE, scanner);
+		result->tuple_terminal = consume(Terminal::KW_TUPLE, scanner);
 		consume(Terminal::BRACKET_CURLY_OPEN, scanner);
 
 
@@ -780,11 +780,11 @@ namespace minairo
 			result->identifier = consume(Terminal::IDENTIFIER, scanner);
 			return result;
 		}
-		else if (scanner.peek_next_symbol().type == Terminal::WK_TABLE)
+		else if (scanner.peek_next_symbol().type == Terminal::KW_TABLE)
 		{
 			return table_type_declaration(scanner);
 		}
-		else if (scanner.peek_next_symbol().type == Terminal::WK_TUPLE)
+		else if (scanner.peek_next_symbol().type == Terminal::KW_TUPLE)
 		{
 			return tuple_type_declaration(scanner);
 		}
@@ -825,23 +825,23 @@ namespace minairo
 		//	case Terminal::BOOL_LITERAL: return std::make_unique<Literal>(parse_bool(scanner.get_next_symbol()));
 
 
-		pratt_prefixes[(int)Terminal::WK_VOID] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_INT8] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_INT16] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_INT32] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_INT64] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_UINT8] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_UINT16] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_UINT32] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_UINT64] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_FLOAT32] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_FLOAT64] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_BOOL] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_TYPEDEF] = &build_in_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_TABLE] = &table_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_TUPLE] = &tuple_type_declaration;
-		pratt_prefixes[(int)Terminal::WK_FUNCTION] = &procedure_declaration;
-		pratt_prefixes[(int)Terminal::WK_PROCEDURE] = &procedure_declaration;
+		pratt_prefixes[(int)Terminal::KW_VOID] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_INT8] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_INT16] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_INT32] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_INT64] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_UINT8] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_UINT16] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_UINT32] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_UINT64] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_FLOAT32] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_FLOAT64] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_BOOL] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_TYPEDEF] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_TABLE] = &table_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_TUPLE] = &tuple_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_FUNCTION] = &procedure_declaration;
+		pratt_prefixes[(int)Terminal::KW_PROCEDURE] = &procedure_declaration;
 
 
 		pratt_infixes[(int)Terminal::OP_ADD] = &binary;
@@ -933,7 +933,7 @@ namespace minairo
 	{
 		auto result = std::make_unique<IfStatement>();
 
-		result->if_keyword = consume(Terminal::WK_IF, scanner);
+		result->if_keyword = consume(Terminal::KW_IF, scanner);
 
 		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
 
@@ -956,9 +956,9 @@ namespace minairo
 
 		result->yes = statement(scanner);
 
-		if (scanner.peek_next_symbol().type == Terminal::WK_ELSE)
+		if (scanner.peek_next_symbol().type == Terminal::KW_ELSE)
 		{
-			consume(Terminal::WK_ELSE, scanner);
+			consume(Terminal::KW_ELSE, scanner);
 			result->no = statement(scanner);
 		}
 
@@ -970,7 +970,7 @@ namespace minairo
 	StatementPtr return_statement(Scanner& scanner)
 	{
 		auto result = std::make_unique<ReturnStatement>();
-		result->return_keyword = consume(Terminal::WK_RETURN, scanner);
+		result->return_keyword = consume(Terminal::KW_RETURN, scanner);
 		result->exp = expression(scanner);
 		result->semicolon = consume(Terminal::OP_SEMICOLON, scanner);
 
@@ -983,15 +983,15 @@ namespace minairo
 	{
 		auto result = std::make_unique<WhileStatement>();
 
-		if (scanner.peek_next_symbol().type == Terminal::WK_DO)
+		if (scanner.peek_next_symbol().type == Terminal::KW_DO)
 		{
 			result->do_while = true;
-			result->while_keyword = consume(Terminal::WK_DO, scanner);
+			result->while_keyword = consume(Terminal::KW_DO, scanner);
 		}
 		else
 		{
 			result->do_while = false;
-			result->while_keyword = consume(Terminal::WK_WHILE, scanner);
+			result->while_keyword = consume(Terminal::KW_WHILE, scanner);
 
 			consume(Terminal::BRACKET_ROUND_OPEN, scanner);
 			result->condition = expression(scanner);
@@ -1002,7 +1002,7 @@ namespace minairo
 
 		if (result->do_while)
 		{
-			consume(Terminal::WK_WHILE, scanner);
+			consume(Terminal::KW_WHILE, scanner);
 			consume(Terminal::BRACKET_ROUND_OPEN, scanner);
 			result->condition = expression(scanner);
 			result->close_parenthesis = consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
@@ -1069,15 +1069,15 @@ namespace minairo
 
 	StatementPtr statement(Scanner& scanner)
 	{
-		if (scanner.peek_next_symbol().type == Terminal::WK_IF)
+		if (scanner.peek_next_symbol().type == Terminal::KW_IF)
 		{
 			return if_statement(scanner);
 		}
-		else if (scanner.peek_next_symbol().type == Terminal::WK_RETURN)
+		else if (scanner.peek_next_symbol().type == Terminal::KW_RETURN)
 		{
 			return return_statement(scanner);
 		}
-		else if (scanner.peek_next_symbol().type == Terminal::WK_WHILE || scanner.peek_next_symbol().type == Terminal::WK_DO)
+		else if (scanner.peek_next_symbol().type == Terminal::KW_WHILE || scanner.peek_next_symbol().type == Terminal::KW_DO)
 		{
 			return while_statement(scanner);
 		}

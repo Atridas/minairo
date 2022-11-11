@@ -28,43 +28,43 @@ export namespace minairo
 		CHAR_LITERAL,
 		STRING_LITERAL,
 		BOOL_LITERAL,
-		WK_ASC,
-		WK_BY,
-		WK_DESC,
-		WK_EXPORT,
-		WK_FUNCTION,
-		WK_IMPORT,
-		WK_MODULE,
-		WK_PROCEDURE,
-		WK_PUBLIC,
-		WK_TABLE,
-		WK_TUPLE,
-		WK_DO,
-		WK_ELSE,
-		WK_FOR,
-		WK_GROUP,
-		WK_IF,
-		WK_JOIN,
-		WK_PROJECT,
-		WK_RETURN,
-		WK_SORT,
-		WK_TAKE,
-		WK_YIELD,
-		WK_WHERE,
-		WK_WHILE,
-		WK_VOID,
-		WK_BOOL,
-		WK_INT8,
-		WK_INT16,
-		WK_INT32,
-		WK_INT64,
-		WK_UINT8,
-		WK_UINT16,
-		WK_UINT32,
-		WK_UINT64,
-		WK_FLOAT32,
-		WK_FLOAT64,
-		WK_TYPEDEF,
+		KW_ASC,
+		KW_BY,
+		KW_DESC,
+		KW_EXPORT,
+		KW_FUNCTION,
+		KW_IMPORT,
+		KW_MODULE,
+		KW_PROCEDURE,
+		KW_PUBLIC,
+		KW_TABLE,
+		KW_TUPLE,
+		KW_DO,
+		KW_ELSE,
+		KW_FOR,
+		KW_GROUP,
+		KW_IF,
+		KW_JOIN,
+		KW_PROJECT,
+		KW_RETURN,
+		KW_SORT,
+		KW_TAKE,
+		KW_YIELD,
+		KW_WHERE,
+		KW_WHILE,
+		KW_VOID,
+		KW_BOOL,
+		KW_INT8,
+		KW_INT16,
+		KW_INT32,
+		KW_INT64,
+		KW_UINT8,
+		KW_UINT16,
+		KW_UINT32,
+		KW_UINT64,
+		KW_FLOAT32,
+		KW_FLOAT64,
+		KW_TYPEDEF,
 		OP_ARROW,
 		OP_DOT,
 		OP_COMMA,
@@ -117,43 +117,43 @@ export namespace minairo
 		case Terminal::CHAR_LITERAL: return "CHAR_LITERAL";
 		case Terminal::STRING_LITERAL: return "STRING_LITERAL";
 		case Terminal::BOOL_LITERAL: return "BOOL_LITERAL";
-		case Terminal::WK_ASC: return "WK_ASC";
-		case Terminal::WK_BY: return "WK_BY";
-		case Terminal::WK_DESC: return "WK_DESC";
-		case Terminal::WK_EXPORT: return "WK_EXPORT";
-		case Terminal::WK_FUNCTION: return "WK_FUNCTION";
-		case Terminal::WK_IMPORT: return "WK_IMPORT";
-		case Terminal::WK_MODULE: return "WK_MODULE";
-		case Terminal::WK_PROCEDURE: return "WK_PROCEDURE";
-		case Terminal::WK_PUBLIC: return "WK_PUBLIC";
-		case Terminal::WK_TABLE: return "WK_TABLE";
-		case Terminal::WK_TUPLE: return "WK_TUPLE";
-		case Terminal::WK_DO: return "WK_DO";
-		case Terminal::WK_ELSE: return "WK_ELSE";
-		case Terminal::WK_FOR: return "WK_FOR";
-		case Terminal::WK_GROUP: return "WK_GROUP";
-		case Terminal::WK_IF: return "WK_IF";
-		case Terminal::WK_JOIN: return "WK_JOIN";
-		case Terminal::WK_PROJECT: return "WK_PROJECT";
-		case Terminal::WK_RETURN: return "WK_RETURN";
-		case Terminal::WK_SORT: return "WK_SORT";
-		case Terminal::WK_TAKE: return "WK_TAKE";
-		case Terminal::WK_YIELD: return "WK_YIELD";
-		case Terminal::WK_WHERE: return "WK_WHERE";
-		case Terminal::WK_WHILE: return "WK_WHILE";
-		case Terminal::WK_VOID: return "WK_VOID";
-		case Terminal::WK_BOOL: return "WK_BOOL";
-		case Terminal::WK_INT8: return "WK_INT8";
-		case Terminal::WK_INT16: return "WK_INT16";
-		case Terminal::WK_INT32: return "WK_INT32";
-		case Terminal::WK_INT64: return "WK_INT64";
-		case Terminal::WK_UINT8: return "WK_UINT8";
-		case Terminal::WK_UINT16: return "WK_UINT16";
-		case Terminal::WK_UINT32: return "WK_UINT32";
-		case Terminal::WK_UINT64: return "WK_UINT64";
-		case Terminal::WK_FLOAT32: return "WK_FLOAT32";
-		case Terminal::WK_FLOAT64: return "WK_FLOAT64";
-		case Terminal::WK_TYPEDEF: return "WK_TYPEDEF";
+		case Terminal::KW_ASC: return "KW_ASC";
+		case Terminal::KW_BY: return "KW_BY";
+		case Terminal::KW_DESC: return "KW_DESC";
+		case Terminal::KW_EXPORT: return "KW_EXPORT";
+		case Terminal::KW_FUNCTION: return "KW_FUNCTION";
+		case Terminal::KW_IMPORT: return "KW_IMPORT";
+		case Terminal::KW_MODULE: return "KW_MODULE";
+		case Terminal::KW_PROCEDURE: return "KW_PROCEDURE";
+		case Terminal::KW_PUBLIC: return "KW_PUBLIC";
+		case Terminal::KW_TABLE: return "KW_TABLE";
+		case Terminal::KW_TUPLE: return "KW_TUPLE";
+		case Terminal::KW_DO: return "KW_DO";
+		case Terminal::KW_ELSE: return "KW_ELSE";
+		case Terminal::KW_FOR: return "KW_FOR";
+		case Terminal::KW_GROUP: return "KW_GROUP";
+		case Terminal::KW_IF: return "KW_IF";
+		case Terminal::KW_JOIN: return "KW_JOIN";
+		case Terminal::KW_PROJECT: return "KW_PROJECT";
+		case Terminal::KW_RETURN: return "KW_RETURN";
+		case Terminal::KW_SORT: return "KW_SORT";
+		case Terminal::KW_TAKE: return "KW_TAKE";
+		case Terminal::KW_YIELD: return "KW_YIELD";
+		case Terminal::KW_WHERE: return "KW_WHERE";
+		case Terminal::KW_WHILE: return "KW_WHILE";
+		case Terminal::KW_VOID: return "KW_VOID";
+		case Terminal::KW_BOOL: return "KW_BOOL";
+		case Terminal::KW_INT8: return "KW_INT8";
+		case Terminal::KW_INT16: return "KW_INT16";
+		case Terminal::KW_INT32: return "KW_INT32";
+		case Terminal::KW_INT64: return "KW_INT64";
+		case Terminal::KW_UINT8: return "KW_UINT8";
+		case Terminal::KW_UINT16: return "KW_UINT16";
+		case Terminal::KW_UINT32: return "KW_UINT32";
+		case Terminal::KW_UINT64: return "KW_UINT64";
+		case Terminal::KW_FLOAT32: return "KW_FLOAT32";
+		case Terminal::KW_FLOAT64: return "KW_FLOAT64";
+		case Terminal::KW_TYPEDEF: return "KW_TYPEDEF";
 		case Terminal::OP_ARROW: return "OP_ARROW";
 		case Terminal::OP_DOT: return "OP_DOT";
 		case Terminal::OP_COMMA: return "OP_COMMA";
@@ -2299,7 +2299,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_BY, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_BY, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -2363,7 +2363,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_DO, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_DO, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -2616,7 +2616,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_IF, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_IF, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -3507,7 +3507,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_ASC, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_ASC, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -3760,7 +3760,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_FOR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_FOR, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -4719,7 +4719,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_BOOL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_BOOL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -4748,7 +4748,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_DESC, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_DESC, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -4809,7 +4809,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_ELSE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_ELSE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5094,7 +5094,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_INT8, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_INT8, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5123,7 +5123,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_JOIN, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_JOIN, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5312,7 +5312,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_SORT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_SORT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5373,7 +5373,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_TAKE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_TAKE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5536,7 +5536,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_VOID, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_VOID, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5859,7 +5859,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_FLOAT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_FLOAT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5920,7 +5920,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_GROUP, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_GROUP, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -5981,7 +5981,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_INT16, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_INT16, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6010,7 +6010,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_INT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_INT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6039,7 +6039,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_INT64, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_INT64, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6228,7 +6228,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_TABLE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_TABLE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6257,7 +6257,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_TUPLE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_TUPLE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6414,7 +6414,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_UINT8, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_UINT8, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6443,7 +6443,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_WHERE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_WHERE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6472,7 +6472,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_WHILE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_WHILE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6501,7 +6501,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_YIELD, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_YIELD, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6652,7 +6652,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_FLOAT64, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_FLOAT64, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6681,7 +6681,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_EXPORT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_EXPORT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6806,7 +6806,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_IMPORT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_IMPORT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6835,7 +6835,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_MODULE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_MODULE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6928,7 +6928,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_PUBLIC, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_PUBLIC, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -6957,7 +6957,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_RETURN, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_RETURN, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7018,7 +7018,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_UINT16, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_UINT16, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7047,7 +7047,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_UINT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_UINT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7076,7 +7076,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_UINT64, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_UINT64, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7105,7 +7105,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_BOOL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_BOOL, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7134,7 +7134,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_FLOAT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_FLOAT32, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7227,7 +7227,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_PROJECT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_PROJECT, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7256,7 +7256,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_TYPEDEF, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_TYPEDEF, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7285,7 +7285,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_FUNCTION, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_FUNCTION, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
@@ -7346,7 +7346,7 @@ export namespace minairo
 						}
 						else
 						{
-							return TerminalData(Terminal::WK_PROCEDURE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
+							return TerminalData(Terminal::KW_PROCEDURE, text.substr(terminal_begin_index, current_text_index - terminal_begin_index), terminal_line_text, current_line_text, terminal_line);
 						}
 						break;
 					}
