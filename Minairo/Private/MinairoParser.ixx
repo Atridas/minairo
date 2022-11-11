@@ -279,16 +279,15 @@ namespace minairo
 		return result;
 	}
 
-	ExpressionPtr procedure_declaration(Scanner& scanner)
+	ExpressionPtr function_declaration(Scanner& scanner)
 	{
-		auto result = std::make_unique<ProcedureDeclaration>();
-		if (scanner.peek_next_symbol().type == Terminal::KW_FUNCTION)
+		auto result = std::make_unique<FunctionDeclaration>();
+		result->keyword = consume(Terminal::KW_FUNCTION, scanner);
+
+		if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER && scanner.peek_next_symbol().text == "pure")
 		{
-			result->kind = consume(Terminal::KW_FUNCTION, scanner);
-		}
-		else
-		{
-			result->kind = consume(Terminal::KW_PROCEDURE, scanner);
+			consume(Terminal::IDENTIFIER, scanner);
+			result->is_pure = true;
 		}
 
 		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
@@ -840,8 +839,7 @@ namespace minairo
 		pratt_prefixes[(int)Terminal::KW_TYPEDEF] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_TABLE] = &table_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_TUPLE] = &tuple_type_declaration;
-		pratt_prefixes[(int)Terminal::KW_FUNCTION] = &procedure_declaration;
-		pratt_prefixes[(int)Terminal::KW_PROCEDURE] = &procedure_declaration;
+		pratt_prefixes[(int)Terminal::KW_FUNCTION] = &function_declaration;
 
 
 		pratt_infixes[(int)Terminal::OP_ADD] = &binary;

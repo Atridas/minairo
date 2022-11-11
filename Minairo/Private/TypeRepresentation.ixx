@@ -131,21 +131,21 @@ export namespace minairo
 		}
 	};
 
-	class ProcedureType : public ComplexType
+	class FunctionType : public ComplexType
 	{
 	public:
 		std::string name;
 		TupleType parameters;
 
 		TypeRepresentation return_type;
-		bool is_function; // Change to "is_pure"
+		bool is_pure;
 
 		void set_name(std::string_view _name) override
 		{
 			name = _name;
 		}
 
-		bool operator==(ProcedureType const& other) const noexcept
+		bool operator==(FunctionType const& other) const noexcept
 		{
 			if (name.empty() && other.name.empty())
 				return parameters == other.parameters;
@@ -156,12 +156,12 @@ export namespace minairo
 
 		operator TypeRepresentation() const
 		{
-			return (std::shared_ptr<ComplexType>)std::make_shared<ProcedureType>(*this);
+			return (std::shared_ptr<ComplexType>)std::make_shared<FunctionType>(*this);
 		}
 
 		operator Value() const
 		{
-			return (std::shared_ptr<ComplexType>)std::make_shared<ProcedureType>(*this);
+			return (std::shared_ptr<ComplexType>)std::make_shared<FunctionType>(*this);
 		}
 	protected:
 		bool equals(ComplexType const& other) const override

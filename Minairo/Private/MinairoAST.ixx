@@ -298,7 +298,7 @@ export namespace minairo
 		{
 			if (callee != nullptr)
 			{
-				std::shared_ptr<ProcedureType> c = get<ProcedureType>(*callee->get_expression_type());
+				std::shared_ptr<FunctionType> c = get<FunctionType>(*callee->get_expression_type());
 				if (c != nullptr)
 				{
 					return c->return_type;
@@ -558,31 +558,32 @@ export namespace minairo
 		}
 	};
 	
-	class ProcedureDeclaration final : public Expression
+	class FunctionDeclaration final : public Expression
 	{
 	public:
-		TerminalData kind;
+		TerminalData keyword;
 		std::unique_ptr<Statement> body;
 		std::unique_ptr<TupleDeclaration> parameter_tuple;
 		std::unique_ptr<Expression> return_type;
-		ProcedureType type;
+		bool is_pure;
+		FunctionType type;
 
-		ProcedureDeclaration() = default;
-		ProcedureDeclaration(ProcedureDeclaration&&) = default;
-		ProcedureDeclaration& operator=(ProcedureDeclaration&&) = default;
-		ProcedureDeclaration(ProcedureDeclaration const& b)
-			: kind(b.kind)
+		FunctionDeclaration() = default;
+		FunctionDeclaration(FunctionDeclaration&&) = default;
+		FunctionDeclaration& operator=(FunctionDeclaration&&) = default;
+		FunctionDeclaration(FunctionDeclaration const& b)
+			: keyword(b.keyword)
 			, body(b.body->deep_copy())
 			, parameter_tuple(b.parameter_tuple->typed_deep_copy())
 			, return_type(b.return_type->deep_copy())
 			, type(b.type)
 		{
 		}
-		ProcedureDeclaration& operator=(ProcedureDeclaration const& b)
+		FunctionDeclaration& operator=(FunctionDeclaration const& b)
 		{
 			if (this != &b)
 			{
-				kind = b.kind;
+				keyword = b.keyword;
 				body = b.body->deep_copy();
 				parameter_tuple = b.parameter_tuple->typed_deep_copy();
 				return_type = b.return_type->deep_copy();
@@ -595,9 +596,9 @@ export namespace minairo
 		{
 			return typed_deep_copy();
 		}
-		std::unique_ptr<ProcedureDeclaration> typed_deep_copy() const
+		std::unique_ptr<FunctionDeclaration> typed_deep_copy() const
 		{
-			return std::make_unique<ProcedureDeclaration>(*this);
+			return std::make_unique<FunctionDeclaration>(*this);
 		}
 
 		void accept(ExpressionVisitor& visitor) override;
@@ -608,7 +609,7 @@ export namespace minairo
 		}
 		virtual TerminalData get_first_terminal() const override
 		{
-			return kind;
+			return keyword;
 		}
 		virtual TerminalData get_last_terminal() const override
 		{
@@ -1250,7 +1251,7 @@ export namespace minairo
 		virtual void visit(Literal& literal) = 0;
 		virtual void visit(MemberRead& literal) = 0;
 		virtual void visit(MemberWrite& literal) = 0;
-		virtual void visit(ProcedureDeclaration& unary_pre) = 0;
+		virtual void visit(FunctionDeclaration& unary_pre) = 0;
 		virtual void visit(TableDeclaration& unary_pre) = 0;
 		virtual void visit(TupleDeclaration& unary_pre) = 0;
 		virtual void visit(UnaryPre& unary_pre) = 0;
@@ -1269,7 +1270,7 @@ export namespace minairo
 		virtual void visit(Literal const& literal) = 0;
 		virtual void visit(MemberRead const& literal) = 0;
 		virtual void visit(MemberWrite const& literal) = 0;
-		virtual void visit(ProcedureDeclaration const& unary_pre) = 0;
+		virtual void visit(FunctionDeclaration const& unary_pre) = 0;
 		virtual void visit(TableDeclaration const& unary_pre) = 0;
 		virtual void visit(TupleDeclaration const& unary_pre) = 0;
 		virtual void visit(UnaryPre const& unary_pre) = 0;
@@ -1333,7 +1334,7 @@ void minairo::MemberWrite::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::ProcedureDeclaration::accept(ExpressionVisitor& visitor)
+void minairo::FunctionDeclaration::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
@@ -1394,7 +1395,7 @@ void minairo::MemberWrite::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::ProcedureDeclaration::accept(ExpressionConstVisitor& visitor) const
+void minairo::FunctionDeclaration::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

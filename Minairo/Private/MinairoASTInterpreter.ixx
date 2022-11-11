@@ -79,7 +79,7 @@ export namespace minairo
 			call.arguments.accept(*this);
 			std::shared_ptr<Tuple> arguments = get<Tuple>(last_expression_value);
 
-			if(Procedure* procedure = dynamic_cast<Procedure*>(callee.get()))
+			if(Function* function = dynamic_cast<Function*>(callee.get()))
 			{
 				std::vector<Value> outer_variables = std::move(variables);
 				variables = std::move(arguments->fields);
@@ -87,14 +87,14 @@ export namespace minairo
 				bool returned = false;
 
 				try {
-					procedure->body->accept(*this);
+					function->body->accept(*this);
 				}
 				catch (ReturnException)
 				{
 					returned = true;
 				}
 
-				assert(returned || procedure->get_return_type() == BuildInType::Void);
+				assert(returned || function->get_return_type() == BuildInType::Void);
 				variables = std::move(outer_variables);
 			}
 			else
@@ -174,9 +174,9 @@ export namespace minairo
 			last_expression_value = result;
 		}
 
-		void visit(ProcedureDeclaration const& procedure_declaration) override
+		void visit(FunctionDeclaration const& function_declaration) override
 		{
-			last_expression_value = (std::shared_ptr<ComplexValue>)std::make_shared<Procedure>(procedure_declaration.type, procedure_declaration.body->deep_copy());
+			last_expression_value = (std::shared_ptr<ComplexValue>)std::make_shared<Function>(function_declaration.type, function_declaration.body->deep_copy());
 		}
 
 		void visit(TableDeclaration const& table_declaration) override

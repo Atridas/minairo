@@ -123,15 +123,15 @@ export namespace minairo
 	// --------------------------------------------------------------------------------------------
 	// --------------------------------------------------------------------------------------------
 
-	struct Procedure final : public FunctionRepresentation
+	struct Function final : public FunctionRepresentation
 	{
-		ProcedureType type;
+		FunctionType type;
 		std::shared_ptr<Statement> body;
 
-		Procedure() = default;
-		Procedure(ProcedureType const& _type, std::shared_ptr<Statement> const& _body) : type(_type), body(_body) {}
-		Procedure(ProcedureType const& _type, std::shared_ptr<Statement>&& _body) : type(_type), body(std::move(_body)) {}
-		Procedure(ProcedureType const& _type, std::unique_ptr<Statement>&& _body) : type(_type), body(std::move(_body)) {}
+		Function() = default;
+		Function(FunctionType const& _type, std::shared_ptr<Statement> const& _body) : type(_type), body(_body) {}
+		Function(FunctionType const& _type, std::shared_ptr<Statement>&& _body) : type(_type), body(std::move(_body)) {}
+		Function(FunctionType const& _type, std::unique_ptr<Statement>&& _body) : type(_type), body(std::move(_body)) {}
 
 		TypeRepresentation get_return_type() const noexcept override
 		{
@@ -157,7 +157,7 @@ export namespace minairo
 		{
 			return type.parameters.get_types();
 		}
-		ProcedureType get_type() const noexcept override
+		FunctionType get_type() const noexcept override
 		{
 			return type;
 		}
@@ -169,12 +169,12 @@ export namespace minairo
 
 		operator Value() const
 		{
-			return (std::shared_ptr<ComplexValue>)std::make_shared<Procedure>(*this);
+			return (std::shared_ptr<ComplexValue>)std::make_shared<Function>(*this);
 		}
 
 		std::unique_ptr<FunctionRepresentation> deep_copy() const override
 		{
-			return std::make_unique<Procedure>(*this);
+			return std::make_unique<Function>(*this);
 		}
 
 	protected:
@@ -284,15 +284,15 @@ export namespace minairo
 			call.arguments.accept(*this);
 
 			TypeRepresentation callee_type = *call.callee->get_expression_type();
-			std::shared_ptr<ProcedureType> as_procedure = get<ProcedureType>(callee_type);
+			std::shared_ptr<FunctionType> as_function = get<FunctionType>(callee_type);
 
-			if(as_procedure == nullptr)
+			if(as_function == nullptr)
 			{
-				throw message_exception("Expected a procedure\n", *call.callee);
+				throw message_exception("Expected a function\n", *call.callee);
 			}
 
 
-			if (!implicit_cast(as_procedure->parameters, call.arguments, false))
+			if (!implicit_cast(as_function->parameters, call.arguments, false))
 			{
 				throw message_exception("Initializer has not the right type\n", call.arguments);
 			}
@@ -380,24 +380,24 @@ export namespace minairo
 			}
 		}
 
-		void visit(ProcedureDeclaration& procedure_declaration) override
+		void visit(FunctionDeclaration& function_declaration) override
 		{
-			procedure_declaration.type.is_function = (procedure_declaration.kind.type == Terminal::KW_FUNCTION);
-			procedure_declaration.parameter_tuple->accept(*this);
+			function_declaration.type.is_pure = function_declaration.is_pure;
+			function_declaration.parameter_tuple->accept(*this);
 
-			procedure_declaration.type.parameters = *get<TupleType>(*procedure_declaration.parameter_tuple->get_type_value());
+			function_declaration.type.parameters = *get<TupleType>(*function_declaration.parameter_tuple->get_type_value());
 
-			if (procedure_declaration.return_type)
+			if (function_declaration.return_type)
 			{
-				procedure_declaration.return_type->accept(*this);
-				if (procedure_declaration.return_type->get_expression_type())
-					procedure_declaration.type.return_type = *procedure_declaration.return_type->get_type_value();
+				function_declaration.return_type->accept(*this);
+				if (function_declaration.return_type->get_expression_type())
+					function_declaration.type.return_type = *function_declaration.return_type->get_type_value();
 				else
-					throw message_exception("Expected a type", *procedure_declaration.return_type);
+					throw message_exception("Expected a type", *function_declaration.return_type);
 			}
 			else
 			{
-				procedure_declaration.type.return_type = BuildInType::Void;
+				function_declaration.type.return_type = BuildInType::Void;
 			}
 
 
@@ -407,57 +407,57 @@ export namespace minairo
 			VariableBlock parameter_block = {};
 			parameter_block.stack_size_at_beginning = 0;
 			TypeRepresentation last_type;
-			for (int i = 0; i < (int)procedure_declaration.parameter_tuple->field_names.size(); ++i)
+			for (int i = 0; i < (int)function_declaration.parameter_tuple->field_names.size(); ++i)
 			{
 				VariableInfo info;
-				if (procedure_declaration.parameter_tuple->field_types[i] == nullptr)
+				if (function_declaration.parameter_tuple->field_types[i] == nullptr)
 				{
 					info.type = last_type;
 				}
 				else
 				{
-					last_type = info.type = *procedure_declaration.parameter_tuple->field_types[i]->get_type_value();
+					last_type = info.type = *function_declaration.parameter_tuple->field_types[i]->get_type_value();
 				}
 				info.index = parameter_block.stack_size_at_beginning + i;
 				info.constant = true; // TODO(?)
-				parameter_block.variables[(std::string)procedure_declaration.parameter_tuple->field_names[i].text] = info;
+				parameter_block.variables[(std::string)function_declaration.parameter_tuple->field_names[i].text] = info;
 			}
 
 			variable_blocks.push_back(std::move(parameter_block));
-			bool was_in_function_context = in_function_context;
+			bool was_in_pure_function_context = in_pure_function_context;
 			bool did_allow_return = allow_return;
 			std::optional<TypeRepresentation> outer_return_type = return_type;
 
-			if (procedure_declaration.type.is_function)
-				in_function_context = true;
+			if (function_declaration.type.is_pure)
+				in_pure_function_context = true;
 
-			if (procedure_declaration.return_type)
+			if (function_declaration.return_type)
 			{
-				return_type = procedure_declaration.type.return_type;
+				return_type = function_declaration.type.return_type;
 			}
 
 			assert(!has_found_return);
 			allow_return = true;
 
-			procedure_declaration.body->accept(*this);
+			function_declaration.body->accept(*this);
 
 			allow_return = did_allow_return;
 
-			if (procedure_declaration.return_type == nullptr)
+			if (function_declaration.return_type == nullptr)
 			{
 				if(return_type)
-					procedure_declaration.type.return_type = *return_type;
-				else if (procedure_declaration.type.is_function)
-					throw message_exception("Can't deduce return type of a function", procedure_declaration);
+					function_declaration.type.return_type = *return_type;
+				else if (function_declaration.type.is_pure)
+					throw message_exception("Can't deduce return type of a function", function_declaration);
 			}
 			else if (!has_found_return)
 			{
-				throw message_exception("All paths must end in a return statement", procedure_declaration);
+				throw message_exception("All paths must end in a return statement", function_declaration);
 			}
 			has_found_return = false;
 
 			return_type = outer_return_type;
-			in_function_context = was_in_function_context;
+			in_pure_function_context = was_in_pure_function_context;
 
 			assert(variable_blocks.size() == 1);
 			variable_blocks = std::move(old_locals);
@@ -575,7 +575,7 @@ export namespace minairo
 			{
 				throw const_write_exception(variable_assign.identifier);
 			}
-			else if (in_function_context && variable.index == -1)
+			else if (in_pure_function_context && variable.index == -1)
 			{
 				throw message_exception("Can't write to a global inside a function!", variable_assign);
 			}
@@ -624,7 +624,7 @@ export namespace minairo
 			else
 			{
 				auto variable = find_variable(variable_read.identifier);
-				if (in_function_context && variable.index == -1 && !variable.constant)
+				if (in_pure_function_context && variable.index == -1 && !variable.constant)
 				{
 					throw message_exception("Can't read from non-constant global inside a function!", variable_read);
 				}
@@ -839,7 +839,7 @@ export namespace minairo
 		std::vector<VariableBlock> variable_blocks;
 
 		GlobalMap globals;
-		bool allow_return = false, in_function_context = false, has_found_return = false;
+		bool allow_return = false, in_pure_function_context = false, has_found_return = false;
 		std::optional<TypeRepresentation> return_type;
 
 		void push_variable_block()

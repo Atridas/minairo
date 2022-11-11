@@ -22,7 +22,7 @@ export namespace minairo
 		virtual TypeRepresentation get_return_type() const noexcept = 0;
 		virtual bool has_parameter_types(std::span<TypeRepresentation const> _parameter_types) const noexcept = 0;
 		virtual std::span<TypeRepresentation const> get_parameter_types() const noexcept = 0;
-		virtual ProcedureType get_type() const noexcept = 0;
+		virtual FunctionType get_type() const noexcept = 0;
 
 		virtual void call(void* return_value, std::span<void*> _arguments) const noexcept = 0;
 
@@ -70,10 +70,10 @@ export namespace minairo
 			static TypeRepresentation params[sizeof...(Params)] = { get_type_representation<Params>()... };
 			return params;
 		}
-		ProcedureType get_type() const noexcept override
+		FunctionType get_type() const noexcept override
 		{
-			ProcedureType result;
-			result.is_function = Pure;
+			FunctionType result;
+			result.is_pure = Pure;
 			result.return_type = get_type_representation<Ret>();
 			std::string c = "a";
 			for (TypeRepresentation const& t : get_parameter_types())
