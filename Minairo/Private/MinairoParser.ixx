@@ -282,12 +282,17 @@ namespace minairo
 	ExpressionPtr function_declaration(Scanner& scanner)
 	{
 		auto result = std::make_unique<FunctionDeclaration>();
-		result->keyword = consume(Terminal::KW_FUNCTION, scanner);
 
 		if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER && scanner.peek_next_symbol().text == "pure")
 		{
-			consume(Terminal::IDENTIFIER, scanner);
+			result->keyword = consume(Terminal::IDENTIFIER, scanner);
+			consume(Terminal::KW_FUNCTION, scanner);
+
 			result->is_pure = true;
+		}
+		else
+		{
+			result->keyword = consume(Terminal::KW_FUNCTION, scanner);
 		}
 
 		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
@@ -374,8 +379,14 @@ namespace minairo
 
 	ExpressionPtr identifier_literal(Scanner& scanner)
 	{
+		if (scanner.peek_next_symbol().text == "pure" && scanner.peek_next_symbol(1).type == Terminal::KW_FUNCTION)
+		{
+			return function_declaration(scanner);
+		}
+
 		auto result = std::make_unique<VariableRead>();
 		result->identifier = consume(Terminal::IDENTIFIER, scanner);
+
 
 		return try_assign(std::move(result), scanner);
 	}
@@ -926,6 +937,90 @@ namespace minairo
 	}
 
 	// ------------------------------------------------------------------------------------
+	
+	StatementPtr for_statement(Scanner& scanner)
+	{
+		auto result = std::make_unique<Block>();
+		result->open = consume(Terminal::KW_FOR, scanner);
+
+		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
+
+		if (scanner.peek_next_symbol().type != Terminal::OP_SEMICOLON)
+		{
+			for (;;)
+			{
+				if (peek_variable_definition(scanner))
+				{
+					result->statements.push_back(variable_definition(scanner, false));
+				}
+				else
+				{
+					auto exprstat = std::make_unique<ExpressionStatement>();
+					exprstat->exp = expression(scanner);
+
+					result->statements.push_back(std::move(exprstat));
+				}
+
+				if (scanner.peek_next_symbol().type == Terminal::OP_COMMA)
+				{
+					consume(Terminal::OP_COMMA, scanner);
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
+		consume(Terminal::OP_SEMICOLON, scanner);
+
+		auto whle = std::make_unique<WhileStatement>();
+		whle->while_keyword = *result->open;
+		if (scanner.peek_next_symbol().type != Terminal::OP_SEMICOLON)
+		{
+			whle->condition = expression(scanner);
+		}
+		else
+		{
+			auto infinite = std::make_unique<Literal>();
+			infinite->value = true;
+			infinite->type_representation = BuildInType::Bool;
+
+			whle->condition = std::move(infinite);
+		}
+		consume(Terminal::OP_SEMICOLON, scanner);
+		
+		auto body = std::make_unique<Block>();
+		if (scanner.peek_next_symbol().type != Terminal::BRACKET_ROUND_CLOSE)
+		{
+			for (;;)
+			{
+				auto exprstat = std::make_unique<ExpressionStatement>();
+				exprstat->exp = expression(scanner);
+
+				body->statements.push_back(std::move(exprstat));
+
+				if (scanner.peek_next_symbol().type == Terminal::OP_COMMA)
+				{
+					consume(Terminal::OP_COMMA, scanner);
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
+		consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
+
+		body->statements.insert(body->statements.begin(), statement(scanner));
+
+		whle->body = std::move(body);
+		result->statements.push_back(std::move(whle));
+
+		
+		return result;
+	}
+
+	// ------------------------------------------------------------------------------------
 
 	StatementPtr if_statement(Scanner& scanner)
 	{
@@ -996,7 +1091,7 @@ namespace minairo
 			consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
 		}
 
-		result->code = statement(scanner);
+		result->body = statement(scanner);
 
 		if (result->do_while)
 		{
@@ -1070,6 +1165,10 @@ namespace minairo
 		if (scanner.peek_next_symbol().type == Terminal::KW_IF)
 		{
 			return if_statement(scanner);
+		}
+		else if (scanner.peek_next_symbol().type == Terminal::KW_FOR)
+		{
+			return for_statement(scanner);
 		}
 		else if (scanner.peek_next_symbol().type == Terminal::KW_RETURN)
 		{

@@ -1187,7 +1187,7 @@ export namespace minairo
 		TerminalData while_keyword;
 		std::optional<TerminalData> close_parenthesis;
 		std::unique_ptr<Expression> condition;
-		std::unique_ptr<Statement> code;
+		std::unique_ptr<Statement> body;
 		bool do_while;
 
 		WhileStatement() = default;
@@ -1197,7 +1197,7 @@ export namespace minairo
 			: while_keyword(b.while_keyword)
 			, close_parenthesis(b.close_parenthesis)
 			, condition(b.condition->deep_copy())
-			, code(b.code->deep_copy())
+			, body(b.body->deep_copy())
 			, do_while(b.do_while)
 		{
 		}
@@ -1208,7 +1208,7 @@ export namespace minairo
 				while_keyword = b.while_keyword;
 				close_parenthesis = b.close_parenthesis;
 				condition = b.condition->deep_copy();
-				code = b.code->deep_copy();
+				body = b.body->deep_copy();
 				do_while = b.do_while;
 			}
 			return *this;
@@ -1231,7 +1231,7 @@ export namespace minairo
 		}
 		virtual TerminalData get_last_terminal() const override
 		{
-			return do_while ? *close_parenthesis : code->get_last_terminal();
+			return do_while ? *close_parenthesis : body->get_last_terminal();
 		}
 	};
 

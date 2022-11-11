@@ -75,6 +75,19 @@ namespace InterpreterTests
 	};
 
 
+	TEST_CLASS(Functions)
+	{
+		TEST_METHOD(Pure)
+		{
+			RunAndExpect(R"codi-minairo(pure function(a,b: int32) return a + b;(1,2);)codi-minairo", "3");
+			RunAndExpect(R"codi-minairo(f :: pure function(a,b: int32) return a + b;; f(1,2);)codi-minairo", "3");
+
+			RunAndExpect(R"codi-minairo(pure function(a,b: int32) return a / b;(10,2);)codi-minairo", "5");
+			RunAndExpect(R"codi-minairo(pure function(a,b: int32) return a / b;(a = 10,2);)codi-minairo", "5");
+			RunAndExpect(R"codi-minairo(pure function(a,b: int32) return a / b;(b = 2, a = 10);)codi-minairo", "5");
+		}
+	};
+
 	TEST_CLASS(Statements)
 	{
 	public:
@@ -128,6 +141,11 @@ namespace InterpreterTests
 
 			RunAndExpectPrint(R"codi-minairo(a:= 0; do { print("a"); a = a + 1; } while(a != 5))codi-minairo", "aaaaa");
 			RunAndExpectPrint(R"codi-minairo(a:= 0; do { print("a"); a = a + 1; } while(a == 1))codi-minairo", "aa");
+		}
+
+		TEST_METHOD(For)
+		{
+			RunAndExpectPrint(R"codi-minairo(for(a:=0; a != 5; a = a + 1) print("a");)codi-minairo", "aaaaa");
 		}
 
 	};

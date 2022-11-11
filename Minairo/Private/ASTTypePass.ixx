@@ -819,7 +819,7 @@ export namespace minairo
 		void visit(WhileStatement& while_statement) override
 		{
 			while_statement.condition->accept(*this);
-			while_statement.code->accept(*this);
+			while_statement.body->accept(*this);
 
 			if (while_statement.condition->get_expression_type() != BuildInType::Bool)
 				throw message_exception("While statement condition must be of type boolean", *while_statement.condition);

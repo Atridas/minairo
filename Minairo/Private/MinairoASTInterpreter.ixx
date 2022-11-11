@@ -440,7 +440,7 @@ export namespace minairo
 
 			do
 			{
-				while_statement.code->accept(*this);
+				while_statement.body->accept(*this);
 				while_statement.condition->accept(*this);
 			} while (*get<bool>(last_expression_value));
 
