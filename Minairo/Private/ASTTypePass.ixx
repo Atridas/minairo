@@ -332,12 +332,25 @@ export namespace minairo
 				}
 				else
 				{
-					throw message_exception("tuple doesn't have a member of this name\n", member_read);
+					throw message_exception("tuple doesn't have a member of this name", member_read);
+				}
+			}
+			else if (auto tuple_ref = get<TupleReferenceType>(left_type.type))
+			{
+				if (tuple_ref->tuple.has_field(member_read.member.text))
+				{
+					member_read.index = tuple_ref->tuple.get_field_index(member_read.member.text);
+					member_read.type = tuple_ref->tuple.get_field_type(member_read.member.text);
+					member_read.constant = left_type.constant || tuple_ref->constant;
+				}
+				else
+				{
+					throw message_exception("tuple doesn't have a member of this name", member_read);
 				}
 			}
 			else
 			{
-				throw message_exception("Expected a tuple before '.'\n", *member_read.left);
+				throw message_exception("Expected a tuple before '.'", *member_read.left);
 			}
 		}
 
@@ -361,6 +374,30 @@ export namespace minairo
 
 					member_write.index = tuple->get_field_index(member_write.member.text);
 					member_write.type = tuple->get_field_type(member_write.member.text);
+
+
+					if (*member_write.type != deduce_type(*member_write.right).type)
+					{
+						throw message_exception("Assignment of different types", member_write);
+					}
+				}
+			}
+			else if (auto tuple_ref = get<TupleReferenceType>(left_type.type))
+			{
+				if (!tuple_ref->tuple.has_field(member_write.member.text))
+				{
+					throw message_exception("tuple doesn't have a member of this name\n", member_write);
+				}
+				else if (left_type.constant || tuple_ref->constant)
+				{
+					throw message_exception("can't assign to a member of a constant tuple\n", member_write);
+				}
+				else
+				{
+					member_write.right->accept(*this);
+
+					member_write.index = tuple_ref->tuple.get_field_index(member_write.member.text);
+					member_write.type = tuple_ref->tuple.get_field_type(member_write.member.text);
 
 
 					if (*member_write.type != deduce_type(*member_write.right).type)

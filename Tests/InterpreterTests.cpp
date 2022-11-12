@@ -36,7 +36,7 @@ namespace InterpreterTests
 	TEST_CLASS(Arithmetic)
 	{
 	public:
-		
+
 		TEST_METHOD(Addition)
 		{
 			RunAndExpect("2 + 2;", "4");
@@ -47,7 +47,7 @@ namespace InterpreterTests
 
 	private:
 
-		
+
 	};
 
 
@@ -189,18 +189,33 @@ namespace InterpreterTests
 			RunAndExpectPrint(R"codi-minairo(for(a:=0; a != 5; a = a + 1) print("a");)codi-minairo", "aaaaa");
 		}
 
-		TEST_METHOD(Foreach)
+		TEST_METHOD(Foreach_Read)
 		{
 			RunAndExpectPrint(R"codi-minairo(
-t : table{ a: string, b : int32 };
-t += { "1", 2 };
-t += { "3", 4 };
-t += { "5", 6 };
-t += { "7", 8 };
-t += { "9", 0 };
-foreach(v :: t) print(v.a);
-)codi-minairo",
+				t : table{ a: string, b : int32 };
+				t += { "1", 2 };
+				t += { "3", 4 };
+				t += { "5", 6 };
+				t += { "7", 8 };
+				t += { "9", 0 };
+				foreach(v :: t) print(v.a);
+				)codi-minairo",
 				"13579");
+		}
+
+		TEST_METHOD(Foreach_Write)
+		{
+			RunAndExpect(R"codi-minairo(
+				t : table{ a: string, b : int32 };
+				t += { "1", 2 };
+				t += { "3", 4 };
+				t += { "5", 6 };
+				t += { "7", 8 };
+				t += { "9", 0 };
+				foreach(v := t) v.b = v.b + 1;
+				t;
+				)codi-minairo",
+				"table {\n    { a: 1, b: 3 }\n    { a: 3, b: 5 }\n    { a: 5, b: 7 }\n    { a: 7, b: 9 }\n    { a: 9, b: 1 }\n  }");
 		}
 
 	};
