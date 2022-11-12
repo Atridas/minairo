@@ -51,5 +51,11 @@
     <ClCompile Include="Private\TypesAndValuesStructures.ixx">
       <Filter>Private</Filter>
     </ClCompile>
+    <ClCompile Include="Private\TypeUtilities.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\TypeUtilities.ixx">
+      <Filter>Private</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

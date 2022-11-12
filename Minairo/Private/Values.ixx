@@ -72,7 +72,7 @@ export namespace minairo
 	{
 		virtual Value& get_field(int index) = 0;
 
-		virtual Tuple& as_tuple() const = 0;
+		virtual Tuple as_tuple() const = 0;
 	};
 
 	struct TupleReferenceOnStack final: public TupleReference
@@ -84,7 +84,7 @@ export namespace minairo
 			return tuple->fields[index];
 		}
 
-		Tuple& as_tuple() const override
+		Tuple as_tuple() const override
 		{
 			return *tuple;
 		}
@@ -99,6 +99,42 @@ export namespace minairo
 		{
 			if (auto t = dynamic_cast<TupleReferenceOnStack const*>(&other))
 				return this->tuple == t->tuple;
+			else
+				return false;
+		}
+	};
+
+	struct TupleReferenceOnATable final: public TupleReference
+	{
+		std::shared_ptr<Table> table;
+		int row;
+
+		Value& get_field(int index) override
+		{
+			return table->fields[index][row];
+		}
+
+		Tuple as_tuple() const override
+		{
+			Tuple result;
+			result.type = table->type.base_tuple;
+			result.fields.reserve(table->fields.size());
+			for (auto& column : table->fields)
+				result.fields.push_back(column[row]);
+
+			return result;
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexValue>)std::make_shared<TupleReferenceOnATable>(*this);
+		}
+
+	protected:
+		bool equals(ComplexValue const& other) const override
+		{
+			if (auto t = dynamic_cast<TupleReferenceOnATable const*>(&other))
+				return row == row && this->table == t->table;
 			else
 				return false;
 		}

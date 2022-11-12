@@ -26,8 +26,8 @@ namespace InterpreterTests
 		std::stringstream print;
 		minairo::VM vm = minairo::create_VM(print);
 
-		std::stringstream out;
-		minairo::interpret(vm, code, out);
+		std::stringstream out, err;
+		minairo::interpret(vm, code, out, err);
 
 		Assert::AreEqual(expected_output, (std::string_view)print.str());
 	}
@@ -60,6 +60,47 @@ namespace InterpreterTests
 			RunAndExpect(R"codi-minairo("";)codi-minairo", "");
 			RunAndExpect(R"codi-minairo("string";)codi-minairo", "string");
 			RunAndExpect(R"codi-minairo("string with spaces";)codi-minairo", "string with spaces");
+		}
+	};
+
+
+	TEST_CLASS(Tuples)
+	{
+	public:
+
+		TEST_METHOD(Definition)
+		{
+			RunAndExpect(R"codi-minairo(a : tuple{ a, b: int32 };)codi-minairo", "tuple { a: 0, b: 0 }");
+			RunAndExpect(R"codi-minairo(t :: tuple{ a, b: int32 }; a : t;)codi-minairo", "tuple t{ a: 0, b: 0 }");
+		}
+
+		TEST_METHOD(DefaultValues)
+		{
+			RunAndExpect(R"codi-minairo(a : tuple{ a, b: int32 = 5 };)codi-minairo", "tuple { a: 5, b: 5 }");
+			RunAndExpect(R"codi-minairo(a : tuple{ a := 10, b:= 15 };)codi-minairo", "tuple { a: 10, b: 15 }");
+		}
+
+		TEST_METHOD(MemberRead)
+		{
+			RunAndExpect(R"codi-minairo(a : tuple{ a, b: int32 = 5 }; a.a;)codi-minairo", "5");
+			RunAndExpect(R"codi-minairo(a : tuple{ a, b: int32 = 5 }; a.b;)codi-minairo", "5");
+			RunAndExpect(R"codi-minairo(a : tuple{ a := 10, b:= 15 }; a.a;)codi-minairo", "10");
+			RunAndExpect(R"codi-minairo(a : tuple{ a := 10, b:= 15 }; a.b;)codi-minairo", "15");
+		}
+
+		TEST_METHOD(MemberWrite)
+		{
+			RunAndExpect(R"codi-minairo(a : tuple{ a, b: int32 = 5 }; a.a = 10; a.a;)codi-minairo", "10");
+			RunAndExpect(R"codi-minairo(a : tuple{ a, b: int32 = 5 }; a.a = 10; a.b;)codi-minairo", "5");
+			RunAndExpect(R"codi-minairo(a : tuple{ a, b: int32 = 5 }; a.a = 10; a;)codi-minairo", "tuple { a: 10, b: 5 }");
+		}
+
+		TEST_METHOD(Recursive)
+		{
+			RunAndExpect(R"codi-minairo(a : tuple{ t : tuple { a, b: int32 = 5 }, c := 10 };)codi-minairo", "tuple { t: tuple { a: 5, b: 5 }, c: 10 }");
+			RunAndExpect(R"codi-minairo(a : tuple{ t : tuple { a, b: int32 = 5 }, c := 10 }; a.t;)codi-minairo", "tuple { a: 5, b: 5 }");
+			RunAndExpect(R"codi-minairo(a : tuple{ t : tuple { a, b: int32 = 5 }, c := 10 }; a.t.a;)codi-minairo", "5");
+			RunAndExpect(R"codi-minairo(a : tuple{ t : tuple { a, b: int32 = 5 }, c := 10 }; a.t.a = 100; a;)codi-minairo", "tuple { t: tuple { a: 100, b: 5 }, c: 10 }");
 		}
 	};
 
@@ -146,6 +187,20 @@ namespace InterpreterTests
 		TEST_METHOD(For)
 		{
 			RunAndExpectPrint(R"codi-minairo(for(a:=0; a != 5; a = a + 1) print("a");)codi-minairo", "aaaaa");
+		}
+
+		TEST_METHOD(Foreach)
+		{
+			RunAndExpectPrint(R"codi-minairo(
+t : table{ a: string, b : int32 };
+t += { "1", 2 };
+t += { "3", 4 };
+t += { "5", 6 };
+t += { "7", 8 };
+t += { "9", 0 };
+foreach(v :: t) print(v.a);
+)codi-minairo",
+				"13579");
 		}
 
 	};

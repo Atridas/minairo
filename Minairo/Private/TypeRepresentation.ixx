@@ -28,7 +28,6 @@ export namespace minairo
 
 		TypeRepresentation const& get_field_type(std::string_view name) const;
 		int get_field_index(std::string_view name) const;
-		int get_original_order(std::string_view name) const;
 
 		int get_num_fields() const { return (int)sorded_fields.size(); }
 		std::string_view get_field_name(int index) const { return field_names[index]; }

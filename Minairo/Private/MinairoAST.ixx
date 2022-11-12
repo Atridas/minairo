@@ -30,7 +30,7 @@ export namespace minairo
 
 		virtual std::unique_ptr<Expression> deep_copy() const = 0;
 		virtual std::optional<TypeRepresentation> get_type_value() const { return std::nullopt; }
-		virtual std::optional<TypeRepresentation> get_expression_type() const = 0;
+		//virtual std::optional<TypeRepresentation> get_expression_type() const = 0;
 		virtual std::optional<uint64_t> get_constant_value() const { return std::nullopt; }
 		virtual TerminalData get_first_terminal() const = 0;
 		virtual TerminalData get_last_terminal() const = 0;
@@ -84,13 +84,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			if (function_to_call == nullptr)
-				return std::nullopt;
-			else
-				return function_to_call->get_return_type();
-		}
 		TerminalData get_first_terminal() const override
 		{
 			return left->get_first_terminal();
@@ -121,10 +114,6 @@ export namespace minairo
 		std::optional<TypeRepresentation> get_type_value() const override
 		{
 			return type;
-		}
-		std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return BuildInType::Typedef;
 		}
 		virtual TerminalData get_first_terminal() const override
 		{
@@ -173,10 +162,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		virtual std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return expr->get_expression_type();
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return open;
@@ -244,10 +229,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		virtual std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return BuildInType::InitializerList;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return open;
@@ -294,18 +275,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		virtual std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			if (callee != nullptr)
-			{
-				std::shared_ptr<FunctionType> c = get<FunctionType>(*callee->get_expression_type());
-				if (c != nullptr)
-				{
-					return c->return_type;
-				}
-			}
-			return std::nullopt;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return callee->get_first_terminal();
@@ -345,10 +314,6 @@ export namespace minairo
 				return std::nullopt;
 			}
 		}
-		virtual std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return type_representation;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return terminal;
@@ -365,6 +330,7 @@ export namespace minairo
 		std::unique_ptr<Expression> left;
 		TerminalData member;
 		int index = -1;
+		bool constant;
 		std::optional<TypeRepresentation> type;
 
 		MemberRead() = default;
@@ -374,6 +340,7 @@ export namespace minairo
 			: left(b.left->deep_copy())
 			, member(b.member)
 			, index(b.index)
+			, constant(b.constant)
 			, type(b.type)
 		{
 		}
@@ -384,6 +351,7 @@ export namespace minairo
 				left = b.left->deep_copy();
 				member = b.member;
 				index = b.index;
+				constant = b.constant;
 				type = b.type;
 			}
 			return *this;
@@ -400,10 +368,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return type;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return left->get_first_terminal();
@@ -460,10 +424,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return type;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return left->get_first_terminal();
@@ -544,10 +504,6 @@ export namespace minairo
 		{
 			return tuple;
 		}
-		std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return BuildInType::Typedef;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return tuple_terminal;
@@ -603,10 +559,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return type;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return keyword;
@@ -664,10 +616,6 @@ export namespace minairo
 		{
 			return table;
 		}
-		std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return BuildInType::Typedef;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return table_terminal;
@@ -716,13 +664,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		virtual std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			if (function_to_call == nullptr)
-				return std::nullopt;
-			else
-				return function_to_call->get_return_type();
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return op;
@@ -771,13 +712,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		virtual std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			if (function_to_call == nullptr)
-				return std::nullopt;
-			else
-				return function_to_call->get_return_type();
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return exp->get_last_terminal();
@@ -831,10 +765,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		virtual std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return type;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return identifier;
@@ -852,6 +782,7 @@ export namespace minairo
 		std::optional<TypeRepresentation> static_type;
 		std::optional<TypeRepresentation> type;
 		int index = -1;
+		bool constant = true;
 
 		VariableRead() = default;
 		VariableRead(VariableRead&&) = default;
@@ -861,6 +792,7 @@ export namespace minairo
 			, static_type(b.static_type)
 			, type(b.type)
 			, index(b.index)
+			, constant(b.constant)
 		{
 		}
 		VariableRead& operator=(VariableRead const& b)
@@ -871,6 +803,7 @@ export namespace minairo
 				static_type = b.static_type;
 				type = b.type;
 				index = b.index;
+				constant = b.constant;
 			}
 			return *this;
 		}
@@ -889,10 +822,6 @@ export namespace minairo
 		std::optional<TypeRepresentation> get_type_value() const override
 		{
 			return static_type;
-		}
-		virtual std::optional<TypeRepresentation> get_expression_type() const override
-		{
-			return type;
 		}
 		virtual TerminalData get_first_terminal() const override
 		{
@@ -1080,6 +1009,61 @@ export namespace minairo
 		}
 	};
 
+	class ForeachStatement final : public Statement
+	{
+	public:
+		TerminalData keyword;
+		TerminalData tuple;
+		std::unique_ptr<Expression> table;
+		std::unique_ptr<Statement> body;
+		bool constant = false;
+
+
+		ForeachStatement() = default;
+		ForeachStatement(ForeachStatement&&) = default;
+		ForeachStatement& operator=(ForeachStatement&&) = default;
+		ForeachStatement(ForeachStatement const& b)
+			: keyword(b.keyword)
+			, tuple(b.tuple)
+			, table(b.table->deep_copy())
+			, body(b.body->deep_copy())
+			, constant(b.constant)
+		{
+		}
+		ForeachStatement& operator=(ForeachStatement const& b)
+		{
+			if (this != &b)
+			{
+				keyword = b.keyword;
+				tuple = b.tuple;
+				table = b.table->deep_copy();
+				body = b.body->deep_copy();
+				constant = b.constant;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Statement> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<ForeachStatement> typed_deep_copy() const
+		{
+			return std::make_unique<ForeachStatement>(*this);
+		}
+
+		void accept(StatementVisitor& visitor) override;
+		void accept(StatementConstVisitor& visitor) const override;
+		virtual TerminalData get_first_terminal() const override
+		{
+			return keyword;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return body->get_last_terminal();
+		}
+	};
+
 	class IfStatement final : public Statement
 	{
 	public:
@@ -1244,45 +1228,46 @@ export namespace minairo
 	{
 	public:
 		virtual void visit(Binary& binary) = 0;
-		virtual void visit(BuildInTypeDeclaration& binary) = 0;
+		virtual void visit(BuildInTypeDeclaration& build_in_type_declaration) = 0;
 		virtual void visit(Call& call) = 0;
 		virtual void visit(Grouping& grouping) = 0;
-		virtual void visit(InitializerList& literal) = 0;
+		virtual void visit(InitializerList& initializer_list) = 0;
 		virtual void visit(Literal& literal) = 0;
-		virtual void visit(MemberRead& literal) = 0;
-		virtual void visit(MemberWrite& literal) = 0;
-		virtual void visit(FunctionDeclaration& unary_pre) = 0;
-		virtual void visit(TableDeclaration& unary_pre) = 0;
-		virtual void visit(TupleDeclaration& unary_pre) = 0;
+		virtual void visit(MemberRead& member_read) = 0;
+		virtual void visit(MemberWrite& member_write) = 0;
+		virtual void visit(FunctionDeclaration& function_declaration) = 0;
+		virtual void visit(TableDeclaration& table_declaration) = 0;
+		virtual void visit(TupleDeclaration& tuple_declaration) = 0;
 		virtual void visit(UnaryPre& unary_pre) = 0;
 		virtual void visit(UnaryPost& unary_post) = 0;
-		virtual void visit(VariableAssign& unary_post) = 0;
-		virtual void visit(VariableRead& unary_post) = 0;
+		virtual void visit(VariableAssign& variable_assign) = 0;
+		virtual void visit(VariableRead& variable_read) = 0;
 	};
 	class ExpressionConstVisitor
 	{
 	public:
 		virtual void visit(Binary const& binary) = 0;
-		virtual void visit(BuildInTypeDeclaration const& binary) = 0;
+		virtual void visit(BuildInTypeDeclaration const& build_in_type_declaration) = 0;
 		virtual void visit(Call const& call) = 0;
 		virtual void visit(Grouping const& grouping) = 0;
-		virtual void visit(InitializerList const& literal) = 0;
+		virtual void visit(InitializerList const& initializer_list) = 0;
 		virtual void visit(Literal const& literal) = 0;
-		virtual void visit(MemberRead const& literal) = 0;
-		virtual void visit(MemberWrite const& literal) = 0;
-		virtual void visit(FunctionDeclaration const& unary_pre) = 0;
-		virtual void visit(TableDeclaration const& unary_pre) = 0;
-		virtual void visit(TupleDeclaration const& unary_pre) = 0;
+		virtual void visit(MemberRead const& member_read) = 0;
+		virtual void visit(MemberWrite const& member_write) = 0;
+		virtual void visit(FunctionDeclaration const& function_declaration) = 0;
+		virtual void visit(TableDeclaration const& table_declaration) = 0;
+		virtual void visit(TupleDeclaration const& tuple_declaration) = 0;
 		virtual void visit(UnaryPre const& unary_pre) = 0;
 		virtual void visit(UnaryPost const& unary_post) = 0;
-		virtual void visit(VariableAssign const& unary_post) = 0;
-		virtual void visit(VariableRead const& unary_post) = 0;
+		virtual void visit(VariableAssign const& variable_assign) = 0;
+		virtual void visit(VariableRead const& variable_read) = 0;
 	};
 	class StatementVisitor
 	{
 	public:
 		virtual void visit(Block& binary) = 0;
 		virtual void visit(ExpressionStatement& binary) = 0;
+		virtual void visit(ForeachStatement& binary) = 0;
 		virtual void visit(IfStatement& binary) = 0;
 		virtual void visit(ReturnStatement& binary) = 0;
 		virtual void visit(VariableDefinition& binary) = 0;
@@ -1293,6 +1278,7 @@ export namespace minairo
 	public:
 		virtual void visit(Block const& binary) = 0;
 		virtual void visit(ExpressionStatement const& binary) = 0;
+		virtual void visit(ForeachStatement const& binary) = 0;
 		virtual void visit(IfStatement const& binary) = 0;
 		virtual void visit(ReturnStatement const& binary) = 0;
 		virtual void visit(VariableDefinition const& binary) = 0;
@@ -1432,6 +1418,10 @@ void minairo::ExpressionStatement::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
 }
+void minairo::ForeachStatement::accept(StatementVisitor& visitor)
+{
+	visitor.visit(*this);
+}
 void minairo::IfStatement::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
@@ -1454,6 +1444,10 @@ void minairo::Block::accept(StatementConstVisitor& visitor) const
 	visitor.visit(*this);
 }
 void minairo::ExpressionStatement::accept(StatementConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void minairo::ForeachStatement::accept(StatementConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

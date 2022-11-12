@@ -12,6 +12,8 @@ module;
 
 export module Minairo.AST.TypePass;
 
+export import :TypeUtilities;
+
 import Minairo.AST;
 import Minairo.Exception;
 import Minairo.Scanner;
@@ -189,54 +191,6 @@ export namespace minairo
 	// --------------------------------------------------------------------------------------------
 	// --------------------------------------------------------------------------------------------
 
-	class AllPathsLeadToReturn final : public StatementConstVisitor
-	{
-	public:
-		bool found_return = false;
-
-		virtual void visit(Block const& block)
-		{
-			for (auto& st : block.statements)
-			{
-				st->accept(*this);
-			}
-		}
-		virtual void visit(ExpressionStatement const& expression_statement)
-		{
-			// ---
-		}
-		virtual void visit(IfStatement const& if_statement)
-		{
-			if (found_return)
-				return;
-
-			if (if_statement.no != nullptr)
-			{
-				if_statement.yes->accept(*this);
-				if (found_return)
-				{
-					found_return = false;
-					if_statement.no->accept(*this);
-				}
-			}
-
-		}
-		virtual void visit(ReturnStatement const& return_statement)
-		{
-			found_return = true;
-		}
-		virtual void visit(VariableDefinition const& variable_definition)
-		{
-			// ---
-		}
-		virtual void visit(WhileStatement const& while_statement)
-		{
-			// ---
-		}
-
-	};
-
-
 	class TypePass final : public ExpressionVisitor, public StatementVisitor
 	{
 		struct VariableInfo
@@ -273,7 +227,7 @@ export namespace minairo
 			binary.left->accept(*this);
 			binary.right->accept(*this);
 
-			TypeRepresentation argument_types[2] = { *binary.left->get_expression_type(), *binary.right->get_expression_type() };
+			TypeRepresentation argument_types[2] = { deduce_type(*binary.left).type, deduce_type(*binary.right).type};
 
 			FunctionRepresentation const* function = nullptr;
 
@@ -331,7 +285,7 @@ export namespace minairo
 			call.callee->accept(*this);
 			call.arguments.accept(*this);
 
-			TypeRepresentation callee_type = *call.callee->get_expression_type();
+			TypeRepresentation callee_type = deduce_type(*call.callee).type;
 			std::shared_ptr<FunctionType> as_function = get<FunctionType>(callee_type);
 
 			if(as_function == nullptr)
@@ -367,14 +321,14 @@ export namespace minairo
 		void visit(MemberRead& member_read) override
 		{
 			member_read.left->accept(*this);
-			TypeRepresentation left_type = *member_read.left->get_expression_type();
-			if (auto tupleopt = get<TupleReferenceType>(left_type))
+			auto left_type = deduce_type(*member_read.left);
+			if (auto tuple = get<TupleType>(left_type.type))
 			{
-				TupleReferenceType tuple_ref = *std::move(tupleopt);
-				if (tuple_ref.tuple.has_field(member_read.member.text))
+				if (tuple->has_field(member_read.member.text))
 				{
-					member_read.index = tuple_ref.tuple.get_field_index(member_read.member.text);
-					member_read.type = tuple_ref.tuple.get_field_type(member_read.member.text);
+					member_read.index = tuple->get_field_index(member_read.member.text);
+					member_read.type = tuple->get_field_type(member_read.member.text);
+					member_read.constant = left_type.constant;
 				}
 				else
 				{
@@ -390,15 +344,14 @@ export namespace minairo
 		void visit(MemberWrite& member_write) override
 		{
 			member_write.left->accept(*this);
-			TypeRepresentation left_type = *member_write.left->get_expression_type();
-			if (auto tupleopt = get<TupleReferenceType>(left_type))
+			auto left_type = deduce_type(*member_write.left);
+			if (auto tuple = get<TupleType>(left_type.type))
 			{
-				TupleReferenceType tuple_ref = *std::move(tupleopt);
-				if (!tuple_ref.tuple.has_field(member_write.member.text))
+				if (!tuple->has_field(member_write.member.text))
 				{
 					throw message_exception("tuple doesn't have a member of this name\n", member_write);
 				}
-				else if (tuple_ref.constant)
+				else if (left_type.constant)
 				{
 					throw message_exception("can't assign to a member of a constant tuple\n", member_write);
 				}
@@ -406,11 +359,11 @@ export namespace minairo
 				{
 					member_write.right->accept(*this);
 
-					member_write.index = tuple_ref.tuple.get_field_index(member_write.member.text);
-					member_write.type = tuple_ref.tuple.get_field_type(member_write.member.text);
+					member_write.index = tuple->get_field_index(member_write.member.text);
+					member_write.type = tuple->get_field_type(member_write.member.text);
 
 
-					if (*member_write.type != *member_write.right->get_expression_type())
+					if (*member_write.type != deduce_type(*member_write.right).type)
 					{
 						throw message_exception("Assignment of different types", member_write);
 					}
@@ -438,7 +391,7 @@ export namespace minairo
 			if (function_declaration.return_type)
 			{
 				function_declaration.return_type->accept(*this);
-				if (function_declaration.return_type->get_expression_type())
+				if (deduce_type(*function_declaration.return_type).type == BuildInType::Typedef)
 					function_declaration.type.return_type = *function_declaration.return_type->get_type_value();
 				else
 					throw message_exception("Expected a type", *function_declaration.return_type);
@@ -498,12 +451,9 @@ export namespace minairo
 					throw message_exception("Can't deduce return type of a function", function_declaration);
 			}
 			
-			if (function_declaration.type.return_type != BuildInType::Void)
+			if (function_declaration.type.return_type != BuildInType::Void && !all_paths_lead_to_a_return(*function_declaration.body))
 			{
-				AllPathsLeadToReturn return_finder;
-				function_declaration.body->accept(return_finder);
-				if(!return_finder.found_return)
-					throw message_exception("All paths must end in a return statement", *function_declaration.body);
+				throw message_exception("All paths must end in a return statement", *function_declaration.body);
 			}
 
 			return_type = outer_return_type;
@@ -573,7 +523,7 @@ export namespace minairo
 
 					if (!tuple_declaration.field_types[i])
 					{
-						field_type = *tuple_declaration.field_initializers[i]->get_expression_type();
+						field_type = deduce_type(*tuple_declaration.field_initializers[i]).type;
 					}
 
 					if (auto init = tuple_declaration.field_initializers[i]->get_constant_value())
@@ -676,21 +626,12 @@ export namespace minairo
 				auto variable = find_variable(variable_read.identifier);
 				if (in_pure_function_context && variable.index == -1 && !variable.constant)
 				{
-					throw message_exception("Can't read from non-constant global inside a function!", variable_read);
+					throw message_exception("Can't read from non-constant global inside a pure function!", variable_read);
 				}
 
-				if (auto t = get<TupleType>(variable.type))
-				{
-					TupleReferenceType as_reference;
-					as_reference.tuple = *t;
-					as_reference.constant = variable.constant;
-					variable_read.type = as_reference;
-				}
-				else
-				{
-					variable_read.type = variable.type;
-				}
+				variable_read.type = variable.type;
 				variable_read.index = variable.index;
+				variable_read.constant = variable.constant;
 			}
 		}
 
@@ -731,6 +672,30 @@ export namespace minairo
 			expression_statement.exp->accept(*this);
 		}
 
+		void visit(ForeachStatement& foreach_statement) override
+		{
+			foreach_statement.table->accept(*this);
+
+			std::shared_ptr<TableType> type = get<TableType>(deduce_type(*foreach_statement.table).type);
+
+			if(type == nullptr)
+				throw message_exception("foreach iterable must be a table", *foreach_statement.table);
+
+			VariableInfo info;
+			info.index = 0;
+			TupleReferenceType iteratedType;
+			iteratedType.tuple = type->base_tuple;
+			info.constant = iteratedType.constant = foreach_statement.constant;
+			info.type = iteratedType;
+
+			push_variable_block();
+			variable_blocks.back().variables[(std::string)foreach_statement.tuple.text] = info;
+
+			foreach_statement.body->accept(*this);
+
+			pop_variable_block();
+		}
+
 		void visit(IfStatement& if_statement) override
 		{
 			push_variable_block();
@@ -749,7 +714,7 @@ export namespace minairo
 			if (if_statement.initialization != nullptr && if_statement.condition == nullptr && *if_statement.initialization->type != BuildInType::Bool)
 				throw message_exception("If statement condition must be of type boolean", *if_statement.initialization);
 
-			if (if_statement.condition != nullptr && if_statement.condition->get_expression_type() != BuildInType::Bool)
+			if (if_statement.condition != nullptr && deduce_type(*if_statement.condition).type != BuildInType::Bool)
 				throw message_exception("If statement condition must be of type boolean", *if_statement.condition);
 
 			pop_variable_block();
@@ -768,7 +733,7 @@ export namespace minairo
 				if (!return_statement.exp)
 					return_type = BuildInType::Void;
 				else
-					return_type = *return_statement.exp->get_expression_type();
+					return_type = deduce_type(*return_statement.exp).type;
 			}
 			else if (return_statement.exp == nullptr)
 			{
@@ -805,7 +770,7 @@ export namespace minairo
 			{
 				variable_definition.type_definition->accept(*this);
 
-				if (*variable_definition.type_definition->get_expression_type() != BuildInType::Typedef)
+				if (deduce_type(*variable_definition.type_definition).type != BuildInType::Typedef)
 				{
 					throw message_exception("Expected a type definition\n", *variable_definition.type_definition);
 				}
@@ -817,7 +782,7 @@ export namespace minairo
 				variable_definition.initialization->accept(*this);
 				if (variable_definition.type_definition == nullptr)
 				{
-					variable_definition.type = *variable_definition.initialization->get_expression_type();
+					variable_definition.type = deduce_type(*variable_definition.initialization).type;
 				}
 				else if (!implicit_cast(*variable_definition.type, variable_definition.initialization))
 				{
@@ -866,7 +831,7 @@ export namespace minairo
 			while_statement.condition->accept(*this);
 			while_statement.body->accept(*this);
 
-			if (while_statement.condition->get_expression_type() != BuildInType::Bool)
+			if (deduce_type(*while_statement.condition).type != BuildInType::Bool)
 				throw message_exception("While statement condition must be of type boolean", *while_statement.condition);
 		}
 
@@ -1014,9 +979,10 @@ export namespace minairo
 
 		bool implicit_cast(TypeRepresentation target, std::unique_ptr<Expression> &origin)
 		{
-			if (target == origin->get_expression_type())
+			TypeRepresentation original_type = deduce_type(*origin).type;
+			if (target == original_type)
 				return true;
-			else if (get<TupleType>(target) && origin->get_expression_type() == BuildInType::InitializerList)
+			else if (get<TupleType>(target) && original_type == BuildInType::InitializerList)
 			{
 				assert(dynamic_cast<InitializerList*>(origin.get()));
 				return implicit_cast(*get<TupleType>(target), *static_cast<InitializerList*>(origin.get()), true);

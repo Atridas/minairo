@@ -59,7 +59,7 @@ export namespace minairo
 
 			void* arguments[2] = { get_ptr(left), get_ptr(right) };
 
-			TypeRepresentation return_type = *binary.get_expression_type();
+			TypeRepresentation return_type = deduce_type(binary).type;
 			void* result_ptr = set_to_type(last_expression_value, return_type);
 
 			binary.function_to_call->call(result_ptr, arguments);
@@ -106,7 +106,7 @@ export namespace minairo
 					args.push_back(get_ptr(argument));
 				}
 
-				TypeRepresentation return_type = *call.get_expression_type();
+				TypeRepresentation return_type = deduce_type(call).type;
 				void* result_ptr = set_to_type(last_expression_value, return_type);
 
 				callee->call(result_ptr, args);
@@ -160,8 +160,17 @@ export namespace minairo
 		void visit(MemberRead const& member_read) override
 		{
 			member_read.left->accept(*this);
-			Value result = get<TupleReference>(last_expression_value)->get_field(member_read.index);
-			last_expression_value = result;
+			if (get<TupleType>(*member_read.type))
+			{
+				TupleReferenceOnStack tuple_ref;
+				tuple_ref.tuple = get<Tuple>(get<TupleReference>(last_expression_value)->get_field(member_read.index));
+				assert(tuple_ref.tuple != nullptr);
+				last_expression_value = tuple_ref;
+			}
+			else
+			{
+				last_expression_value = get<TupleReference>(last_expression_value)->get_field(member_read.index);
+			}
 		}
 
 		void visit(MemberWrite const& member_write) override
@@ -196,7 +205,7 @@ export namespace minairo
 
 			void* arguments[1] = {get_ptr(exp)};
 
-			TypeRepresentation return_type = *unary_pre.get_expression_type();
+			TypeRepresentation return_type = deduce_type(unary_pre).type;
 			void* result_ptr = set_to_type(last_expression_value, return_type);
 
 			unary_pre.function_to_call->call(result_ptr, arguments);
@@ -209,7 +218,7 @@ export namespace minairo
 
 			void* arguments[1] = { get_ptr(exp) };
 
-			TypeRepresentation return_type = *unary_post.get_expression_type();
+			TypeRepresentation return_type = deduce_type(unary_post).type;
 			void* result_ptr = set_to_type(last_expression_value, return_type);
 
 			unary_post.function_to_call->call(result_ptr, arguments);
@@ -274,7 +283,7 @@ export namespace minairo
 				assert(variable_read.index == -1);
 				last_expression_value = *variable_read.static_type;
 			}
-			else if (get<TupleReferenceType>(*variable_read.type))
+			else if (get<TupleType>(*variable_read.type))
 			{
 				TupleReferenceOnStack tuple_ref;
 				if (variable_read.index == -1)
@@ -336,6 +345,26 @@ export namespace minairo
 			{
 				last_expression_value = tuple_reference->as_tuple();
 			}
+		}
+
+		void visit(ForeachStatement const& for_statement) override
+		{
+			for_statement.table->accept(*this);
+			TupleReferenceOnATable reference;
+			reference.table = get<Table>(last_expression_value);
+
+			int current_stack_size = (int)variables.size();
+
+			variables.push_back(reference);
+
+			for (reference.row = 0; reference.row < reference.table->rows; ++reference.row)
+			{
+				variables[current_stack_size] = reference;
+
+				for_statement.body->accept(*this);
+			}
+
+			variables.resize(current_stack_size);
 		}
 
 		void visit(IfStatement const& if_statement) override

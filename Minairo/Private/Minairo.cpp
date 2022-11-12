@@ -292,7 +292,7 @@ namespace minairo
 		return "function TODO";
 	}
 
-	void interpret(VMImpl* vm, std::string_view code, std::ostream &out)
+	void interpret(VMImpl* vm, std::string_view code, std::ostream &out, std::ostream& err)
 	{
 		assert(vm != nullptr);
 
@@ -317,11 +317,11 @@ namespace minairo
 		}
 		catch (ParseException pe)
 		{
-			std::cerr << pe.print_error() << std::endl;
+			err << pe.print_error() << std::endl;
 		}
 		catch (TypeException te)
 		{
-			std::cerr << te.print_error() << std::endl;
+			err << te.print_error() << std::endl;
 		}
 	}
 

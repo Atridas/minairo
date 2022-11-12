@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Private\TypeUtilities.cpp" />
     <ClCompile Include="Private\FunctionRepresentation.cpp" />
     <ClCompile Include="Private\MinairoAST.ixx" />
     <ClCompile Include="Private\Minairo.cpp" />
@@ -31,6 +32,7 @@
     <ClCompile Include="Private\TypeRepresentation.ixx" />
     <ClCompile Include="Private\TypesAndValues.ixx" />
     <ClCompile Include="Private\TypesAndValuesStructures.ixx" />
+    <ClCompile Include="Private\TypeUtilities.ixx" />
     <ClCompile Include="Private\Values.ixx" />
     <ClCompile Include="Public\Minairo\Minairo.ixx" />
   </ItemGroup>

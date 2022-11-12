@@ -62,7 +62,7 @@ FLOAT_LITERAL += '0' ('x' | 'X') HEX_DIGIT_SEQUENCE? '.' HEX_DIGIT_SEQUENCE HEX_
 
 CHAR_LITERAL = '\'' (@ | ESCAPE_SEQUENCE | OTHER_CHAR) '\'';
 
-STRING_LITERAL = '"' (@ | ESCAPE_SEQUENCE | OTHER_CHAR)* '"';
+STRING_LITERAL = '"' (@ | # | ESCAPE_SEQUENCE | OTHER_CHAR)* '"';
 
 BOOL_LITERAL = "true" | "false";
 
@@ -84,6 +84,7 @@ KW_TUPLE = "tuple";
 KW_DO = "do";
 KW_ELSE = "else";
 KW_FOR = "for";
+KW_FOREACH = "foreach";
 KW_GROUP = "group";
 KW_IF = "if";
 KW_JOIN = "join";
@@ -108,6 +109,7 @@ KW_UINT64 = "uint64";
 KW_FLOAT32 = "float" | "float32" ;
 KW_FLOAT64 = "double" | "float64";
 KW_TYPEDEF = "typedef";
+KW_STRING = "string";
 
 // Operators
 

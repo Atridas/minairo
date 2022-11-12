@@ -14,5 +14,5 @@ namespace minairo
 	export API void destroy_VM(VM state);
 
 	export API void interpret(std::string_view code);
-	export API void interpret(VM state, std::string_view code, std::ostream &out = std::cout);
+	export API void interpret(VM state, std::string_view code, std::ostream &out = std::cout, std::ostream &err = std::cerr);
 }

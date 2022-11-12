@@ -273,6 +273,9 @@ namespace minairo
 		case Terminal::KW_TYPEDEF:
 			result->type = BuildInType::Typedef;
 			break;
+		case Terminal::KW_STRING:
+			result->type = BuildInType::String;
+			break;
 		default:
 			throw unexpected_type_exception(result->terminal);
 		}
@@ -848,6 +851,7 @@ namespace minairo
 		pratt_prefixes[(int)Terminal::KW_FLOAT64] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_BOOL] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_TYPEDEF] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_STRING] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_TABLE] = &table_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_TUPLE] = &tuple_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_FUNCTION] = &function_declaration;
@@ -1022,6 +1026,38 @@ namespace minairo
 
 	// ------------------------------------------------------------------------------------
 
+	StatementPtr foreach_statement(Scanner& scanner)
+	{
+		auto result = std::make_unique<ForeachStatement>();
+		result->keyword = consume(Terminal::KW_FOREACH, scanner);
+
+		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
+
+		result->tuple = consume(Terminal::IDENTIFIER, scanner);
+
+		consume(Terminal::OP_COLON, scanner);
+		if (scanner.peek_next_symbol().type == Terminal::OP_COLON)
+		{
+			result->constant = true;
+			consume(Terminal::OP_COLON, scanner);
+		}
+		else
+		{
+			result->constant = false;
+			consume(Terminal::OP_ASSIGN, scanner);
+		}
+
+		result->table = expression(scanner);
+
+		consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
+
+		result->body = statement(scanner);
+
+		return result;
+	}
+
+	// ------------------------------------------------------------------------------------
+
 	StatementPtr if_statement(Scanner& scanner)
 	{
 		auto result = std::make_unique<IfStatement>();
@@ -1169,6 +1205,10 @@ namespace minairo
 		else if (scanner.peek_next_symbol().type == Terminal::KW_FOR)
 		{
 			return for_statement(scanner);
+		}
+		else if (scanner.peek_next_symbol().type == Terminal::KW_FOREACH)
+		{
+			return foreach_statement(scanner);
 		}
 		else if (scanner.peek_next_symbol().type == Terminal::KW_RETURN)
 		{
