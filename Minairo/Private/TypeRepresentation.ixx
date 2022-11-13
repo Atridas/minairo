@@ -165,7 +165,10 @@ export namespace minairo
 	protected:
 		bool equals(ComplexType const& other) const override
 		{
-			return *this == other;
+			if (FunctionType const* as_function_type = dynamic_cast<FunctionType const*>(&other))
+				return *this == *as_function_type;
+			else
+				return false;
 		}
 	};
 

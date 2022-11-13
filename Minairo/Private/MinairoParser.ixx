@@ -31,6 +31,7 @@ namespace minairo
 	StatementPtr statement(Scanner& scanner);
 	bool peek_variable_definition(Scanner& scanner);
 	std::unique_ptr<VariableDefinition> variable_definition(Scanner& scanner, bool consume_semicolon = true);
+	std::unique_ptr<Block> block(Scanner& scanner);
 
 	// ------------------------------------------------------------------------------------
 	// ------------------------------------------------------------------------------------
@@ -40,26 +41,38 @@ namespace minairo
 	{
 		enum class Type
 		{
-			UnexpectedEnd,
+			Message,
 			ScannerError,
+			UnexpectedEnd,
+			UnexpectedPrefix,
 			UnexpectedTerminal,
-			UnexpectedType,
-			UnexpectedPrefix
+			UnexpectedType
 		} type;
 
 		Terminal terminal;
-		TerminalData terminal_data;
+		TerminalData terminal_data, terminal_data2;
+
+		std::string message;
+
 
 		std::string print_error()
 		{
 			std::stringstream ss;
 			switch (type)
 			{
-			case Type::UnexpectedEnd:
-				ss << "Encountered the end of the file while waiting for a " << to_string(terminal);
+			case Type::Message:
+				ss << message << '\n';
+				print_error_line(ss, terminal_data, terminal_data2);
 				break;
 			case Type::ScannerError:
 				ss << "Encountered an scanner error while waiting for a " << to_string(terminal) << '\n';
+				print_error_line(ss, terminal_data);
+				break;
+			case Type::UnexpectedEnd:
+				ss << "Encountered the end of the file while waiting for a " << to_string(terminal);
+				break;
+			case Type::UnexpectedPrefix:
+				ss << "Encountered a " << to_string(terminal_data.type) << " on an expression, while expecting a literal, variable, etc... \n";
 				print_error_line(ss, terminal_data);
 				break;
 			case Type::UnexpectedTerminal:
@@ -68,10 +81,6 @@ namespace minairo
 				break;
 			case Type::UnexpectedType:
 				ss << "Encountered a " << to_string(terminal_data.type) << " while waiting for a type\n";
-				print_error_line(ss, terminal_data);
-				break;
-			case Type::UnexpectedPrefix:
-				ss << "Encountered a " << to_string(terminal_data.type) << " on an expression, while expecting a literal, variable, etc... \n";
 				print_error_line(ss, terminal_data);
 				break;
 			default:
@@ -131,6 +140,21 @@ namespace minairo
 		result.type = ParseException::Type::UnexpectedPrefix;
 		result.terminal_data = unexpected_terminal;
 		return result;
+	}
+
+	ParseException message_exception(std::string_view message, TerminalData t1, TerminalData t2)
+	{
+		ParseException result;
+		result.type = ParseException::Type::Message;
+		result.message = message;
+		result.terminal_data = t1;
+		result.terminal_data2 = t2;
+		return result;
+	}
+
+	ParseException message_exception(std::string_view message, Expression& expression)
+	{
+		return message_exception(message, expression.get_first_terminal(), expression.get_last_terminal());
 	}
 
 	// ------------------------------------------------------------------------------------
@@ -282,33 +306,34 @@ namespace minairo
 		return result;
 	}
 
-	ExpressionPtr function_declaration(Scanner& scanner)
+	ExpressionPtr function_declaration(Scanner& scanner, bool only_header)
 	{
 		auto result = std::make_unique<FunctionDeclaration>();
+		result->header = std::make_unique<FunctionTypeDeclaration>();
 
 		if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER && scanner.peek_next_symbol().text == "pure")
 		{
-			result->keyword = consume(Terminal::IDENTIFIER, scanner);
+			result->header->keyword = consume(Terminal::IDENTIFIER, scanner);
 			consume(Terminal::KW_FUNCTION, scanner);
 
-			result->is_pure = true;
+			result->header->is_pure = true;
 		}
 		else
 		{
-			result->keyword = consume(Terminal::KW_FUNCTION, scanner);
+			result->header->keyword = consume(Terminal::KW_FUNCTION, scanner);
 		}
 
 		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
-		result->parameter_tuple = std::make_unique<TupleDeclaration>();
+		result->header->parameter_tuple = std::make_unique<TupleDeclaration>();
 
 		while (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
 		{
-			result->parameter_tuple->field_names.push_back(consume(Terminal::IDENTIFIER, scanner));
+			result->header->parameter_tuple->field_names.push_back(consume(Terminal::IDENTIFIER, scanner));
 
 			while (scanner.peek_next_symbol().type == Terminal::OP_COMMA)
 			{
 				consume(Terminal::OP_COMMA, scanner);
-				result->parameter_tuple->field_names.push_back(consume(Terminal::IDENTIFIER, scanner));
+				result->header->parameter_tuple->field_names.push_back(consume(Terminal::IDENTIFIER, scanner));
 			}
 
 			consume(Terminal::OP_COLON, scanner);
@@ -316,35 +341,35 @@ namespace minairo
 			if (scanner.peek_next_symbol().type == Terminal::OP_ASSIGN)
 			{
 				consume(Terminal::OP_ASSIGN, scanner);
-				result->parameter_tuple->field_types.push_back(nullptr);
-				result->parameter_tuple->field_initializers.push_back(expression(scanner));
+				result->header->parameter_tuple->field_types.push_back(nullptr);
+				result->header->parameter_tuple->field_initializers.push_back(expression(scanner));
 			}
 			else
 			{
-				result->parameter_tuple->field_types.push_back(type_declaration(scanner));
+				result->header->parameter_tuple->field_types.push_back(type_declaration(scanner));
 
 				if (scanner.peek_next_symbol().type == Terminal::OP_ASSIGN)
 				{
 					consume(Terminal::OP_ASSIGN, scanner);
-					result->parameter_tuple->field_initializers.push_back(expression(scanner));
+					result->header->parameter_tuple->field_initializers.push_back(expression(scanner));
 					// TODO uninitialized(?)
 				}
 				else
 				{
-					result->parameter_tuple->field_initializers.push_back(nullptr);
+					result->header->parameter_tuple->field_initializers.push_back(nullptr);
 				}
 			}
 
-			assert(result->parameter_tuple->field_initializers.size() == result->parameter_tuple->field_types.size());
+			assert(result->header->parameter_tuple->field_initializers.size() == result->header->parameter_tuple->field_types.size());
 
-			while (result->parameter_tuple->field_types.size() < result->parameter_tuple->field_names.size())
+			while (result->header->parameter_tuple->field_types.size() < result->header->parameter_tuple->field_names.size())
 			{
-				result->parameter_tuple->field_types.push_back(nullptr);
-				result->parameter_tuple->field_initializers.push_back(nullptr);
+				result->header->parameter_tuple->field_types.push_back(nullptr);
+				result->header->parameter_tuple->field_initializers.push_back(nullptr);
 			}
 
-			assert(result->parameter_tuple->field_types.size() == result->parameter_tuple->field_names.size());
-			assert(result->parameter_tuple->field_initializers.size() == result->parameter_tuple->field_names.size());
+			assert(result->header->parameter_tuple->field_types.size() == result->header->parameter_tuple->field_names.size());
+			assert(result->header->parameter_tuple->field_initializers.size() == result->header->parameter_tuple->field_names.size());
 
 			// -----------------
 
@@ -358,17 +383,31 @@ namespace minairo
 			}
 		}
 
-		consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
+		result->header->parenthesis = consume(Terminal::BRACKET_ROUND_CLOSE, scanner);
 
-		if (scanner.peek_next_symbol().type == Terminal::OP_ARROW)
+		if (scanner.peek_next_symbol().type == Terminal::OP_ARROW || only_header)
 		{
 			consume(Terminal::OP_ARROW, scanner);
-			result->return_type = expression(scanner);
+			result->header->return_type = expression(scanner);
 		}
 
-		result->body = statement(scanner);
+		if (only_header || scanner.peek_next_symbol().type != Terminal::BRACKET_CURLY_OPEN)
+		{
+			if (result->header->return_type == nullptr)
+				throw message_exception("Function type declaration needs return type", *result->header);
 
-		return result;
+			return std::move(result->header);
+		}
+		else
+		{
+			result->body = block(scanner);
+			return result;
+		}
+	}
+
+	ExpressionPtr function_declaration(Scanner& scanner)
+	{
+		return function_declaration(scanner, false);
 	}
 
 	ExpressionPtr grouping(Scanner& scanner)
@@ -789,9 +828,16 @@ namespace minairo
 	{
 		if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
 		{
-			auto result = std::make_unique<VariableRead>();
-			result->identifier = consume(Terminal::IDENTIFIER, scanner);
-			return result;
+			if (scanner.peek_next_symbol().text == "pure" && scanner.peek_next_symbol(1).type == Terminal::KW_FUNCTION)
+			{
+				return function_declaration(scanner, true);
+			}
+			else
+			{
+				auto result = std::make_unique<VariableRead>();
+				result->identifier = consume(Terminal::IDENTIFIER, scanner);
+				return result;
+			}
 		}
 		else if (scanner.peek_next_symbol().type == Terminal::KW_TABLE)
 		{
@@ -911,7 +957,7 @@ namespace minairo
 	// ------------------------------------------------------------------------------------
 	// ------------------------------------------------------------------------------------
 
-	StatementPtr block(Scanner& scanner)
+	std::unique_ptr<Block> block(Scanner& scanner)
 	{
 		auto block = std::make_unique<Block>();
 		block->open = consume(Terminal::BRACKET_CURLY_OPEN, scanner);

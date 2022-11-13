@@ -120,12 +120,12 @@ namespace InterpreterTests
 	{
 		TEST_METHOD(Pure)
 		{
-			RunAndExpect(R"codi-minairo(pure function(a,b: int32) return a + b;(1,2);)codi-minairo", "3");
-			RunAndExpect(R"codi-minairo(f :: pure function(a,b: int32) return a + b;; f(1,2);)codi-minairo", "3");
+			RunAndExpect(R"codi-minairo(pure function(a,b: int32) { return a + b; }(1,2);)codi-minairo", "3");
+			RunAndExpect(R"codi-minairo(f :: pure function(a,b: int32) { return a + b; }; f(1,2);)codi-minairo", "3");
 
-			RunAndExpect(R"codi-minairo(pure function(a,b: int32) return a / b;(10,2);)codi-minairo", "5");
-			RunAndExpect(R"codi-minairo(pure function(a,b: int32) return a / b;(a = 10,2);)codi-minairo", "5");
-			RunAndExpect(R"codi-minairo(pure function(a,b: int32) return a / b;(b = 2, a = 10);)codi-minairo", "5");
+			RunAndExpect(R"codi-minairo(pure function(a,b: int32) { return a / b; }(10,2);)codi-minairo", "5");
+			RunAndExpect(R"codi-minairo(pure function(a,b: int32) { return a / b; }(a = 10,2);)codi-minairo", "5");
+			RunAndExpect(R"codi-minairo(pure function(a,b: int32) { return a / b; }(b = 2, a = 10);)codi-minairo", "5");
 		}
 	};
 

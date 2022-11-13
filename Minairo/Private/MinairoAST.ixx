@@ -492,39 +492,71 @@ export namespace minairo
 		}
 	};
 	
-	class FunctionDeclaration final : public Expression
+	class FunctionTypeDeclaration final : public Expression
 	{
 	public:
-		TerminalData keyword;
-		std::unique_ptr<Statement> body;
+		TerminalData keyword, parenthesis;
 		std::unique_ptr<TupleDeclaration> parameter_tuple;
 		std::unique_ptr<Expression> return_type;
 		bool is_pure;
 		FunctionType type;
 
-		FunctionDeclaration() = default;
-		FunctionDeclaration(FunctionDeclaration&&) = default;
-		FunctionDeclaration& operator=(FunctionDeclaration&&) = default;
-		FunctionDeclaration(FunctionDeclaration const& b)
+		FunctionTypeDeclaration() = default;
+		FunctionTypeDeclaration(FunctionTypeDeclaration&&) = default;
+		FunctionTypeDeclaration& operator=(FunctionTypeDeclaration&&) = default;
+		FunctionTypeDeclaration(FunctionTypeDeclaration const& b)
 			: keyword(b.keyword)
-			, body(b.body->deep_copy())
+			, parenthesis(b.parenthesis)
 			, parameter_tuple(b.parameter_tuple->typed_deep_copy())
 			, return_type(b.return_type->deep_copy())
 			, type(b.type)
 		{
 		}
-		FunctionDeclaration& operator=(FunctionDeclaration const& b)
+		FunctionTypeDeclaration& operator=(FunctionTypeDeclaration const& b)
 		{
 			if (this != &b)
 			{
 				keyword = b.keyword;
-				body = b.body->deep_copy();
+				parenthesis = b.parenthesis;
 				parameter_tuple = b.parameter_tuple->typed_deep_copy();
 				return_type = b.return_type->deep_copy();
 				type = b.type;
 			}
 			return *this;
 		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<FunctionTypeDeclaration> typed_deep_copy() const
+		{
+			return std::make_unique<FunctionTypeDeclaration>(*this);
+		}
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		virtual TerminalData get_first_terminal() const override
+		{
+			return keyword;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return return_type ? return_type->get_last_terminal() : parenthesis;
+		}
+	};
+	
+	class FunctionDeclaration final : public Expression
+	{
+	public:
+		std::unique_ptr<FunctionTypeDeclaration> header;
+		std::unique_ptr<class Block> body;
+
+		FunctionDeclaration() = default;
+		FunctionDeclaration(FunctionDeclaration&&) = default;
+		FunctionDeclaration& operator=(FunctionDeclaration&&) = default;
+		FunctionDeclaration(FunctionDeclaration const& b);
+		FunctionDeclaration& operator=(FunctionDeclaration const& b);
 
 		std::unique_ptr<Expression> deep_copy() const override
 		{
@@ -537,14 +569,11 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		virtual TerminalData get_first_terminal() const override
+		TerminalData get_first_terminal() const override
 		{
-			return keyword;
+			return header->get_last_terminal();
 		}
-		virtual TerminalData get_last_terminal() const override
-		{
-			return body->get_last_terminal();
-		}
+		TerminalData get_last_terminal() const override;
 	};
 
 	class TableDeclaration final : public Expression
@@ -1206,6 +1235,7 @@ export namespace minairo
 		virtual void visit(MemberRead& member_read) = 0;
 		virtual void visit(MemberWrite& member_write) = 0;
 		virtual void visit(FunctionDeclaration& function_declaration) = 0;
+		virtual void visit(FunctionTypeDeclaration& function_type_declaration) = 0;
 		virtual void visit(TableDeclaration& table_declaration) = 0;
 		virtual void visit(TupleDeclaration& tuple_declaration) = 0;
 		virtual void visit(UnaryPre& unary_pre) = 0;
@@ -1225,6 +1255,7 @@ export namespace minairo
 		virtual void visit(MemberRead const& member_read) = 0;
 		virtual void visit(MemberWrite const& member_write) = 0;
 		virtual void visit(FunctionDeclaration const& function_declaration) = 0;
+		virtual void visit(FunctionTypeDeclaration const& function_type_declaration) = 0;
 		virtual void visit(TableDeclaration const& table_declaration) = 0;
 		virtual void visit(TupleDeclaration const& tuple_declaration) = 0;
 		virtual void visit(UnaryPre const& unary_pre) = 0;
@@ -1256,184 +1287,212 @@ export namespace minairo
 	};
 }
 
+using namespace minairo;
 
 // ------------------------------------------------------------------------------------------------
-void minairo::Binary::accept(ExpressionVisitor& visitor)
+FunctionDeclaration::FunctionDeclaration(FunctionDeclaration const& b)
+	: header(b.header->typed_deep_copy())
+	, body(b.body->typed_deep_copy())
+{
+}
+FunctionDeclaration& FunctionDeclaration::operator=(FunctionDeclaration const& b)
+{
+	if (this != &b)
+	{
+		header = b.header->typed_deep_copy();
+		body = b.body->typed_deep_copy();
+	}
+	return *this;
+}
+TerminalData FunctionDeclaration::get_last_terminal() const
+{
+	return body->get_last_terminal();
+}
+// ------------------------------------------------------------------------------------------------
+void Binary::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::BuildInTypeDeclaration::accept(ExpressionVisitor& visitor)
+void BuildInTypeDeclaration::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::Call::accept(ExpressionVisitor& visitor)
+void Call::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::Grouping::accept(ExpressionVisitor& visitor)
+void Grouping::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::InitializerList::accept(ExpressionVisitor& visitor)
+void InitializerList::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::Literal::accept(ExpressionVisitor& visitor)
+void Literal::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::MemberRead::accept(ExpressionVisitor& visitor)
+void MemberRead::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::MemberWrite::accept(ExpressionVisitor& visitor)
+void MemberWrite::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::FunctionDeclaration::accept(ExpressionVisitor& visitor)
+void FunctionDeclaration::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::TableDeclaration::accept(ExpressionVisitor& visitor)
+void FunctionTypeDeclaration::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::TupleDeclaration::accept(ExpressionVisitor& visitor)
+void TableDeclaration::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::UnaryPre::accept(ExpressionVisitor& visitor)
+void TupleDeclaration::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::UnaryPost::accept(ExpressionVisitor& visitor)
+void UnaryPre::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::VariableAssign::accept(ExpressionVisitor& visitor)
+void UnaryPost::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::VariableRead::accept(ExpressionVisitor& visitor)
+void VariableAssign::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+void VariableRead::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
 // ------------------------------------------------------------------------------------------------
-void minairo::Binary::accept(ExpressionConstVisitor& visitor) const
+void Binary::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::BuildInTypeDeclaration::accept(ExpressionConstVisitor& visitor) const
+void BuildInTypeDeclaration::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::Call::accept(ExpressionConstVisitor& visitor) const
+void Call::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::Grouping::accept(ExpressionConstVisitor& visitor) const
+void Grouping::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::InitializerList::accept(ExpressionConstVisitor& visitor) const
+void InitializerList::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::Literal::accept(ExpressionConstVisitor& visitor) const
+void Literal::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::MemberRead::accept(ExpressionConstVisitor& visitor) const
+void MemberRead::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::MemberWrite::accept(ExpressionConstVisitor& visitor) const
+void MemberWrite::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::FunctionDeclaration::accept(ExpressionConstVisitor& visitor) const
+void FunctionDeclaration::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::TableDeclaration::accept(ExpressionConstVisitor& visitor) const
+void FunctionTypeDeclaration::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::TupleDeclaration::accept(ExpressionConstVisitor& visitor) const
+void TableDeclaration::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::UnaryPre::accept(ExpressionConstVisitor& visitor) const
+void TupleDeclaration::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::UnaryPost::accept(ExpressionConstVisitor& visitor) const
+void UnaryPre::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::VariableAssign::accept(ExpressionConstVisitor& visitor) const
+void UnaryPost::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-void minairo::VariableRead::accept(ExpressionConstVisitor& visitor) const
+void VariableAssign::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
-// ------------------------------------------------------------------------------------------------
-void minairo::Block::accept(StatementVisitor& visitor)
-{
-	visitor.visit(*this);
-}
-void minairo::ExpressionStatement::accept(StatementVisitor& visitor)
-{
-	visitor.visit(*this);
-}
-void minairo::ForeachStatement::accept(StatementVisitor& visitor)
-{
-	visitor.visit(*this);
-}
-void minairo::IfStatement::accept(StatementVisitor& visitor)
-{
-	visitor.visit(*this);
-}
-void minairo::ReturnStatement::accept(StatementVisitor& visitor)
-{
-	visitor.visit(*this);
-}
-void minairo::VariableDefinition::accept(StatementVisitor& visitor)
-{
-	visitor.visit(*this);
-}
-void minairo::WhileStatement::accept(StatementVisitor& visitor)
+void VariableRead::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }
 // ------------------------------------------------------------------------------------------------
-void minairo::Block::accept(StatementConstVisitor& visitor) const
+void Block::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::ExpressionStatement::accept(StatementConstVisitor& visitor) const
+void ExpressionStatement::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::ForeachStatement::accept(StatementConstVisitor& visitor) const
+void ForeachStatement::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::IfStatement::accept(StatementConstVisitor& visitor) const
+void IfStatement::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::ReturnStatement::accept(StatementConstVisitor& visitor) const
+void ReturnStatement::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::VariableDefinition::accept(StatementConstVisitor& visitor) const
+void VariableDefinition::accept(StatementVisitor& visitor)
 {
 	visitor.visit(*this);
 }
-void minairo::WhileStatement::accept(StatementConstVisitor& visitor) const
+void WhileStatement::accept(StatementVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+// ------------------------------------------------------------------------------------------------
+void Block::accept(StatementConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void ExpressionStatement::accept(StatementConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void ForeachStatement::accept(StatementConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void IfStatement::accept(StatementConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void ReturnStatement::accept(StatementConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void VariableDefinition::accept(StatementConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void WhileStatement::accept(StatementConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

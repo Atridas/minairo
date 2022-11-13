@@ -185,7 +185,12 @@ export namespace minairo
 
 		void visit(FunctionDeclaration const& function_declaration) override
 		{
-			last_expression_value = (std::shared_ptr<ComplexValue>)std::make_shared<Function>(function_declaration.type, function_declaration.body->deep_copy());
+			last_expression_value = (std::shared_ptr<ComplexValue>)std::make_shared<Function>(function_declaration.header->type, function_declaration.body->deep_copy());
+		}
+
+		void visit(FunctionTypeDeclaration const& function_type_declaration) override
+		{
+			last_expression_value = function_type_declaration.type;
 		}
 
 		void visit(TableDeclaration const& table_declaration) override

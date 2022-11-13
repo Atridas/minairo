@@ -420,45 +420,20 @@ export namespace minairo
 
 		void visit(FunctionDeclaration& function_declaration) override
 		{
-			function_declaration.type.is_pure = function_declaration.is_pure;
-			function_declaration.parameter_tuple->accept(*this);
-
-			function_declaration.type.parameters = *get_compile_time_type_value<TupleType>(*function_declaration.parameter_tuple);
-
-			if (function_declaration.return_type)
-			{
-				function_declaration.return_type->accept(*this);
-				if (deduce_type(*function_declaration.return_type).type == BuildInType::Typedef)
-					function_declaration.type.return_type = get_compile_time_type_value(*function_declaration.return_type);
-				else
-					throw message_exception("Expected a type", *function_declaration.return_type);
-			}
-			else
-			{
-				function_declaration.type.return_type = BuildInType::Void;
-			}
-
+			visit(*function_declaration.header);
 
 			std::vector<VariableBlock> old_locals = std::move(variable_blocks);
 			variable_blocks.resize(0);
 
 			VariableBlock parameter_block = {};
 			parameter_block.stack_size_at_beginning = 0;
-			TypeRepresentation last_type;
-			for (int i = 0; i < (int)function_declaration.parameter_tuple->field_names.size(); ++i)
+			for (int i = 0; i < function_declaration.header->parameter_tuple->tuple.get_num_fields(); ++i)
 			{
 				VariableInfo info;
-				if (function_declaration.parameter_tuple->field_types[i] == nullptr)
-				{
-					info.type = last_type;
-				}
-				else
-				{
-					last_type = info.type = get_compile_time_type_value(*function_declaration.parameter_tuple->field_types[i]);
-				}
+				info.type = function_declaration.header->parameter_tuple->tuple.get_field_type(i);
 				info.index = parameter_block.stack_size_at_beginning + i;
 				info.constant = true; // TODO(?)
-				parameter_block.variables[(std::string)function_declaration.parameter_tuple->field_names[i].text] = info;
+				parameter_block.variables[(std::string)function_declaration.header->parameter_tuple->field_names[i].text] = info;
 			}
 
 			variable_blocks.push_back(std::move(parameter_block));
@@ -466,12 +441,12 @@ export namespace minairo
 			bool did_allow_return = allow_return;
 			std::optional<TypeRepresentation> outer_return_type = return_type;
 
-			if (function_declaration.type.is_pure)
+			if (function_declaration.header->type.is_pure)
 				in_pure_function_context = true;
 
-			if (function_declaration.return_type)
+			if (function_declaration.header->return_type)
 			{
-				return_type = function_declaration.type.return_type;
+				return_type = function_declaration.header->type.return_type;
 			}
 
 			allow_return = true;
@@ -480,15 +455,15 @@ export namespace minairo
 
 			allow_return = did_allow_return;
 
-			if (function_declaration.return_type == nullptr)
+			if (function_declaration.header->return_type == nullptr)
 			{
 				if(return_type)
-					function_declaration.type.return_type = *return_type;
-				else if (function_declaration.type.is_pure)
+					function_declaration.header->type.return_type = *return_type;
+				else if (function_declaration.header->type.is_pure)
 					throw message_exception("Can't deduce return type of a function", function_declaration);
 			}
 			
-			if (function_declaration.type.return_type != BuildInType::Void && !all_paths_lead_to_a_return(*function_declaration.body))
+			if (function_declaration.header->type.return_type != BuildInType::Void && !all_paths_lead_to_a_return(*function_declaration.body))
 			{
 				throw message_exception("All paths must end in a return statement", *function_declaration.body);
 			}
@@ -498,6 +473,27 @@ export namespace minairo
 
 			assert(variable_blocks.size() == 1);
 			variable_blocks = std::move(old_locals);
+		}
+
+		void visit(FunctionTypeDeclaration& function_type_declaration) override
+		{
+			function_type_declaration.type.is_pure = function_type_declaration.is_pure;
+			function_type_declaration.parameter_tuple->accept(*this);
+
+			function_type_declaration.type.parameters = *get_compile_time_type_value<TupleType>(*function_type_declaration.parameter_tuple);
+
+			if (function_type_declaration.return_type)
+			{
+				function_type_declaration.return_type->accept(*this);
+				if (deduce_type(*function_type_declaration.return_type).type == BuildInType::Typedef)
+					function_type_declaration.type.return_type = get_compile_time_type_value(*function_type_declaration.return_type);
+				else
+					throw message_exception("Expected a type", *function_type_declaration.return_type);
+			}
+			else
+			{
+				function_type_declaration.type.return_type = BuildInType::Void;
+			}
 		}
 
 		void visit(TableDeclaration& table_declaration) override
@@ -1018,7 +1014,11 @@ export namespace minairo
 		{
 			TypeRepresentation original_type = deduce_type(*origin).type;
 			if (target == original_type)
+			{
+				if (get<FunctionType>(target))
+					assert(false); // TODO
 				return true;
+			}
 			else if (get<TupleType>(target) && original_type == BuildInType::InitializerList)
 			{
 				assert(dynamic_cast<InitializerList*>(origin.get()));

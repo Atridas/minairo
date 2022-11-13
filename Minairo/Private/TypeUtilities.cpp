@@ -131,7 +131,12 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 		}
 		void visit(FunctionDeclaration const& function_declaration) override
 		{
-			type_information.type = function_declaration.type;
+			type_information.type = function_declaration.header->type;
+			type_information.constant = true;
+		}
+		void visit(FunctionTypeDeclaration const& function_type_declaration) override
+		{
+			type_information.type = BuildInType::Typedef;
 			type_information.constant = true;
 		}
 		void visit(TableDeclaration const& table_declaration) override
@@ -223,6 +228,10 @@ std::optional<Value> minairo::get_compile_time_value(Expression const& expressio
 		void visit(FunctionDeclaration const& function_declaration) override
 		{
 			result = std::nullopt;
+		}
+		void visit(FunctionTypeDeclaration const& function_type_declaration) override
+		{
+			result = function_type_declaration.type;
 		}
 		void visit(TableDeclaration const& table_declaration) override
 		{
