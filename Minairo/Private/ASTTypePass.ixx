@@ -434,6 +434,7 @@ export namespace minairo
 				info.index = parameter_block.stack_size_at_beginning + i;
 				info.constant = true; // TODO(?)
 				parameter_block.variables[(std::string)function_declaration.header->parameter_tuple->field_names[i].text] = info;
+
 			}
 
 			variable_blocks.push_back(std::move(parameter_block));
@@ -479,6 +480,21 @@ export namespace minairo
 		{
 			function_type_declaration.type.is_pure = function_type_declaration.is_pure;
 			function_type_declaration.parameter_tuple->accept(*this);
+
+
+			if (function_type_declaration.type.is_pure)
+			{
+				for (int i = 0; i < function_type_declaration.parameter_tuple->tuple.get_num_fields(); ++i)
+				{
+					if (auto function = get<FunctionType>(function_type_declaration.parameter_tuple->tuple.get_field_type(i)))
+					{
+						if (!function->is_pure)
+						{
+							throw message_exception("Pure functions can only take other pure functions as parameters", function_type_declaration.parameter_tuple->field_names[i]);
+						}
+					}
+				}
+			}
 
 			function_type_declaration.type.parameters = *get_compile_time_type_value<TupleType>(*function_type_declaration.parameter_tuple);
 
@@ -1015,8 +1031,20 @@ export namespace minairo
 			TypeRepresentation original_type = deduce_type(*origin).type;
 			if (target == original_type)
 			{
-				if (get<FunctionType>(target))
-					assert(false); // TODO
+				if (auto target_function = get<FunctionType>(target))
+				{
+					auto origin_function = get<FunctionType>(original_type);
+					assert(origin_function);
+					for (int i = 0; i < origin_function->parameters.get_num_fields(); ++i)
+					{
+						if (auto init = origin_function->parameters.get_field_init_value(i))
+						{
+							auto target_init = target_function->parameters.get_field_init_value(i);
+							if (!target_init || *target_init != init)
+								return false;
+						}
+					}
+				}
 				return true;
 			}
 			else if (get<TupleType>(target) && original_type == BuildInType::InitializerList)

@@ -839,6 +839,10 @@ namespace minairo
 				return result;
 			}
 		}
+		else if (scanner.peek_next_symbol().type == Terminal::KW_FUNCTION)
+		{
+			return function_declaration(scanner, true);
+		}
 		else if (scanner.peek_next_symbol().type == Terminal::KW_TABLE)
 		{
 			return table_type_declaration(scanner);

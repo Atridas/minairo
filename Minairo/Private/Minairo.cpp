@@ -123,8 +123,10 @@ namespace minairo
 
 	}
 
+	std::string print_type(TypeRepresentation const& type);
 	std::string print_table(Table const& table);
 	std::string print_tuple(Tuple const& tuple);
+	std::string print_function(FunctionType const& function);
 	std::string print_function(FunctionRepresentation const& function);
 
 	std::string print_value(Value const& value)
@@ -161,61 +163,8 @@ namespace minairo
 			else if constexpr (std::is_same_v<T, TypeRepresentation>)
 			{
 				std::stringstream ss;
-				ss << "typedef ";
-				std::visit([&ss] <typename Q>(Q value) {
-					if constexpr (std::is_same_v<Q, BuildInType>)
-					{
-						switch (value)
-						{
-						case BuildInType::Void:
-							ss << "void";
-							break;
-						case BuildInType::Bool:
-							ss << "bool";
-							break;
-						case BuildInType::I8:
-							ss << "int8";
-							break;
-						case BuildInType::I16:
-							ss << "int16";
-							break;
-						case BuildInType::I32:
-							ss << "int32";
-							break;
-						case BuildInType::I64:
-							ss << "int64";
-							break;
-						case BuildInType::U8:
-							ss << "uint8";
-							break;
-						case BuildInType::U16:
-							ss << "uint16";
-							break;
-						case BuildInType::U32:
-							ss << "uint32";
-							break;
-						case BuildInType::U64:
-							ss << "uint64";
-							break;
-						case BuildInType::F32:
-							ss << "float";
-							break;
-						case BuildInType::F64:
-							ss << "double";
-							break;
-						case BuildInType::Typedef:
-							ss << "typedef";
-							break;
-						default:
-							assert(false);
-						}
-					}
-					else
-					{
-						// TODO
-						ss << "????";
-					}
-				}, value);
+				ss << "typedef " << print_type(value);
+				
 				return ss.str();
 			}
 			else if constexpr (std::is_same_v<T, std::shared_ptr<ComplexValue>>)
@@ -242,6 +191,63 @@ namespace minairo
 				return "unknown";
 			}
 		}, value);
+	}
+
+	std::string print_type(TypeRepresentation const& type)
+	{
+		return std::visit([] <typename T>(T value) -> std::string {
+			if constexpr (std::is_same_v<T, BuildInType>)
+			{
+				switch (value)
+				{
+				case BuildInType::Void:
+					return "void";
+				case BuildInType::Bool:
+					return "bool";
+				case BuildInType::I8:
+					return "int8";
+				case BuildInType::I16:
+					return "int16";
+				case BuildInType::I32:
+					return "int32";
+				case BuildInType::I64:
+					return "int64";
+				case BuildInType::U8:
+					return "uint8";
+				case BuildInType::U16:
+					return "uint16";
+				case BuildInType::U32:
+					return "uint32";
+				case BuildInType::U64:
+					return "uint64";
+				case BuildInType::F32:
+					return "float";
+				case BuildInType::F64:
+					return "double";
+				case BuildInType::Typedef:
+					return "typedef";
+				default:
+					assert(false);
+					return "????";
+				}
+			}
+			else if constexpr (std::is_same_v<T, std::shared_ptr<ComplexType>>)
+			{
+				if (auto function = get<FunctionType>((TypeRepresentation)value))
+				{
+					return print_function(*function);
+				}
+				else
+				{
+					return "?????";
+				}
+			}
+			else
+			{
+				// TODO
+				return "??????";
+			}
+		}, type);
 	}
 
 	std::string print_table(Table const& table)
@@ -287,9 +293,26 @@ namespace minairo
 		return ss.str();
 	}
 
+	std::string print_function(FunctionType const& function_type)
+	{
+		std::stringstream ss;
+		if (function_type.is_pure)
+			ss << "pure ";
+		ss << "function " << function_type.name << " ( ";
+
+		const char* comma = "";
+		for (int i = 0; i < function_type.parameters.get_num_fields(); ++i)
+		{
+			ss << comma << function_type.parameters.get_field_name(i) << ": " << print_type(function_type.parameters.get_field_type(i));
+			comma = ", ";
+		}
+		ss << " ) -> " << print_type(function_type.return_type);
+		return ss.str();
+	}
+
 	std::string print_function(FunctionRepresentation const& function)
 	{
-		return "function TODO";
+		return "instance of " + print_function(function.get_type());
 	}
 
 	void interpret(VMImpl* vm, std::string_view code, std::ostream &out, std::ostream& err)
