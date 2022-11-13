@@ -17,6 +17,63 @@ import Minairo.TypesAndValues;
 
 using namespace minairo;
 
+bool minairo::all_paths_lead_to_a_return(Statement const& statement)
+{
+	class AllPathsLeadToReturn final : public StatementConstVisitor
+	{
+	public:
+		bool found_return = false;
+
+		virtual void visit(Block const& block)
+		{
+			for (auto& st : block.statements)
+			{
+				st->accept(*this);
+			}
+		}
+		virtual void visit(ExpressionStatement const& expression_statement)
+		{
+			// ---
+		}
+		virtual void visit(ForeachStatement const& foreach_statement)
+		{
+			// ---
+		}
+		virtual void visit(IfStatement const& if_statement)
+		{
+			if (found_return)
+				return;
+
+			if (if_statement.no != nullptr)
+			{
+				if_statement.yes->accept(*this);
+				if (found_return)
+				{
+					found_return = false;
+					if_statement.no->accept(*this);
+				}
+			}
+
+		}
+		virtual void visit(ReturnStatement const& return_statement)
+		{
+			found_return = true;
+		}
+		virtual void visit(VariableDefinition const& variable_definition)
+		{
+			// ---
+		}
+		virtual void visit(WhileStatement const& while_statement)
+		{
+			// ---
+		}
+
+	} visitor;
+
+	statement.accept(visitor);
+	return visitor.found_return;
+}
+
 TypeInformation minairo::deduce_type(Expression const& expression)
 {
 	class DeduceType final : public ExpressionConstVisitor
@@ -117,59 +174,87 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 	return type_deducer.type_information;
 }
 
-bool minairo::all_paths_lead_to_a_return(Statement const& statement)
+std::optional<Value> minairo::get_compile_time_value(Expression const& expression)
 {
-	class AllPathsLeadToReturn final : public StatementConstVisitor
+	class CompileTimeValue final : public ExpressionConstVisitor
 	{
 	public:
-		bool found_return = false;
+		std::optional<Value> result;
 
-		virtual void visit(Block const& block)
+		void visit(Binary const& binary) override
 		{
-			for (auto& st : block.statements)
+			result = std::nullopt;
+		}
+		void visit(BuildInTypeDeclaration const& build_in_type_declaration) override
+		{
+			result = build_in_type_declaration.type;
+		}
+		void visit(Call const& call) override
+		{
+			result = std::nullopt;
+		}
+		void visit(Grouping const& grouping) override
+		{
+			result = std::nullopt;
+		}
+		void visit(InitializerList const& initializer_list) override
+		{
+			result = std::nullopt;
+		}
+		void visit(Literal const& literal) override
+		{
+			if (std::holds_alternative<uint64_t>(literal.value))
 			{
-				st->accept(*this);
+				result = cast(std::get<BuildInType>(literal.type_representation), literal.value);
+			}
+			else
+			{
+				assert(false); // TODO
 			}
 		}
-		virtual void visit(ExpressionStatement const& expression_statement)
+		void visit(MemberRead const& member_read) override
 		{
-			// ---
+			result = std::nullopt;
 		}
-		virtual void visit(ForeachStatement const& foreach_statement)
+		void visit(MemberWrite const& member_write) override
 		{
-			// ---
+			result = std::nullopt;
 		}
-		virtual void visit(IfStatement const& if_statement)
+		void visit(FunctionDeclaration const& function_declaration) override
 		{
-			if (found_return)
-				return;
+			result = std::nullopt;
+		}
+		void visit(TableDeclaration const& table_declaration) override
+		{
+			result = table_declaration.table;
+		}
+		void visit(TupleDeclaration const& tuple_declaration) override
+		{
+			result = tuple_declaration.tuple;
+		}
+		void visit(UnaryPre const& unary_pre) override
+		{
+			result = std::nullopt;
+		}
+		void visit(UnaryPost const& unary_post) override
+		{
+			result = std::nullopt;
+		}
+		void visit(VariableAssign const& variable_assign) override
+		{
+			result = std::nullopt;
+		}
+		void visit(VariableRead const& variable_read) override
+		{
+			if (variable_read.static_type.has_value())
+				result = *variable_read.static_type;
+			else
+				result = std::nullopt;
+		}
+	};
 
-			if (if_statement.no != nullptr)
-			{
-				if_statement.yes->accept(*this);
-				if (found_return)
-				{
-					found_return = false;
-					if_statement.no->accept(*this);
-				}
-			}
+	CompileTimeValue compile_time_value;
+	expression.accept(compile_time_value);
 
-		}
-		virtual void visit(ReturnStatement const& return_statement)
-		{
-			found_return = true;
-		}
-		virtual void visit(VariableDefinition const& variable_definition)
-		{
-			// ---
-		}
-		virtual void visit(WhileStatement const& while_statement)
-		{
-			// ---
-		}
-
-	} visitor;
-
-	statement.accept(visitor);
-	return visitor.found_return;
+	return compile_time_value.result;
 }

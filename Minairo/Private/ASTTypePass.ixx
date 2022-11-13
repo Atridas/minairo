@@ -423,13 +423,13 @@ export namespace minairo
 			function_declaration.type.is_pure = function_declaration.is_pure;
 			function_declaration.parameter_tuple->accept(*this);
 
-			function_declaration.type.parameters = *get<TupleType>(*function_declaration.parameter_tuple->get_type_value());
+			function_declaration.type.parameters = *get_compile_time_type_value<TupleType>(*function_declaration.parameter_tuple);
 
 			if (function_declaration.return_type)
 			{
 				function_declaration.return_type->accept(*this);
 				if (deduce_type(*function_declaration.return_type).type == BuildInType::Typedef)
-					function_declaration.type.return_type = *function_declaration.return_type->get_type_value();
+					function_declaration.type.return_type = get_compile_time_type_value(*function_declaration.return_type);
 				else
 					throw message_exception("Expected a type", *function_declaration.return_type);
 			}
@@ -454,7 +454,7 @@ export namespace minairo
 				}
 				else
 				{
-					last_type = info.type = *function_declaration.parameter_tuple->field_types[i]->get_type_value();
+					last_type = info.type = get_compile_time_type_value(*function_declaration.parameter_tuple->field_types[i]);
 				}
 				info.index = parameter_block.stack_size_at_beginning + i;
 				info.constant = true; // TODO(?)
@@ -550,7 +550,7 @@ export namespace minairo
 				if (tuple_declaration.field_types[i])
 				{
 					tuple_declaration.field_types[i]->accept(*this);
-					field_type = *tuple_declaration.field_types[i]->get_type_value();
+					field_type = get_compile_time_type_value(*tuple_declaration.field_types[i]);
 					initial_value = std::nullopt;
 				}
 
@@ -563,9 +563,9 @@ export namespace minairo
 						field_type = deduce_type(*tuple_declaration.field_initializers[i]).type;
 					}
 
-					if (auto init = tuple_declaration.field_initializers[i]->get_constant_value())
+					if (auto init = get_compile_time_value(*tuple_declaration.field_initializers[i]))
 					{
-						initial_value = cast(*get<BuildInType>(field_type), *init);
+						initial_value = *init;
 					}
 					else
 					{
@@ -575,7 +575,7 @@ export namespace minairo
 
 				if (tuple_declaration.field_types[i] && tuple_declaration.field_initializers[i])
 				{
-					if(!implicit_cast(*tuple_declaration.field_types[i]->get_type_value(), tuple_declaration.field_initializers[i]))
+					if (!implicit_cast(get_compile_time_type_value(*tuple_declaration.field_types[i]), tuple_declaration.field_initializers[i]))
 					{
 						throw message_exception("Initializer has not the right type\n", *tuple_declaration.field_initializers[i]);
 					}
@@ -811,7 +811,7 @@ export namespace minairo
 				{
 					throw message_exception("Expected a type definition\n", *variable_definition.type_definition);
 				}
-				variable_definition.type = variable_definition.type_definition->get_type_value();
+				variable_definition.type = get_compile_time_type_value(*variable_definition.type_definition);
 			}
 
 			if (variable_definition.initialization != nullptr)
@@ -836,12 +836,12 @@ export namespace minairo
 
 				if (variable_blocks.empty())
 				{
-					globals.types[(std::string)variable_definition.variable.text] = *variable_definition.initialization->get_type_value();
+					globals.types[(std::string)variable_definition.variable.text] = get_compile_time_type_value(*variable_definition.initialization);
 					globals.types[(std::string)variable_definition.variable.text].set_name(variable_definition.variable.text);
 				}
 				else
 				{
-					variable_blocks.back().types[(std::string)variable_definition.variable.text] = *variable_definition.initialization->get_type_value();
+					variable_blocks.back().types[(std::string)variable_definition.variable.text] = get_compile_time_type_value(*variable_definition.initialization);
 					variable_blocks.back().types[(std::string)variable_definition.variable.text].set_name(variable_definition.variable.text);
 				}
 			}

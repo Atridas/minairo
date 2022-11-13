@@ -29,9 +29,6 @@ export namespace minairo
 		virtual void accept(ExpressionConstVisitor& visitor) const = 0;
 
 		virtual std::unique_ptr<Expression> deep_copy() const = 0;
-		virtual std::optional<TypeRepresentation> get_type_value() const { return std::nullopt; }
-		//virtual std::optional<TypeRepresentation> get_expression_type() const = 0;
-		virtual std::optional<uint64_t> get_constant_value() const { return std::nullopt; }
 		virtual TerminalData get_first_terminal() const = 0;
 		virtual TerminalData get_last_terminal() const = 0;
 	};
@@ -111,10 +108,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		std::optional<TypeRepresentation> get_type_value() const override
-		{
-			return type;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return terminal;
@@ -303,17 +296,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		std::optional<uint64_t> get_constant_value() const override
-		{
-			if (std::holds_alternative<uint64_t>(value))
-			{
-				return std::get<uint64_t>(value);
-			}
-			else
-			{
-				return std::nullopt;
-			}
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return terminal;
@@ -500,10 +482,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		std::optional<TypeRepresentation> get_type_value() const override
-		{
-			return tuple;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return tuple_terminal;
@@ -612,10 +590,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		std::optional<TypeRepresentation> get_type_value() const override
-		{
-			return table;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return table_terminal;
@@ -819,10 +793,6 @@ export namespace minairo
 
 		void accept(ExpressionVisitor& visitor) override;
 		void accept(ExpressionConstVisitor& visitor) const override;
-		std::optional<TypeRepresentation> get_type_value() const override
-		{
-			return static_type;
-		}
 		virtual TerminalData get_first_terminal() const override
 		{
 			return identifier;

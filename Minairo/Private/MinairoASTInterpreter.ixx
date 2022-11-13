@@ -400,7 +400,7 @@ export namespace minairo
 			if (*variable_definition.type == BuildInType::Typedef)
 			{
 				assert(variable_definition.index == -1);
-				last_expression_value = *variable_definition.initialization->get_type_value();
+				last_expression_value = *get_compile_time_value(*variable_definition.initialization);
 			}
 			else if(variable_definition.index == -1)
 			{

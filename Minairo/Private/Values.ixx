@@ -387,7 +387,7 @@ export namespace minairo
 			}
 			else
 			{
-				return {};
+				return decltype(get<T>(TypeRepresentation{})){};
 			}
 		}
 		else if constexpr (std::is_base_of_v<ComplexValue, T>)
