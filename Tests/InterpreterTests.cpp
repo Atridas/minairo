@@ -186,7 +186,7 @@ namespace InterpreterTests
 		TEST_METHOD(DoWhile)
 		{
 			RunAndExpect(R"codi-minairo(a:= 0; do a = a + 1; while(a == 0) a;)codi-minairo", "1");
-			RunAndExpect(R"codi-minairo(a:= 0; do a = a + 1; while(a != 5); a;)codi-minairo", "5");
+			RunAndExpect(R"codi-minairo(a:= 0; do a = a + 1; while(a < 5); a;)codi-minairo", "5");
 
 			RunAndExpectPrint(R"codi-minairo(a:= 0; do { print("a"); a = a + 1; } while(a != 5))codi-minairo", "aaaaa");
 			RunAndExpectPrint(R"codi-minairo(a:= 0; do { print("a"); a = a + 1; } while(a == 1))codi-minairo", "aa");
@@ -194,7 +194,7 @@ namespace InterpreterTests
 
 		TEST_METHOD(For)
 		{
-			RunAndExpectPrint(R"codi-minairo(for(a:=0; a != 5; a = a + 1) print("a");)codi-minairo", "aaaaa");
+			RunAndExpectPrint(R"codi-minairo(for(a:=0; a < 5; a = a + 1) print("a");)codi-minairo", "aaaaa");
 		}
 
 		TEST_METHOD(Foreach_Read)

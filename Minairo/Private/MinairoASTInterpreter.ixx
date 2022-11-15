@@ -75,10 +75,26 @@ export namespace minairo
 						return left / right;
 					case Terminal::OP_MOD:
 						return left % right;
+
+					case Terminal::OP_BIT_AND:
+						return left & right;
+					case Terminal::OP_BIT_OR:
+						return left | right;
+					case Terminal::OP_BIT_XOR:
+						return left ^ right;
+
 					case Terminal::OP_EQ:
 						return left == right;
 					case Terminal::OP_NEQ:
 						return left != right;
+					case Terminal::OP_LT:
+						return left < right;
+					case Terminal::OP_GT:
+						return left > right;
+					case Terminal::OP_LTE:
+						return left <= right;
+					case Terminal::OP_GTE:
+						return left >= right;
 					default:
 						assert(false);
 						return false;
@@ -96,10 +112,19 @@ export namespace minairo
 						return left * right;
 					case Terminal::OP_DIV:
 						return left / right;
+
 					case Terminal::OP_EQ:
 						return left == right;
 					case Terminal::OP_NEQ:
 						return left != right;
+					case Terminal::OP_LT:
+						return left < right;
+					case Terminal::OP_GT:
+						return left > right;
+					case Terminal::OP_LTE:
+						return left <= right;
+					case Terminal::OP_GTE:
+						return left >= right;
 					default:
 						assert(false);
 						return false;

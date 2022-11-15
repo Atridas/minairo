@@ -186,6 +186,9 @@ namespace minairo
 		Comparison,
 		Term,
 		Factor,
+		BitwiseOr,
+		BitwiseAnd,
+		BitwiseXor,
 		Unary,
 		Call,
 		Primary
@@ -913,10 +916,24 @@ namespace minairo
 		pratt_precedences[(int)Terminal::OP_DIV] = Precedence::Factor;
 		pratt_infixes[(int)Terminal::OP_MOD] = &binary;
 		pratt_precedences[(int)Terminal::OP_MOD] = Precedence::Factor;
+		pratt_infixes[(int)Terminal::OP_BIT_OR] = &binary;
+		pratt_precedences[(int)Terminal::OP_BIT_OR] = Precedence::BitwiseOr;
+		pratt_infixes[(int)Terminal::OP_BIT_AND] = &binary;
+		pratt_precedences[(int)Terminal::OP_BIT_AND] = Precedence::BitwiseAnd;
+		pratt_infixes[(int)Terminal::OP_BIT_XOR] = &binary;
+		pratt_precedences[(int)Terminal::OP_BIT_XOR] = Precedence::BitwiseXor;
 		pratt_infixes[(int)Terminal::OP_EQ] = &binary;
 		pratt_precedences[(int)Terminal::OP_EQ] = Precedence::Equality;
 		pratt_infixes[(int)Terminal::OP_NEQ] = &binary;
 		pratt_precedences[(int)Terminal::OP_NEQ] = Precedence::Equality;
+		pratt_infixes[(int)Terminal::OP_LT] = &binary;
+		pratt_precedences[(int)Terminal::OP_LT] = Precedence::Comparison;
+		pratt_infixes[(int)Terminal::OP_GT] = &binary;
+		pratt_precedences[(int)Terminal::OP_GT] = Precedence::Comparison;
+		pratt_infixes[(int)Terminal::OP_LTE] = &binary;
+		pratt_precedences[(int)Terminal::OP_LTE] = Precedence::Comparison;
+		pratt_infixes[(int)Terminal::OP_GTE] = &binary;
+		pratt_precedences[(int)Terminal::OP_GTE] = Precedence::Comparison;
 		pratt_infixes[(int)Terminal::BRACKET_ROUND_OPEN] = &call;
 		pratt_precedences[(int)Terminal::BRACKET_ROUND_OPEN] = Precedence::Call;
 		pratt_infixes[(int)Terminal::OP_DOT] = &member_read;

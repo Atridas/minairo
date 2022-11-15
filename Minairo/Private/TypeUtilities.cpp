@@ -93,6 +93,9 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 			case Terminal::OP_MUL:
 			case Terminal::OP_DIV:
 			case Terminal::OP_MOD:
+			case Terminal::OP_BIT_AND:
+			case Terminal::OP_BIT_OR:
+			case Terminal::OP_BIT_XOR:
 			{
 				BuildInType left = *get<BuildInType>(deduce_type(*binary.left).type);
 				type_information.type = left;
@@ -100,6 +103,10 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 			}
 			case Terminal::OP_EQ:
 			case Terminal::OP_NEQ:
+			case Terminal::OP_LT:
+			case Terminal::OP_GT:
+			case Terminal::OP_LTE:
+			case Terminal::OP_GTE:
 			{
 				type_information.type = BuildInType::Bool;
 				break;
