@@ -208,6 +208,12 @@ export namespace minairo
 			// TODO not a string map please. I'm just lazy rn
 			std::unordered_map<std::string, VariableInfo> variables;
 			std::unordered_map<std::string, TypeRepresentation> types;
+
+			void add_global(std::string_view name, TypeRepresentation type, bool constant = true)
+			{
+				assert(variables.find((std::string)name) == variables.end());
+				variables[(std::string)name] = { type, -1, constant };
+			}
 		};
 
 		void set_globals(GlobalMap const& global_map)
@@ -229,50 +235,36 @@ export namespace minairo
 
 			TypeRepresentation argument_types[2] = { deduce_type(*binary.left).type, deduce_type(*binary.right).type};
 
-			FunctionRepresentation const* function = nullptr;
 
 			switch (binary.op)
 			{
 			case Terminal::OP_ADD:
-			{
-				binary.function_to_call = function_map.get("operator+", argument_types);
-				break;
-			}
 			case Terminal::OP_SUB:
-			{
-				binary.function_to_call = function_map.get("operator-", argument_types);
-				break;
-			}
 			case Terminal::OP_MUL:
-			{
-				binary.function_to_call = function_map.get("operator*", argument_types);
-				break;
-			}
 			case Terminal::OP_DIV:
-			{
-				binary.function_to_call = function_map.get("operator/", argument_types);
-				break;
-			}
 			case Terminal::OP_MOD:
-			{
-				binary.function_to_call = function_map.get("operator%", argument_types);
-				break;
-			}
 			case Terminal::OP_EQ:
-			{
-				binary.function_to_call = function_map.get("operator==", argument_types);
-				break;
-			}
 			case Terminal::OP_NEQ:
 			{
-				binary.function_to_call = function_map.get("operator!=", argument_types);
+				if ((argument_types[0].is_integral() || argument_types[0].is_float())
+					&& (argument_types[1].is_integral() || argument_types[1].is_float()))
+				{
+					// TODO implicit casts
+					assert(get<BuildInType>(deduce_type(*binary.left).type));
+					assert(deduce_type(*binary.left).type == deduce_type(*binary.right).type);
+
+					// TODO more checks?
+				}
+				else
+				{
+					throw message_exception("binary operator only defined between numbers", binary);
+				}
+
 				break;
 			}
 			default:
 				assert(false); // TODO
 			}
-
-			assert(binary.function_to_call != nullptr);
 		}
 
 		void visit(BuildInTypeDeclaration&) override
@@ -673,9 +665,19 @@ export namespace minairo
 			else
 			{
 				auto variable = find_variable(variable_read.identifier);
-				if (in_pure_function_context && variable.index == -1 && !variable.constant)
+				if (in_pure_function_context && variable.index == -1)
 				{
-					throw message_exception("Can't read from non-constant global inside a pure function!", variable_read);
+					if (!variable.constant)
+					{
+						throw message_exception("Can't read from non-constant global inside a pure function!", variable_read);
+					}
+					else if (auto fun = get<FunctionType>(variable.type))
+					{
+						if (!fun->is_pure)
+						{
+							throw message_exception("Can't call a non-pure function inside a pure function!", variable_read);
+						}
+					}
 				}
 
 				variable_read.type = variable.type;

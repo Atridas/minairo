@@ -223,6 +223,50 @@ export namespace minairo
 			return name == other.name;
 	}
 
+
+	bool TypeRepresentation::is_integral() const
+	{
+		if (std::holds_alternative<BuildInType>(*this))
+		{
+			switch (std::get<BuildInType>(*this))
+			{
+			case BuildInType::I8:
+			case BuildInType::I16:
+			case BuildInType::I32:
+			case BuildInType::I64:
+			case BuildInType::U8:
+			case BuildInType::U16:
+			case BuildInType::U32:
+			case BuildInType::U64:
+				return true;
+			default:
+				return false;
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+	bool TypeRepresentation::is_float() const
+	{
+		if (std::holds_alternative<BuildInType>(*this))
+		{
+			switch (std::get<BuildInType>(*this))
+			{
+			case BuildInType::F32:
+			case BuildInType::F64:
+				return true;
+			default:
+				return false;
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+
 	template<typename T>
 	TypeRepresentation get_type_representation()
 	{

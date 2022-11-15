@@ -52,20 +52,18 @@ export namespace minairo
 	{
 	public:
 		std::unique_ptr<Expression> left, right;
-		FunctionRepresentation const* function_to_call = nullptr;
 		Terminal op;
 
 		Binary() = default;
 		Binary(Binary&&) = default;
 		Binary& operator=(Binary&&) = default;
-		Binary(Binary const& b) : left(b.left->deep_copy()), right(b.right->deep_copy()), function_to_call(b.function_to_call), op(b.op) {}
+		Binary(Binary const& b) : left(b.left->deep_copy()), right(b.right->deep_copy()), op(b.op) {}
 		Binary& operator=(Binary const& b)
 		{
 			if (this != &b)
 			{
 				left = b.left->deep_copy();
 				right = b.right->deep_copy();
-				function_to_call = b.function_to_call;
 				op = b.op;
 			}
 			return *this;

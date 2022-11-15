@@ -83,8 +83,31 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 
 		void visit(Binary const& binary) override
 		{
-			if (binary.function_to_call)
-				type_information.type = binary.function_to_call->get_return_type();
+			assert(get<BuildInType>(deduce_type(*binary.left).type));
+			assert(deduce_type(*binary.left).type == deduce_type(*binary.right).type);
+
+			switch (binary.op)
+			{
+			case Terminal::OP_ADD:
+			case Terminal::OP_SUB:
+			case Terminal::OP_MUL:
+			case Terminal::OP_DIV:
+			case Terminal::OP_MOD:
+			{
+				BuildInType left = *get<BuildInType>(deduce_type(*binary.left).type);
+				type_information.type = left;
+				break;
+			}
+			case Terminal::OP_EQ:
+			case Terminal::OP_NEQ:
+			{
+				type_information.type = BuildInType::Bool;
+				break;
+			}
+			default:
+				assert(false); // TODO
+			}
+
 			type_information.constant = true;
 		}
 		void visit(BuildInTypeDeclaration const& build_in_type_declaration) override

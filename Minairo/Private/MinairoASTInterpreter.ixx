@@ -57,12 +57,114 @@ export namespace minairo
 			binary.right->accept(*this);
 			Value right = last_expression_value;
 
-			void* arguments[2] = { get_ptr(left), get_ptr(right) };
 
-			TypeRepresentation return_type = deduce_type(binary).type;
-			void* result_ptr = set_to_type(last_expression_value, return_type);
+			auto operation = [&binary]<typename T>(T left, T right)->Value
+			{
+				if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, int16_t> || std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> ||
+					std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> || std::is_same_v<T, uint32_t> || std::is_same_v<T, uint64_t>)
+				{
+					switch (binary.op)
+					{
+					case Terminal::OP_ADD:
+						return left + right;
+					case Terminal::OP_SUB:
+						return left - right;
+					case Terminal::OP_MUL:
+						return left * right;
+					case Terminal::OP_DIV:
+						return left / right;
+					case Terminal::OP_MOD:
+						return left % right;
+					case Terminal::OP_EQ:
+						return left == right;
+					case Terminal::OP_NEQ:
+						return left != right;
+					default:
+						assert(false);
+						return false;
+					}
+				}
+				else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>)
+				{
+					switch (binary.op)
+					{
+					case Terminal::OP_ADD:
+						return left + right;
+					case Terminal::OP_SUB:
+						return left - right;
+					case Terminal::OP_MUL:
+						return left * right;
+					case Terminal::OP_DIV:
+						return left / right;
+					case Terminal::OP_EQ:
+						return left == right;
+					case Terminal::OP_NEQ:
+						return left != right;
+					default:
+						assert(false);
+						return false;
+					}
+				}
+				else if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, bool>)
+				{
+					switch (binary.op)
+					{
+					case Terminal::OP_EQ:
+						return left == right;
+					case Terminal::OP_NEQ:
+						return left != right;
+					default:
+						assert(false);
+						return false;
+					}
+				}
+				else
+				{
+					assert(false);
+					return false;
+				}
+			};
 
-			binary.function_to_call->call(result_ptr, arguments);
+			assert(get<BuildInType>(deduce_type(*binary.left).type));
+			assert(deduce_type(*binary.left).type == deduce_type(*binary.right).type);
+
+			switch (*get<BuildInType>(deduce_type(*binary.left).type))
+			{
+			case BuildInType::I8:
+				last_expression_value = operation(std::get<int8_t>(left), std::get<int8_t>(right));
+				break;
+			case BuildInType::I16:
+				last_expression_value = operation(std::get<int16_t>(left), std::get<int16_t>(right));
+				break;
+			case BuildInType::I32:
+				last_expression_value = operation(std::get<int32_t>(left), std::get<int32_t>(right));
+				break;
+			case BuildInType::I64:
+				last_expression_value = operation(std::get<int64_t>(left), std::get<int64_t>(right));
+				break;
+			case BuildInType::U8:
+				last_expression_value = operation(std::get<uint8_t>(left), std::get<uint8_t>(right));
+				break;
+			case BuildInType::U16:
+				last_expression_value = operation(std::get<uint16_t>(left), std::get<uint16_t>(right));
+				break;
+			case BuildInType::U32:
+				last_expression_value = operation(std::get<uint32_t>(left), std::get<uint32_t>(right));
+				break;
+			case BuildInType::U64:
+				last_expression_value = operation(std::get<uint64_t>(left), std::get<uint64_t>(right));
+				break;
+			case BuildInType::F32:
+				last_expression_value = operation(std::get<float>(left), std::get<float>(right));
+				break;
+			case BuildInType::F64:
+				last_expression_value = operation(std::get<double>(left), std::get<double>(right));
+				break;
+			case BuildInType::Bool:
+				last_expression_value = operation(std::get<bool>(left), std::get<bool>(right));
+				break;
+			}
+
 		}
 
 		void visit(BuildInTypeDeclaration const& build_tn_type_declaration) override
@@ -79,7 +181,7 @@ export namespace minairo
 			call.arguments.accept(*this);
 			std::shared_ptr<Tuple> arguments = get<Tuple>(last_expression_value);
 
-			if(Function* function = dynamic_cast<Function*>(callee.get()))
+			if (Function* function = dynamic_cast<Function*>(callee.get()))
 			{
 				std::vector<Value> outer_variables = std::move(variables);
 				variables = std::move(arguments->fields);
@@ -208,7 +310,7 @@ export namespace minairo
 			unary_pre.exp->accept(*this);
 			Value exp = last_expression_value;
 
-			void* arguments[1] = {get_ptr(exp)};
+			void* arguments[1] = { get_ptr(exp) };
 
 			TypeRepresentation return_type = deduce_type(unary_pre).type;
 			void* result_ptr = set_to_type(last_expression_value, return_type);
@@ -330,7 +432,7 @@ export namespace minairo
 		// ----------------------------------------------------------------------------------------
 		// ----------------------------------------------------------------------------------------
 
-		void visit(Block const &block) override
+		void visit(Block const& block) override
 		{
 			int current_stack_size = (int)variables.size();
 
@@ -342,7 +444,7 @@ export namespace minairo
 			variables.resize(current_stack_size);
 		}
 
-		void visit(ExpressionStatement const &expression_statement) override
+		void visit(ExpressionStatement const& expression_statement) override
 		{
 			expression_statement.exp->accept(*this);
 
@@ -382,11 +484,11 @@ export namespace minairo
 			if (if_statement.condition != nullptr)
 				if_statement.condition->accept(*this);
 
-			if(*get<bool>(last_expression_value))
+			if (*get<bool>(last_expression_value))
 			{
 				if_statement.yes->accept(*this);
 			}
-			else if(if_statement.no != nullptr)
+			else if (if_statement.no != nullptr)
 			{
 				if_statement.no->accept(*this);
 			}
@@ -394,7 +496,7 @@ export namespace minairo
 			variables.resize(current_stack_size);
 		}
 
-		void visit(ReturnStatement const &return_statement) override
+		void visit(ReturnStatement const& return_statement) override
 		{
 			return_statement.exp->accept(*this);
 			throw ReturnException{};
@@ -407,7 +509,7 @@ export namespace minairo
 				assert(variable_definition.index == -1);
 				last_expression_value = *get_compile_time_value(*variable_definition.initialization);
 			}
-			else if(variable_definition.index == -1)
+			else if (variable_definition.index == -1)
 			{
 				if (variable_definition.initialization)
 				{

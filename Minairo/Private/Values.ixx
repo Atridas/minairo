@@ -11,6 +11,7 @@ module;
 
 export module Minairo.TypesAndValues:Values;
 
+import :FunctionRepresentation;
 import :Structures;
 import :TypeRepresentation;
 
@@ -267,6 +268,14 @@ export namespace minairo
 			return false;
 		case BuildInType::Typedef:
 			return BuildInType::Void;
+		case BuildInType::Multifunction:
+			return Multifunction{};
+		case BuildInType::PureMultifunction:
+		{
+			Multifunction result{};
+			result.is_pure = true;
+			return result;
+		}
 		default:
 			assert(false);
 			return BuildInType::Void;

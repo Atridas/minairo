@@ -76,6 +76,7 @@ KW_EXPORT = "export";
 KW_FUNCTION = "function";
 KW_IMPORT = "import";
 KW_MODULE = "module";
+KW_MULTIFUNCTION = "multifunction";
 KW_PUBLIC = "public";
 KW_TABLE = "table";
 KW_TUPLE = "tuple";

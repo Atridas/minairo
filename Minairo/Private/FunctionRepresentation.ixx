@@ -116,6 +116,11 @@ export namespace minairo
 			return std::make_unique<TypedFunctionRepresentation<Pure, Ret, Params...>>(*this);
 		}
 
+		operator Value() const
+		{
+			return (Value)deep_copy();
+		}
+
 	protected:
 		virtual bool equals(ComplexValue const&) const
 		{
@@ -141,8 +146,34 @@ export namespace minairo
 		}
 	};
 
+	class Multifunction : public ComplexValue
+	{
+	public:
+		std::string name;
+		std::vector<std::shared_ptr<FunctionRepresentation>> variants;
+		std::vector<bool> have_body_assigned;
+		bool is_pure;
 
+		bool operator==(Multifunction const& other) const noexcept
+		{
+			assert(!name.empty() && !other.name.empty());
+			return name == other.name;
+		}
 
+		operator Value() const
+		{
+			return (Value)std::make_shared<Multifunction>(*this);
+		}
+
+	protected:
+		bool equals(ComplexValue const& other) const override
+		{
+			if (Multifunction const* as_multifunction = dynamic_cast<Multifunction const*>(&other))
+				return *this == *as_multifunction;
+			else
+				return false;
+		}
+	};
 
 	class FunctionMap
 	{

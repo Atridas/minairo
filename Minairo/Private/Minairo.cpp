@@ -4,6 +4,7 @@ module;
 
 #include <iostream>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <sstream>
 #include <type_traits>
@@ -19,73 +20,10 @@ import Minairo.Parser;
 import Minairo.Scanner;
 import Minairo.TypesAndValues;
 
+using namespace std::string_literals;
+
 namespace minairo
 {
-
-	template<typename Ret, typename Param1, typename Param2, bool Mod = true>
-	struct AddOperatorToFunctionMap
-	{
-		void operator()(FunctionMap& function_map)
-		{
-			auto add = std::make_unique<TypedFunctionRepresentation<true, Ret, Param1, Param2>>();
-			auto sub = std::make_unique<TypedFunctionRepresentation<true, Ret, Param1, Param2>>();
-			auto mul = std::make_unique<TypedFunctionRepresentation<true, Ret, Param1, Param2>>();
-			auto div = std::make_unique<TypedFunctionRepresentation<true, Ret, Param1, Param2>>();
-			auto eq = std::make_unique<TypedFunctionRepresentation<true, bool, Param1, Param2>>();
-			auto neq = std::make_unique<TypedFunctionRepresentation<true, bool, Param1, Param2>>();
-
-			add->set_callable([](Param1 a, Param2 b) -> Ret { return (Ret)a + (Ret)b; });
-			sub->set_callable([](Param1 a, Param2 b) -> Ret { return (Ret)a - (Ret)b; });
-			mul->set_callable([](Param1 a, Param2 b) -> Ret { return (Ret)a * (Ret)b; });
-			div->set_callable([](Param1 a, Param2 b) -> Ret { return (Ret)a / (Ret)b; });
-			eq->set_callable([](Param1 a, Param2 b) -> bool { return (Ret)a == (Ret)b; });
-			neq->set_callable([](Param1 a, Param2 b) -> bool { return (Ret)a != (Ret)b; });
-
-			function_map.store("operator+", std::move(add));
-			function_map.store("operator-", std::move(sub));
-			function_map.store("operator*", std::move(mul));
-			function_map.store("operator/", std::move(div));
-			function_map.store("operator==", std::move(eq));
-			function_map.store("operator!=", std::move(neq));
-
-			if constexpr (Mod)
-			{
-				auto mod = std::make_unique<TypedFunctionRepresentation<true, Ret, Param1, Param2>>();
-				mod->set_callable([](Param1 a, Param2 b) -> Ret { return (Ret)a % (Ret)b; });
-				function_map.store("operator%", std::move(mod));
-			}
-		}
-	};
-
-	void add_print_function(FunctionMap& function_map, std::ostream& out)
-	{
-		auto print = std::make_unique<TypedFunctionRepresentation<false, void, std::string>>();
-
-		print->set_callable([&out](std::string str) -> void { out << str; });
-
-		function_map.store("print", std::move(print));
-	}
-
-	FunctionMap create_function_map(std::ostream& out)
-	{
-		FunctionMap function_map;
-
-		AddOperatorToFunctionMap<int8_t, int8_t, int8_t>{}(function_map);
-		AddOperatorToFunctionMap<int16_t, int16_t, int16_t>{}(function_map);
-		AddOperatorToFunctionMap<int32_t, int32_t, int32_t>{}(function_map);
-		AddOperatorToFunctionMap<int64_t, int64_t, int64_t>{}(function_map);
-		AddOperatorToFunctionMap<uint8_t, uint8_t, uint8_t>{}(function_map);
-		AddOperatorToFunctionMap<uint16_t, uint16_t, uint16_t>{}(function_map);
-		AddOperatorToFunctionMap<uint32_t, uint32_t, uint32_t>{}(function_map);
-		AddOperatorToFunctionMap<uint64_t, uint64_t, uint64_t>{}(function_map);
-		AddOperatorToFunctionMap<float, float, float, false>{}(function_map);
-		AddOperatorToFunctionMap<double, double, double, false>{}(function_map);
-
-		add_print_function(function_map, out);
-
-		return function_map;
-	}
-
 	struct VMImpl
 	{
 		FunctionMap fm;
@@ -93,11 +31,23 @@ namespace minairo
 		Interpreter::Globals globals;
 	};
 
+	void add_print_function(VMImpl &vm, std::ostream& out)
+	{
+		TypedFunctionRepresentation<false, void, std::string> print;
+
+		print.set_callable([&out](std::string str) -> void { out << str; });
+
+
+		vm.global_types.add_global("print", print.get_type());
+		vm.globals.variables["print"s] = (Value)print;
+	}
+
 
 	VMImpl* create_VM(std::ostream& out)
 	{
-		VMImpl*vm = new VMImpl();
-		vm->fm = create_function_map(out);
+		VMImpl *vm = new VMImpl();
+
+		add_print_function(*vm, out);
 		return vm;
 	}
 
@@ -110,15 +60,16 @@ namespace minairo
 	{
 		std::cout << "interpreting " << code << std::endl;
 
-		FunctionMap fm = create_function_map(std::cout);
+		VMImpl vm;
+		add_print_function(vm, std::cout);
 
 		auto expression = generate_AST(code);
 
-		TypePass type_pass(fm);
+		TypePass type_pass(vm.fm);
 		expression->accept(type_pass);
 
 
-		Interpreter interpreter(fm);
+		Interpreter interpreter(vm.fm);
 		expression->accept(interpreter);
 
 	}

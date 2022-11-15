@@ -300,6 +300,17 @@ namespace minairo
 		case Terminal::KW_STRING:
 			result->type = BuildInType::String;
 			break;
+		case Terminal::KW_MULTIFUNCTION:
+			if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER && scanner.peek_next_symbol().text == "pure")
+			{
+				consume(Terminal::IDENTIFIER, scanner);
+				result->type = BuildInType::PureMultifunction;
+			}
+			else
+			{
+				result->type = BuildInType::Multifunction;
+			}
+			break;
 		default:
 			throw unexpected_type_exception(result->terminal);
 		}
@@ -311,16 +322,12 @@ namespace minairo
 		auto result = std::make_unique<FunctionDeclaration>();
 		result->header = std::make_unique<FunctionTypeDeclaration>();
 
+		result->header->keyword = consume(Terminal::KW_FUNCTION, scanner);
+
 		if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER && scanner.peek_next_symbol().text == "pure")
 		{
-			result->header->keyword = consume(Terminal::IDENTIFIER, scanner);
-			consume(Terminal::KW_FUNCTION, scanner);
-
+			consume(Terminal::IDENTIFIER, scanner);
 			result->header->is_pure = true;
-		}
-		else
-		{
-			result->header->keyword = consume(Terminal::KW_FUNCTION, scanner);
 		}
 
 		consume(Terminal::BRACKET_ROUND_OPEN, scanner);
@@ -421,11 +428,6 @@ namespace minairo
 
 	ExpressionPtr identifier_literal(Scanner& scanner)
 	{
-		if (scanner.peek_next_symbol().text == "pure" && scanner.peek_next_symbol(1).type == Terminal::KW_FUNCTION)
-		{
-			return function_declaration(scanner);
-		}
-
 		auto result = std::make_unique<VariableRead>();
 		result->identifier = consume(Terminal::IDENTIFIER, scanner);
 
@@ -828,16 +830,9 @@ namespace minairo
 	{
 		if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
 		{
-			if (scanner.peek_next_symbol().text == "pure" && scanner.peek_next_symbol(1).type == Terminal::KW_FUNCTION)
-			{
-				return function_declaration(scanner, true);
-			}
-			else
-			{
-				auto result = std::make_unique<VariableRead>();
-				result->identifier = consume(Terminal::IDENTIFIER, scanner);
-				return result;
-			}
+			auto result = std::make_unique<VariableRead>();
+			result->identifier = consume(Terminal::IDENTIFIER, scanner);
+			return result;
 		}
 		else if (scanner.peek_next_symbol().type == Terminal::KW_FUNCTION)
 		{
@@ -902,6 +897,7 @@ namespace minairo
 		pratt_prefixes[(int)Terminal::KW_BOOL] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_TYPEDEF] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_STRING] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_MULTIFUNCTION] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_TABLE] = &table_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_TUPLE] = &tuple_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_FUNCTION] = &function_declaration;

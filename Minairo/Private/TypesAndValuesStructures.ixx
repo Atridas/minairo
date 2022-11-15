@@ -34,7 +34,8 @@ export namespace minairo
 		String,
 
 		InitializerList,
-		Typedef
+		Typedef,
+		Multifunction, PureMultifunction
 	};
 
 	class ComplexType
@@ -64,6 +65,9 @@ export namespace minairo
 		TypeRepresentation(TypeRepresentation&&) = default;
 		TypeRepresentation& operator=(TypeRepresentation const&) = default;
 		TypeRepresentation& operator=(TypeRepresentation&&) = default;
+
+		bool is_integral() const;
+		bool is_float() const;
 
 		void set_name(std::string_view _name)
 		{
