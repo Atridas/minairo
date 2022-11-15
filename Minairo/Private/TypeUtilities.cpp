@@ -101,6 +101,8 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 				type_information.type = left;
 				break;
 			}
+			case Terminal::OP_OR:
+			case Terminal::OP_AND:
 			case Terminal::OP_EQ:
 			case Terminal::OP_NEQ:
 			case Terminal::OP_LT:

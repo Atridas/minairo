@@ -238,6 +238,9 @@ export namespace minairo
 
 			switch (binary.op)
 			{
+			case Terminal::OP_OR:
+			case Terminal::OP_AND:
+
 			case Terminal::OP_ADD:
 			case Terminal::OP_SUB:
 			case Terminal::OP_MUL:
@@ -254,8 +257,8 @@ export namespace minairo
 			case Terminal::OP_LTE:
 			case Terminal::OP_GTE:
 			{
-				if ((argument_types[0].is_integral() || argument_types[0].is_float())
-					&& (argument_types[1].is_integral() || argument_types[1].is_float()))
+				if ((argument_types[0].is_integral() || argument_types[0].is_float() || argument_types[0] == BuildInType::Bool)
+					&& (argument_types[1].is_integral() || argument_types[1].is_float() || argument_types[1] == BuildInType::Bool))
 				{
 					// TODO implicit casts
 					assert(get<BuildInType>(deduce_type(*binary.left).type));

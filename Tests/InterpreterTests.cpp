@@ -44,6 +44,24 @@ namespace InterpreterTests
 			RunAndExpect("2 + 7;", "9");
 			RunAndExpect("7 + 2;", "9");
 		}
+		TEST_METHOD(Shortcircuit)
+		{
+			std::string preamble = R"codi-minairo(
+					t :: function() { print("t"); return true; };
+					f :: function() { print("f"); return false; };
+					r :: function() { print("r"); };
+				)codi-minairo";
+
+			RunAndExpectPrint(preamble + "if(t() && t()) r();", "ttr");
+			RunAndExpectPrint(preamble + "if(t() && f()) r();", "tf");
+			RunAndExpectPrint(preamble + "if(f() && t()) r();", "f");
+			RunAndExpectPrint(preamble + "if(f() && f()) r();", "f");
+
+			RunAndExpectPrint(preamble + "if(t() || t()) r();", "tr");
+			RunAndExpectPrint(preamble + "if(t() || f()) r();", "tr");
+			RunAndExpectPrint(preamble + "if(f() || t()) r();", "ftr");
+			RunAndExpectPrint(preamble + "if(f() || f()) r();", "ff");
+		}
 
 	private:
 

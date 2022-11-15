@@ -906,6 +906,10 @@ namespace minairo
 		pratt_prefixes[(int)Terminal::KW_FUNCTION] = &function_declaration;
 
 
+		pratt_infixes[(int)Terminal::OP_OR] = &binary;
+		pratt_precedences[(int)Terminal::OP_OR] = Precedence::Or;
+		pratt_infixes[(int)Terminal::OP_AND] = &binary;
+		pratt_precedences[(int)Terminal::OP_AND] = Precedence::And;
 		pratt_infixes[(int)Terminal::OP_ADD] = &binary;
 		pratt_precedences[(int)Terminal::OP_ADD] = Precedence::Term;
 		pratt_infixes[(int)Terminal::OP_SUB] = &binary;

@@ -54,142 +54,159 @@ export namespace minairo
 		{
 			binary.left->accept(*this);
 			Value left = last_expression_value;
-			binary.right->accept(*this);
-			Value right = last_expression_value;
 
-
-			auto operation = [&binary]<typename T>(T left, T right)->Value
+			if (binary.op == Terminal::OP_OR)
 			{
-				if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, int16_t> || std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> ||
-					std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> || std::is_same_v<T, uint32_t> || std::is_same_v<T, uint64_t>)
+				if (!std::get<bool>(left))
 				{
-					switch (binary.op)
-					{
-					case Terminal::OP_ADD:
-						return left + right;
-					case Terminal::OP_SUB:
-						return left - right;
-					case Terminal::OP_MUL:
-						return left * right;
-					case Terminal::OP_DIV:
-						return left / right;
-					case Terminal::OP_MOD:
-						return left % right;
-
-					case Terminal::OP_BIT_AND:
-						return left & right;
-					case Terminal::OP_BIT_OR:
-						return left | right;
-					case Terminal::OP_BIT_XOR:
-						return left ^ right;
-
-					case Terminal::OP_EQ:
-						return left == right;
-					case Terminal::OP_NEQ:
-						return left != right;
-					case Terminal::OP_LT:
-						return left < right;
-					case Terminal::OP_GT:
-						return left > right;
-					case Terminal::OP_LTE:
-						return left <= right;
-					case Terminal::OP_GTE:
-						return left >= right;
-					default:
-						assert(false);
-						return false;
-					}
+					binary.right->accept(*this);
 				}
-				else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>)
-				{
-					switch (binary.op)
-					{
-					case Terminal::OP_ADD:
-						return left + right;
-					case Terminal::OP_SUB:
-						return left - right;
-					case Terminal::OP_MUL:
-						return left * right;
-					case Terminal::OP_DIV:
-						return left / right;
-
-					case Terminal::OP_EQ:
-						return left == right;
-					case Terminal::OP_NEQ:
-						return left != right;
-					case Terminal::OP_LT:
-						return left < right;
-					case Terminal::OP_GT:
-						return left > right;
-					case Terminal::OP_LTE:
-						return left <= right;
-					case Terminal::OP_GTE:
-						return left >= right;
-					default:
-						assert(false);
-						return false;
-					}
-				}
-				else if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, bool>)
-				{
-					switch (binary.op)
-					{
-					case Terminal::OP_EQ:
-						return left == right;
-					case Terminal::OP_NEQ:
-						return left != right;
-					default:
-						assert(false);
-						return false;
-					}
-				}
-				else
-				{
-					assert(false);
-					return false;
-				}
-			};
-
-			assert(get<BuildInType>(deduce_type(*binary.left).type));
-			assert(deduce_type(*binary.left).type == deduce_type(*binary.right).type);
-
-			switch (*get<BuildInType>(deduce_type(*binary.left).type))
-			{
-			case BuildInType::I8:
-				last_expression_value = operation(std::get<int8_t>(left), std::get<int8_t>(right));
-				break;
-			case BuildInType::I16:
-				last_expression_value = operation(std::get<int16_t>(left), std::get<int16_t>(right));
-				break;
-			case BuildInType::I32:
-				last_expression_value = operation(std::get<int32_t>(left), std::get<int32_t>(right));
-				break;
-			case BuildInType::I64:
-				last_expression_value = operation(std::get<int64_t>(left), std::get<int64_t>(right));
-				break;
-			case BuildInType::U8:
-				last_expression_value = operation(std::get<uint8_t>(left), std::get<uint8_t>(right));
-				break;
-			case BuildInType::U16:
-				last_expression_value = operation(std::get<uint16_t>(left), std::get<uint16_t>(right));
-				break;
-			case BuildInType::U32:
-				last_expression_value = operation(std::get<uint32_t>(left), std::get<uint32_t>(right));
-				break;
-			case BuildInType::U64:
-				last_expression_value = operation(std::get<uint64_t>(left), std::get<uint64_t>(right));
-				break;
-			case BuildInType::F32:
-				last_expression_value = operation(std::get<float>(left), std::get<float>(right));
-				break;
-			case BuildInType::F64:
-				last_expression_value = operation(std::get<double>(left), std::get<double>(right));
-				break;
-			case BuildInType::Bool:
-				last_expression_value = operation(std::get<bool>(left), std::get<bool>(right));
-				break;
 			}
+			else if (binary.op == Terminal::OP_AND)
+			{
+				if (std::get<bool>(left))
+				{
+					binary.right->accept(*this);
+				}
+			}
+			else
+			{
+				binary.right->accept(*this);
+				Value right = last_expression_value;
 
+
+				auto operation = [&binary]<typename T>(T left, T right)->Value
+				{
+					if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, int16_t> || std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> ||
+						std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> || std::is_same_v<T, uint32_t> || std::is_same_v<T, uint64_t>)
+					{
+						switch (binary.op)
+						{
+						case Terminal::OP_ADD:
+							return left + right;
+						case Terminal::OP_SUB:
+							return left - right;
+						case Terminal::OP_MUL:
+							return left * right;
+						case Terminal::OP_DIV:
+							return left / right;
+						case Terminal::OP_MOD:
+							return left % right;
+
+						case Terminal::OP_BIT_AND:
+							return left & right;
+						case Terminal::OP_BIT_OR:
+							return left | right;
+						case Terminal::OP_BIT_XOR:
+							return left ^ right;
+
+						case Terminal::OP_EQ:
+							return left == right;
+						case Terminal::OP_NEQ:
+							return left != right;
+						case Terminal::OP_LT:
+							return left < right;
+						case Terminal::OP_GT:
+							return left > right;
+						case Terminal::OP_LTE:
+							return left <= right;
+						case Terminal::OP_GTE:
+							return left >= right;
+						default:
+							assert(false);
+							return false;
+						}
+					}
+					else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>)
+					{
+						switch (binary.op)
+						{
+						case Terminal::OP_ADD:
+							return left + right;
+						case Terminal::OP_SUB:
+							return left - right;
+						case Terminal::OP_MUL:
+							return left * right;
+						case Terminal::OP_DIV:
+							return left / right;
+
+						case Terminal::OP_EQ:
+							return left == right;
+						case Terminal::OP_NEQ:
+							return left != right;
+						case Terminal::OP_LT:
+							return left < right;
+						case Terminal::OP_GT:
+							return left > right;
+						case Terminal::OP_LTE:
+							return left <= right;
+						case Terminal::OP_GTE:
+							return left >= right;
+						default:
+							assert(false);
+							return false;
+						}
+					}
+					else if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, bool>)
+					{
+						switch (binary.op)
+						{
+						case Terminal::OP_EQ:
+							return left == right;
+						case Terminal::OP_NEQ:
+							return left != right;
+						default:
+							assert(false);
+							return false;
+						}
+					}
+					else
+					{
+						assert(false);
+						return false;
+					}
+				};
+
+				assert(get<BuildInType>(deduce_type(*binary.left).type));
+				assert(deduce_type(*binary.left).type == deduce_type(*binary.right).type);
+
+				switch (*get<BuildInType>(deduce_type(*binary.left).type))
+				{
+				case BuildInType::I8:
+					last_expression_value = operation(std::get<int8_t>(left), std::get<int8_t>(right));
+					break;
+				case BuildInType::I16:
+					last_expression_value = operation(std::get<int16_t>(left), std::get<int16_t>(right));
+					break;
+				case BuildInType::I32:
+					last_expression_value = operation(std::get<int32_t>(left), std::get<int32_t>(right));
+					break;
+				case BuildInType::I64:
+					last_expression_value = operation(std::get<int64_t>(left), std::get<int64_t>(right));
+					break;
+				case BuildInType::U8:
+					last_expression_value = operation(std::get<uint8_t>(left), std::get<uint8_t>(right));
+					break;
+				case BuildInType::U16:
+					last_expression_value = operation(std::get<uint16_t>(left), std::get<uint16_t>(right));
+					break;
+				case BuildInType::U32:
+					last_expression_value = operation(std::get<uint32_t>(left), std::get<uint32_t>(right));
+					break;
+				case BuildInType::U64:
+					last_expression_value = operation(std::get<uint64_t>(left), std::get<uint64_t>(right));
+					break;
+				case BuildInType::F32:
+					last_expression_value = operation(std::get<float>(left), std::get<float>(right));
+					break;
+				case BuildInType::F64:
+					last_expression_value = operation(std::get<double>(left), std::get<double>(right));
+					break;
+				case BuildInType::Bool:
+					last_expression_value = operation(std::get<bool>(left), std::get<bool>(right));
+					break;
+				}
+			}
 		}
 
 		void visit(BuildInTypeDeclaration const& build_tn_type_declaration) override
