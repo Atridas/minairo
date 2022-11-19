@@ -432,8 +432,7 @@ export namespace minairo
 					member_write.index = tuple->get_field_index(member_write.member.text);
 					member_write.type = tuple->get_field_type(member_write.member.text);
 
-
-					if (*member_write.type != deduce_type(*member_write.right).type)
+					if(!implicit_cast(*member_write.type, member_write.right))
 					{
 						throw message_exception("Assignment of different types", member_write);
 					}
