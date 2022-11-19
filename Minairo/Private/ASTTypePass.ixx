@@ -816,21 +816,6 @@ export namespace minairo
 
 		void visit(VariableDefinition& variable_definition) override
 		{
-			if (variable_blocks.empty())
-			{
-				if (globals.variables.contains((std::string)variable_definition.variable.text))
-				{
-					throw variable_redefinition_exception(variable_definition.variable);
-				}
-			}
-			else
-			{
-				if (variable_blocks.back().variables.contains((std::string)variable_definition.variable.text))
-				{
-					throw variable_redefinition_exception(variable_definition.variable);
-				}
-			}
-
 			assert(variable_definition.type_definition != nullptr || variable_definition.initialization != nullptr);
 
 
@@ -883,11 +868,21 @@ export namespace minairo
 
 				if (variable_blocks.empty())
 				{
+					if (globals.variables.contains((std::string)variable_definition.variable.text) || globals.types.contains((std::string)variable_definition.variable.text))
+					{
+						throw variable_redefinition_exception(variable_definition.variable);
+					}
+
 					globals.types[(std::string)variable_definition.variable.text] = get_compile_time_type_value(*variable_definition.initialization);
 					globals.types[(std::string)variable_definition.variable.text].set_name(variable_definition.variable.text);
 				}
 				else
 				{
+					if (variable_blocks.back().variables.contains((std::string)variable_definition.variable.text) || variable_blocks.back().types.contains((std::string)variable_definition.variable.text))
+					{
+						throw variable_redefinition_exception(variable_definition.variable);
+					}
+
 					variable_blocks.back().types[(std::string)variable_definition.variable.text] = get_compile_time_type_value(*variable_definition.initialization);
 					variable_blocks.back().types[(std::string)variable_definition.variable.text].set_name(variable_definition.variable.text);
 				}
@@ -897,28 +892,117 @@ export namespace minairo
 				VariableInfo info;
 				info.type = *variable_definition.type;
 				info.constant = variable_definition.constant;
-				if (variable_blocks.empty())
+
+				auto as_function = get<FunctionType>(info.type);
+
+				if (as_function && info.constant)
 				{
-					if (get<FunctionType>(info.type) && !info.constant)
+					MultifunctionType multi;
+
+					if (variable_blocks.empty())
 					{
-						if (variable_definition.initialization == nullptr)
+						info.index = -1;
+						if (globals.variables.contains((std::string)variable_definition.variable.text))
 						{
-							info.constant = variable_definition.constant = true;
+							VariableInfo stored_info = globals.variables[(std::string)variable_definition.variable.text];
+							assert(stored_info.index = -1);
+							assert(stored_info.constant = true);
+
+							auto as_multi = get<MultifunctionType>(stored_info.type);
+
+							if (as_multi == nullptr)
+							{
+								throw variable_redefinition_exception(variable_definition.variable);
+							}
+							else if (as_multi->is_pure != as_function->is_pure)
+							{
+								throw message_exception("All function overloads must be all pure or impure", variable_definition);
+							}
+							else
+							{
+								multi = *as_multi;
+							}
+						}
+						else if(globals.types.contains((std::string)variable_definition.variable.text))
+						{
+							throw variable_redefinition_exception(variable_definition.variable);
 						}
 						else
 						{
-							throw message_exception("global functions must be constant", variable_definition);
+							multi.is_pure = as_function->is_pure;
 						}
 					}
-					info.index = -1;
-					globals.variables[(std::string)variable_definition.variable.text] = info;
+					else
+					{
+						if (variable_blocks.back().variables.contains((std::string)variable_definition.variable.text))
+						{
+							VariableInfo stored_info = variable_blocks.back().variables[(std::string)variable_definition.variable.text];
+							assert(stored_info.constant = true);
+							variable_definition.index = info.index = stored_info.index;
+
+							auto as_multi = get<MultifunctionType>(stored_info.type);
+
+							if (as_multi == nullptr)
+							{
+								throw variable_redefinition_exception(variable_definition.variable);
+							}
+							else if (as_multi->is_pure != as_function->is_pure)
+							{
+								throw message_exception("All function overloads must be all pure or impure", variable_definition);
+							}
+							else
+							{
+								multi = *as_multi;
+							}
+						}
+						else if(variable_blocks.back().types.contains((std::string)variable_definition.variable.text))
+						{
+							throw variable_redefinition_exception(variable_definition.variable);
+						}
+						else
+						{
+							variable_definition.index = info.index = variable_blocks.back().stack_size_at_beginning + (int)variable_blocks.back().variables.size();
+							multi.is_pure = as_function->is_pure;
+						}
+					}
+
+					multi.functions.push_back(std::move(*as_function));
+					info.type = multi;
+
+					if (variable_blocks.empty())
+					{
+						globals.variables[(std::string)variable_definition.variable.text] = info;
+					}
+					else
+					{
+						variable_blocks.back().variables[(std::string)variable_definition.variable.text] = info;
+					}
 				}
 				else
 				{
-					variable_definition.index = info.index = variable_blocks.back().stack_size_at_beginning + (int)variable_blocks.back().variables.size();
-					variable_blocks.back().variables[(std::string)variable_definition.variable.text] = info;
+					if (variable_blocks.empty())
+					{
+						if (globals.variables.contains((std::string)variable_definition.variable.text) || globals.types.contains((std::string)variable_definition.variable.text))
+						{
+							throw variable_redefinition_exception(variable_definition.variable);
+						}
+
+						info.index = -1;
+						globals.variables[(std::string)variable_definition.variable.text] = info;
+					}
+					else
+					{
+						if (variable_blocks.back().variables.contains((std::string)variable_definition.variable.text) || variable_blocks.back().types.contains((std::string)variable_definition.variable.text))
+						{
+							throw variable_redefinition_exception(variable_definition.variable);
+						}
+
+						variable_definition.index = info.index = variable_blocks.back().stack_size_at_beginning + (int)variable_blocks.back().variables.size();
+						variable_blocks.back().variables[(std::string)variable_definition.variable.text] = info;
+					}
 				}
 			}
+
 		}
 
 		void visit(WhileStatement& while_statement) override

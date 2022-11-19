@@ -34,8 +34,7 @@ export namespace minairo
 		String,
 
 		InitializerList,
-		Typedef,
-		Multifunction, PureMultifunction
+		Typedef
 	};
 
 	class ComplexType

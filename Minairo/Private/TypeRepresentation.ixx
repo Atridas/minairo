@@ -150,7 +150,6 @@ export namespace minairo
 				return parameters == other.parameters;
 			else
 				return name == other.name;
-
 		}
 
 		operator TypeRepresentation() const
@@ -167,6 +166,46 @@ export namespace minairo
 		{
 			if (FunctionType const* as_function_type = dynamic_cast<FunctionType const*>(&other))
 				return *this == *as_function_type;
+			else
+				return false;
+		}
+	};
+
+	class MultifunctionType : public ComplexType
+	{
+	public:
+		std::string name;
+		std::vector<FunctionType> functions;
+		bool is_pure;
+
+		void set_name(std::string_view _name) override
+		{
+			name = _name;
+		}
+
+		bool operator==(MultifunctionType const& other) const noexcept
+		{
+			if (name.empty() && other.name.empty())
+				return functions == other.functions;
+			else
+				return name == other.name;
+		}
+
+		operator TypeRepresentation() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<MultifunctionType>(*this);
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<MultifunctionType>(*this);
+		}
+
+	protected:
+		bool equals(ComplexType const& other) const override
+		{
+			if (MultifunctionType const* as_multifunction_type = dynamic_cast<MultifunctionType const*>(&other))
+				return *this == *as_multifunction_type;
 			else
 				return false;
 		}

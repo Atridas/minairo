@@ -303,17 +303,17 @@ namespace minairo
 		case Terminal::KW_STRING:
 			result->type = BuildInType::String;
 			break;
-		case Terminal::KW_MULTIFUNCTION:
+		/*case Terminal::KW_MULTIFUNCTION:
+		{
+			MultifunctionType multi = {};
 			if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER && scanner.peek_next_symbol().text == "pure")
 			{
 				consume(Terminal::IDENTIFIER, scanner);
-				result->type = BuildInType::PureMultifunction;
+				multi.is_pure = true;
 			}
-			else
-			{
-				result->type = BuildInType::Multifunction;
-			}
+			result->type = multi;
 			break;
+		}*/
 		default:
 			throw unexpected_type_exception(result->terminal);
 		}
