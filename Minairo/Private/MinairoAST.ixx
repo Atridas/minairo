@@ -1001,7 +1001,7 @@ export namespace minairo
 		std::unique_ptr<Expression> type_definition;
 		std::unique_ptr<Expression> initialization;
 		int index = -1;
-		bool constant = false, explicitly_uninitialized = false;
+		bool constant = false, explicitly_uninitialized = false, multifunction_first = false;
 
 		VariableDefinition() = default;
 		VariableDefinition(VariableDefinition&&) = default;
@@ -1014,6 +1014,7 @@ export namespace minairo
 			, index(b.index)
 			, constant(b.constant)
 			, explicitly_uninitialized(b.explicitly_uninitialized)
+			, multifunction_first(b.multifunction_first)
 		{
 		}
 		VariableDefinition& operator=(VariableDefinition const& b)
@@ -1027,6 +1028,7 @@ export namespace minairo
 				index = b.index;
 				constant = b.constant;
 				explicitly_uninitialized = b.explicitly_uninitialized;
+				multifunction_first = b.multifunction_first;
 			}
 			return *this;
 		}

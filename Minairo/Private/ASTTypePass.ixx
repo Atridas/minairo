@@ -295,12 +295,60 @@ export namespace minairo
 
 			if(as_function == nullptr)
 			{
-				throw message_exception("Expected a function\n", *call.callee);
+				std::shared_ptr<MultifunctionType> as_multifunction = get<MultifunctionType>(callee_type);
+
+				if (as_multifunction == nullptr)
+				{
+					throw message_exception("Expected a function\n", *call.callee);
+				}
+				else
+				{
+					// TODO move to a function?
+					std::vector<FunctionType> candidates;
+
+					int best_needed_casts = 0x7fffffff;
+
+					for (auto &candidate : as_multifunction->functions)
+					{
+						int needed_casts = 0;
+						if (implicit_cast(candidate.parameters, call.arguments, false, &needed_casts))
+						{
+							if (needed_casts < best_needed_casts)
+							{
+								candidates.clear();
+								best_needed_casts = needed_casts;
+							}
+
+							if (needed_casts == best_needed_casts)
+							{
+								candidates.push_back(candidate);
+							}
+						}
+					}
+
+					if (candidates.size() == 1)
+					{
+						Cast cast;
+						cast.target_type = candidates[0];
+						cast.expr = std::move(call.callee);
+						call.callee = cast.deep_copy();
+
+						as_function = std::make_shared<FunctionType>(candidates[0]);
+					}
+					else if (candidates.size() == 0)
+					{
+						throw message_exception("No overload found for this arguments", call.arguments);
+					}
+					else
+					{
+						throw message_exception("Too many overloads found", call.arguments);
+					}
+				}
 			}
 
 			if (!implicit_cast(as_function->parameters, call.arguments, false))
 			{
-				throw message_exception("Initializer has not the right type\n", call.arguments);
+				throw message_exception("Initializer has not the right type", call.arguments);
 			}
 		}
 
@@ -929,6 +977,7 @@ export namespace minairo
 						}
 						else
 						{
+							variable_definition.multifunction_first = true;
 							multi.is_pure = as_function->is_pure;
 						}
 					}
@@ -962,10 +1011,18 @@ export namespace minairo
 						else
 						{
 							variable_definition.index = info.index = variable_blocks.back().stack_size_at_beginning + (int)variable_blocks.back().variables.size();
+							variable_definition.multifunction_first = true;
 							multi.is_pure = as_function->is_pure;
 						}
 					}
 
+					for (FunctionType const& old_overload : multi.functions)
+					{
+						if (old_overload == *as_function)
+						{
+							throw message_exception("overload already exists", variable_definition);
+						}
+					}
 					multi.functions.push_back(std::move(*as_function));
 					info.type = multi;
 
@@ -1097,12 +1154,14 @@ export namespace minairo
 			return std::nullopt;
 		}
 
-		bool implicit_cast(TupleType target, InitializerList &origin, bool let_undefined_fields, bool execute_cast = true)
+		bool implicit_cast(TupleType target, InitializerList &origin, bool let_undefined_fields, int *needed_casts = nullptr)
 		{
-			if(execute_cast)
+			if(needed_casts == nullptr)
 			{
 				origin.destination_type = target;
 			}
+
+			std::vector<int> indexes, default_initializers;
 
 			int last_index = -1;
 			for (int i = 0; i < (int)origin.expressions.size(); ++i)
@@ -1110,12 +1169,12 @@ export namespace minairo
 				int index;
 				if (origin.names[i])
 				{
-					if (!origin.destination_type.has_field(origin.names[i]->text))
+					if (!target.has_field(origin.names[i]->text))
 					{
 						throw message_exception("tuple doesn't have this field\n", *origin.names[i]);
 					}
-					index = origin.destination_type.get_field_index(origin.names[i]->text);
-					if (std::find(origin.indexes.begin(), origin.indexes.end(), index) != origin.indexes.end())
+					index = target.get_field_index(origin.names[i]->text);
+					if (std::find(indexes.begin(), indexes.end(), index) != indexes.end())
 					{
 						throw message_exception("this field has already been initialized", *origin.names[i]);
 					}
@@ -1123,38 +1182,33 @@ export namespace minairo
 				else
 				{
 					++last_index;
-					while (std::find(origin.indexes.begin(), origin.indexes.end(), last_index) != origin.indexes.end())
+					while (std::find(indexes.begin(), indexes.end(), last_index) != indexes.end())
 					{
 						++last_index;
 					}
 					index = last_index;
 
-					if (index >= origin.destination_type.get_num_fields())
+					if (index >= target.get_num_fields())
 					{
 						throw message_exception("too many initializer values for this tuple", *origin.expressions[i]);
 					}
 				}
 
-				if (!implicit_cast(origin.destination_type.get_field_type(index), origin.expressions[i]))
+				if (!implicit_cast(target.get_field_type(index), origin.expressions[i], needed_casts))
 				{
 					throw message_exception("initializer has the wrong type", *origin.expressions[i]);
 				}
 
-				if(execute_cast)
-				{
-					origin.indexes.push_back(index);
-				}
+				indexes.push_back(index);
 				last_index = index;
 			}
 
-			for (int i = 0; i < origin.destination_type.get_num_fields(); ++i)
+			for (int i = 0; i < target.get_num_fields(); ++i)
 			{
-				if (std::find(origin.indexes.begin(), origin.indexes.end(), i) == origin.indexes.end())
+				if (std::find(indexes.begin(), indexes.end(), i) == indexes.end())
 				{
-					if(execute_cast)
-					{
-						origin.default_initializers.push_back(i);
-					}
+					default_initializers.push_back(i);
+
 					if (!let_undefined_fields && !target.get_field_init_value(i).has_value())
 					{
 						throw message_exception("missing arguments!", origin);
@@ -1162,10 +1216,20 @@ export namespace minairo
 				}
 			}
 
+			if (needed_casts == nullptr)
+			{
+				origin.indexes = indexes;
+				origin.default_initializers = default_initializers;
+			}
+			else
+			{
+				*needed_casts += (int)default_initializers.size();
+			}
+
 			return true;
 		}
 
-		bool implicit_cast(TypeRepresentation target, std::unique_ptr<Expression> &origin, bool execute_cast = true)
+		bool implicit_cast(TypeRepresentation target, std::unique_ptr<Expression> &origin, int* needed_casts = nullptr)
 		{
 			TypeRepresentation original_type = deduce_type(*origin).type;
 			if (target == original_type)
@@ -1189,7 +1253,7 @@ export namespace minairo
 			else if (get<TupleType>(target) && original_type == BuildInType::InitializerList)
 			{
 				assert(dynamic_cast<InitializerList*>(origin.get()));
-				return implicit_cast(*get<TupleType>(target), *static_cast<InitializerList*>(origin.get()), true, execute_cast);
+				return implicit_cast(*get<TupleType>(target), *static_cast<InitializerList*>(origin.get()), true, needed_casts);
 			}
 			else if ((target.is_integral() || target.is_float()) && (original_type.is_integral() || original_type.is_float()))
 			{
@@ -1302,13 +1366,17 @@ export namespace minairo
 
 				if (can_cast)
 				{
-					if(execute_cast)
+					if(needed_casts == nullptr)
 					{
 						auto cast = std::make_unique<Cast>();
 						cast->expr = std::move(origin);
 						cast->target_type = target;
 
 						origin = std::move(cast);
+					}
+					else
+					{
+						++ *needed_casts;
 					}
 
 					return true;
