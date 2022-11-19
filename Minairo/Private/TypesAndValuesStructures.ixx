@@ -66,6 +66,7 @@ export namespace minairo
 		TypeRepresentation& operator=(TypeRepresentation const&) = default;
 		TypeRepresentation& operator=(TypeRepresentation&&) = default;
 
+		bool is_buildin() const { return std::holds_alternative<BuildInType>(*this); }
 		bool is_integral() const;
 		bool is_float() const;
 

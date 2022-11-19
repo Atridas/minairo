@@ -101,6 +101,12 @@ namespace minairo
 				else
 					return "false";
 			}
+			else if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, uint8_t>)
+			{
+				std::stringstream ss;
+				ss << (int)value;
+				return ss.str();
+			}
 			else if constexpr (std::is_integral_v<T>)
 			{
 				std::stringstream ss;

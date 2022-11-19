@@ -83,22 +83,22 @@ export namespace minairo
 						switch (binary.op)
 						{
 						case Terminal::OP_ADD:
-							return left + right;
+							return (T)(left + right);
 						case Terminal::OP_SUB:
-							return left - right;
+							return (T)(left - right);
 						case Terminal::OP_MUL:
-							return left * right;
+							return (T)(left * right);
 						case Terminal::OP_DIV:
-							return left / right;
+							return (T)(left / right);
 						case Terminal::OP_MOD:
-							return left % right;
+							return (T)(left % right);
 
 						case Terminal::OP_BIT_AND:
-							return left & right;
+							return (T)(left & right);
 						case Terminal::OP_BIT_OR:
-							return left | right;
+							return (T)(left | right);
 						case Terminal::OP_BIT_XOR:
-							return left ^ right;
+							return (T)(left ^ right);
 
 						case Terminal::OP_EQ:
 							return left == right;
@@ -254,6 +254,50 @@ export namespace minairo
 				void* result_ptr = set_to_type(last_expression_value, return_type);
 
 				callee->call(result_ptr, args);
+			}
+		}
+
+		void visit(Cast const& cast) override
+		{
+			cast.expr->accept(*this);
+			if (cast.target_type.is_buildin())
+			{
+				last_expression_value = std::visit([target_type = std::get<BuildInType>(cast.target_type)]<typename T>(T v) -> Value
+				{
+					if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, int16_t> || std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> ||
+						std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> || std::is_same_v<T, uint32_t> || std::is_same_v<T, uint64_t>)
+					{
+						switch (target_type)
+						{
+						case BuildInType::I8:
+							return (int8_t)v;
+						case BuildInType::I16:
+							return (int16_t)v;
+						case BuildInType::I32:
+							return (int32_t)v;
+						case BuildInType::I64:
+							return (int64_t)v;
+						case BuildInType::U8:
+							return (uint8_t)v;
+						case BuildInType::U16:
+							return (uint16_t)v;
+						case BuildInType::U32:
+							return (uint32_t)v;
+						case BuildInType::U64:
+							return (uint64_t)v;
+						case BuildInType::F32:
+							return (float)v;
+						case BuildInType::F64:
+							return (double)v;
+						default:
+							return {};
+						}
+					}
+					else
+					{
+						return {}; // TODO
+					}
+				}, last_expression_value);
 			}
 		}
 

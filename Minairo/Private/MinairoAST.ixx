@@ -276,6 +276,52 @@ export namespace minairo
 		}
 	};
 
+	class Cast final : public Expression
+	{
+	public:
+		std::unique_ptr<Expression> expr;
+		TypeRepresentation target_type;
+
+
+		Cast() = default;
+		Cast(Cast&&) = default;
+		Cast& operator=(Cast&&) = default;
+		Cast(Cast const& b)
+			: expr(b.expr->deep_copy())
+			, target_type(b.target_type)
+		{
+		}
+		Cast& operator=(Cast const& b)
+		{
+			if (this != &b)
+			{
+				expr = b.expr->deep_copy();
+				target_type = b.target_type;
+			}
+			return *this;
+		}
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<Cast> typed_deep_copy() const
+		{
+			return std::make_unique<Cast>(*this);
+		}
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		virtual TerminalData get_first_terminal() const override
+		{
+			return expr->get_first_terminal();
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return expr->get_last_terminal();
+		}
+	};
+
 	class Literal final : public Expression
 	{
 	public:
@@ -1227,6 +1273,7 @@ export namespace minairo
 		virtual void visit(Binary& binary) = 0;
 		virtual void visit(BuildInTypeDeclaration& build_in_type_declaration) = 0;
 		virtual void visit(Call& call) = 0;
+		virtual void visit(Cast& cast) = 0;
 		virtual void visit(Grouping& grouping) = 0;
 		virtual void visit(InitializerList& initializer_list) = 0;
 		virtual void visit(Literal& literal) = 0;
@@ -1247,6 +1294,7 @@ export namespace minairo
 		virtual void visit(Binary const& binary) = 0;
 		virtual void visit(BuildInTypeDeclaration const& build_in_type_declaration) = 0;
 		virtual void visit(Call const& call) = 0;
+		virtual void visit(Cast const& cast) = 0;
 		virtual void visit(Grouping const& grouping) = 0;
 		virtual void visit(InitializerList const& initializer_list) = 0;
 		virtual void visit(Literal const& literal) = 0;
@@ -1319,6 +1367,10 @@ void Call::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
+void Cast::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
 void Grouping::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
@@ -1381,6 +1433,10 @@ void BuildInTypeDeclaration::accept(ExpressionConstVisitor& visitor) const
 	visitor.visit(*this);
 }
 void Call::accept(ExpressionConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void Cast::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

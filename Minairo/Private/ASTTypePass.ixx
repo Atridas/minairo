@@ -260,9 +260,11 @@ export namespace minairo
 				if ((argument_types[0].is_integral() || argument_types[0].is_float() || argument_types[0] == BuildInType::Bool)
 					&& (argument_types[1].is_integral() || argument_types[1].is_float() || argument_types[1] == BuildInType::Bool))
 				{
-					// TODO implicit casts
-					assert(get<BuildInType>(deduce_type(*binary.left).type));
-					assert(deduce_type(*binary.left).type == deduce_type(*binary.right).type);
+					if (!(implicit_cast(argument_types[0], binary.right) || implicit_cast(argument_types[1], binary.left)))
+					{
+						throw message_exception("can't implicitly cast operators!", binary);
+					}
+
 
 					// TODO more checks?
 				}
@@ -296,11 +298,15 @@ export namespace minairo
 				throw message_exception("Expected a function\n", *call.callee);
 			}
 
-
 			if (!implicit_cast(as_function->parameters, call.arguments, false))
 			{
 				throw message_exception("Initializer has not the right type\n", call.arguments);
 			}
+		}
+
+		void visit(Cast& cast) override
+		{
+			cast.expr->accept(*this);
 		}
 
 		void visit(Grouping& grouping) override
@@ -845,6 +851,22 @@ export namespace minairo
 				if (variable_definition.type_definition == nullptr)
 				{
 					variable_definition.type = deduce_type(*variable_definition.initialization).type;
+					if (variable_definition.type->is_integral())
+					{
+						switch (std::get<BuildInType>(*variable_definition.type))
+						{
+						case BuildInType::I8:
+						case BuildInType::I16:
+							variable_definition.type = BuildInType::I32;
+							implicit_cast(BuildInType::I32, variable_definition.initialization);
+							break;
+						case BuildInType::U8:
+						case BuildInType::U16:
+							variable_definition.type = BuildInType::U32;
+							implicit_cast(BuildInType::U32, variable_definition.initialization);
+							break;
+						}
+					}
 				}
 				else if (!implicit_cast(*variable_definition.type, variable_definition.initialization))
 				{
@@ -980,9 +1002,12 @@ export namespace minairo
 			return std::nullopt;
 		}
 
-		bool implicit_cast(TupleType target, InitializerList &origin, bool let_undefined_fields)
+		bool implicit_cast(TupleType target, InitializerList &origin, bool let_undefined_fields, bool execute_cast = true)
 		{
-			origin.destination_type = target;
+			if(execute_cast)
+			{
+				origin.destination_type = target;
+			}
 
 			int last_index = -1;
 			for (int i = 0; i < (int)origin.expressions.size(); ++i)
@@ -1020,7 +1045,10 @@ export namespace minairo
 					throw message_exception("initializer has the wrong type", *origin.expressions[i]);
 				}
 
-				origin.indexes.push_back(index);
+				if(execute_cast)
+				{
+					origin.indexes.push_back(index);
+				}
 				last_index = index;
 			}
 
@@ -1028,7 +1056,10 @@ export namespace minairo
 			{
 				if (std::find(origin.indexes.begin(), origin.indexes.end(), i) == origin.indexes.end())
 				{
-					origin.default_initializers.push_back(i);
+					if(execute_cast)
+					{
+						origin.default_initializers.push_back(i);
+					}
 					if (!let_undefined_fields && !target.get_field_init_value(i).has_value())
 					{
 						throw message_exception("missing arguments!", origin);
@@ -1039,7 +1070,7 @@ export namespace minairo
 			return true;
 		}
 
-		bool implicit_cast(TypeRepresentation target, std::unique_ptr<Expression> &origin)
+		bool implicit_cast(TypeRepresentation target, std::unique_ptr<Expression> &origin, bool execute_cast = true)
 		{
 			TypeRepresentation original_type = deduce_type(*origin).type;
 			if (target == original_type)
@@ -1063,7 +1094,134 @@ export namespace minairo
 			else if (get<TupleType>(target) && original_type == BuildInType::InitializerList)
 			{
 				assert(dynamic_cast<InitializerList*>(origin.get()));
-				return implicit_cast(*get<TupleType>(target), *static_cast<InitializerList*>(origin.get()), true);
+				return implicit_cast(*get<TupleType>(target), *static_cast<InitializerList*>(origin.get()), true, execute_cast);
+			}
+			else if ((target.is_integral() || target.is_float()) && (original_type.is_integral() || original_type.is_float()))
+			{
+				bool o_sign, t_sign;
+				int o_bits, t_bits;
+				switch (std::get<BuildInType>(target))
+				{
+				case BuildInType::I8:
+					t_sign = true;
+					t_bits = 8;
+					break;
+				case BuildInType::I16:
+					t_sign = true;
+					t_bits = 16;
+					break;
+				case BuildInType::I32:
+					t_sign = true;
+					t_bits = 32;
+					break;
+				case BuildInType::I64:
+					t_sign = true;
+					t_bits = 64;
+					break;
+				case BuildInType::U8:
+					t_sign = false;
+					t_bits = 8;
+					break;
+				case BuildInType::U16:
+					t_sign = false;
+					t_bits = 16;
+					break;
+				case BuildInType::U32:
+					t_sign = false;
+					t_bits = 32;
+					break;
+				case BuildInType::U64:
+					t_sign = false;
+					t_bits = 64;
+					break;
+				case BuildInType::F32:
+					t_sign = true;
+					t_bits = 32;
+					break;
+				case BuildInType::F64:
+					t_sign = true;
+					t_bits = 64;
+					break;
+				}
+
+				switch (std::get<BuildInType>(original_type))
+				{
+				case BuildInType::I8:
+					o_sign = true;
+					o_bits = 8;
+					break;
+				case BuildInType::I16:
+					o_sign = true;
+					o_bits = 16;
+					break;
+				case BuildInType::I32:
+					o_sign = true;
+					o_bits = 32;
+					break;
+				case BuildInType::I64:
+					o_sign = true;
+					o_bits = 64;
+					break;
+				case BuildInType::U8:
+					o_sign = false;
+					o_bits = 8;
+					break;
+				case BuildInType::U16:
+					o_sign = false;
+					o_bits = 16;
+					break;
+				case BuildInType::U32:
+					o_sign = false;
+					o_bits = 32;
+					break;
+				case BuildInType::U64:
+					o_sign = false;
+					o_bits = 64;
+					break;
+				case BuildInType::F32:
+					o_sign = true;
+					o_bits = 32;
+					break;
+				case BuildInType::F64:
+					o_sign = true;
+					o_bits = 64;
+					break;
+				}
+
+				bool can_cast = false;
+				if (target.is_integral() && original_type.is_integral())
+				{
+					if (o_bits < t_bits)
+					{
+						if(!o_sign || t_sign)
+							can_cast = true;
+					}
+				}
+				else if (target.is_float())
+				{
+					if (t_bits == 32 && o_bits <= 16)
+						can_cast = true;
+					else if (o_bits <= 32)
+						can_cast = true;
+				}
+
+				if (can_cast)
+				{
+					if(execute_cast)
+					{
+						auto cast = std::make_unique<Cast>();
+						cast->expr = std::move(origin);
+						cast->target_type = target;
+
+						origin = std::move(cast);
+					}
+
+					return true;
+				}
+				else
+				{
+					return false;
+				}
 			}
 			else
 				return false;

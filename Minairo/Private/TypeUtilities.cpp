@@ -83,9 +83,6 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 
 		void visit(Binary const& binary) override
 		{
-			assert(get<BuildInType>(deduce_type(*binary.left).type));
-			assert(deduce_type(*binary.left).type == deduce_type(*binary.right).type);
-
 			switch (binary.op)
 			{
 			case Terminal::OP_ADD:
@@ -97,8 +94,7 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 			case Terminal::OP_BIT_OR:
 			case Terminal::OP_BIT_XOR:
 			{
-				BuildInType left = *get<BuildInType>(deduce_type(*binary.left).type);
-				type_information.type = left;
+				type_information.type = deduce_type(*binary.left).type;
 				break;
 			}
 			case Terminal::OP_OR:
@@ -134,6 +130,11 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 					type_information.type = c->return_type;
 				}
 			}
+			type_information.constant = true;
+		}
+		void visit(Cast const& cast) override
+		{
+			type_information.type = cast.target_type;
 			type_information.constant = true;
 		}
 		void visit(Grouping const& grouping) override
@@ -213,6 +214,8 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 
 std::optional<Value> minairo::get_compile_time_value(Expression const& expression)
 {
+	// TODO use the interpreter somehow
+
 	class CompileTimeValue final : public ExpressionConstVisitor
 	{
 	public:
@@ -229,6 +232,52 @@ std::optional<Value> minairo::get_compile_time_value(Expression const& expressio
 		void visit(Call const& call) override
 		{
 			result = std::nullopt;
+		}
+		void visit(Cast const& cast) override
+		{
+			cast.expr->accept(*this);
+			if (result)
+			{
+				if (cast.target_type.is_buildin())
+				{
+					result = std::visit([target_type = std::get<BuildInType>(cast.target_type)]<typename T>(T v) -> std::optional<Value>
+					{
+						if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, int16_t> || std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> ||
+							std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> || std::is_same_v<T, uint32_t> || std::is_same_v<T, uint64_t>)
+						{
+							switch (target_type)
+							{
+							case BuildInType::I8:
+								return (int8_t)v;
+							case BuildInType::I16:
+								return (int16_t)v;
+							case BuildInType::I32:
+								return (int32_t)v;
+							case BuildInType::I64:
+								return (int64_t)v;
+							case BuildInType::U8:
+								return (uint8_t)v;
+							case BuildInType::U16:
+								return (uint16_t)v;
+							case BuildInType::U32:
+								return (uint32_t)v;
+							case BuildInType::U64:
+								return (uint64_t)v;
+							case BuildInType::F32:
+								return (float)v;
+							case BuildInType::F64:
+								return (double)v;
+							default:
+								return std::nullopt;
+							}
+						}
+						else
+						{
+							return std::nullopt; // TODO
+						}
+					}, * result);
+				}
+			}
 		}
 		void visit(Grouping const& grouping) override
 		{

@@ -482,21 +482,26 @@ namespace minairo
 	{
 		auto result = std::make_unique<Literal>();
 		result->terminal = consume(Terminal::INTEGER_LITERAL, scanner);
-		// TODO U, L, LL, Z
+
+		uint64_t value = 0;
+
+		// TODO too big numbers error
 
 		if (result->terminal.text[0] == '0')
 		{
 			if (result->terminal.text.size() == 1)
 			{
-				result->value = (uint64_t)0;
-				result->type_representation = BuildInType::I32;
+				//  value = (uint64_t)0;
 			}
 			else if (result->terminal.text[1] == 'x' || result->terminal.text[1] == 'X')
 			{
 				// hex literal
-				uint64_t value = 0;
 				for (char c : result->terminal.text)
 				{
+					if (c == 'u' || c == 'U')
+					{
+						break;
+					}
 					if (c != '\'' && c != 'x' && c != 'X')
 					{
 						value *= 16;
@@ -511,15 +516,16 @@ namespace minairo
 						}
 					}
 				}
-				result->value = value;
-				result->type_representation = BuildInType::I32;
 			}
 			else if (result->terminal.text[1] == 'b' || result->terminal.text[1] == 'B')
 			{
 				// binary literal
-				uint64_t value = 0;
 				for (char c : result->terminal.text)
 				{
+					if (c == 'u' || c == 'U')
+					{
+						break;
+					}
 					if (c != '\'' && c != 'b' && c != 'B')
 					{
 						assert(c == '0' || c == '1');
@@ -527,15 +533,16 @@ namespace minairo
 						value += c - '0';
 					}
 				}
-				result->value = value;
-				result->type_representation = BuildInType::I32;
 			}
 			else
 			{
 				// octal literal
-				uint64_t value = 0;
 				for (char c : result->terminal.text)
 				{
+					if (c == 'u' || c == 'U')
+					{
+						break;
+					}
 					if (c != '\'')
 					{
 						assert(c >= '0' && c <= '7');
@@ -543,16 +550,17 @@ namespace minairo
 						value += c - '0';
 					}
 				}
-				result->value = value;
-				result->type_representation = BuildInType::I32;
 			}
 		}
 		else
 		{
 			// decimal literal
-			uint64_t value = 0;
 			for (char c : result->terminal.text)
 			{
+				if (c == 'u' || c == 'U')
+				{
+					break;
+				}
 				if (c != '\'')
 				{
 					assert(c >= '0' && c <= '9');
@@ -560,8 +568,31 @@ namespace minairo
 					value += c - '0';
 				}
 			}
-			result->value = value;
-			result->type_representation = BuildInType::I32;
+		}
+
+		result->value = value;
+
+		if (result->terminal.text.ends_with("u") || result->terminal.text.ends_with("U"))
+		{
+			if (value <= 0xff)
+				result->type_representation = BuildInType::U8;
+			else if (value <= 0xffff)
+				result->type_representation = BuildInType::U16;
+			else if (value <= 0xffffffff)
+				result->type_representation = BuildInType::U32;
+			else 
+				result->type_representation = BuildInType::U64;
+		}
+		else
+		{
+			if (value <= 0x7f)
+				result->type_representation = BuildInType::I8;
+			else if (value <= 0x7fff)
+				result->type_representation = BuildInType::I16;
+			else if (value <= 0x7fffffff)
+				result->type_representation = BuildInType::I32;
+			else
+				result->type_representation = BuildInType::I64;
 		}
 
 		return result;
