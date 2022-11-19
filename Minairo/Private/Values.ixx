@@ -308,6 +308,12 @@ export namespace minairo
 
 			return result;
 		}
+		else if(FunctionType const* function_type = dynamic_cast<FunctionType*>(type.get()))
+		{
+			DefaultFunction result;
+			result.type = *function_type;
+			return (std::shared_ptr<ComplexValue>)std::move(result.deep_copy());
+		}
 		else
 		{
 			assert(false);

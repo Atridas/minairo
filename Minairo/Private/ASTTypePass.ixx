@@ -878,7 +878,7 @@ export namespace minairo
 			{
 				if (variable_definition.type == BuildInType::Typedef && !variable_definition.constant)
 				{
-					throw message_exception("typedefs must be constant\n", variable_definition);
+					throw message_exception("typedefs must be constant", variable_definition);
 				}
 
 				if (variable_blocks.empty())
@@ -899,6 +899,17 @@ export namespace minairo
 				info.constant = variable_definition.constant;
 				if (variable_blocks.empty())
 				{
+					if (get<FunctionType>(info.type) && !info.constant)
+					{
+						if (variable_definition.initialization == nullptr)
+						{
+							info.constant = variable_definition.constant = true;
+						}
+						else
+						{
+							throw message_exception("global functions must be constant", variable_definition);
+						}
+					}
 					info.index = -1;
 					globals.variables[(std::string)variable_definition.variable.text] = info;
 				}

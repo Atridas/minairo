@@ -146,6 +146,69 @@ export namespace minairo
 		}
 	};
 
+	class DefaultFunction final : public FunctionRepresentation
+	{
+	public:
+		FunctionType type;
+
+		TypeRepresentation get_return_type() const noexcept override
+		{
+			return type.return_type;
+		}
+		bool has_parameter_types(std::span<TypeRepresentation const> _parameter_types) const noexcept
+		{
+			if (_parameter_types.size() != type.parameters.get_num_fields())
+				return false;
+			else
+			{
+				for (int i = 0; i < (int)type.parameters.get_num_fields(); ++i)
+				{
+					if (_parameter_types[i] != type.parameters.get_field_type(i))
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+		std::span<TypeRepresentation const> get_parameter_types() const noexcept override
+		{
+			return type.parameters.get_types();
+		}
+		FunctionType get_type() const noexcept override
+		{
+			return type;
+		}
+
+		void call(void* return_value, std::span<void*> _arguments) const noexcept
+		{
+			assert(false);
+		}
+
+		std::unique_ptr<FunctionRepresentation> deep_copy() const override
+		{
+			return std::make_unique<DefaultFunction>(*this);
+		}
+
+		bool operator==(DefaultFunction const& other) const
+		{
+			return type == other.type;
+		}
+
+	protected:
+		virtual bool equals(ComplexValue const& other) const
+		{
+			if (DefaultFunction const* o = dynamic_cast<DefaultFunction const*>(&other))
+			{
+				return *this == *o;
+			}
+			else
+			{
+				return false;
+			}
+		}
+	};
+
 	class Multifunction : public ComplexValue
 	{
 	public:
