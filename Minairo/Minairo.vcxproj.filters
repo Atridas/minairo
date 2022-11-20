@@ -57,5 +57,14 @@
     <ClCompile Include="Private\TypeUtilities.ixx">
       <Filter>Private</Filter>
     </ClCompile>
+    <ClCompile Include="Private\MinairoParser.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\ASTTypePass.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\MinairoASTInterpreter.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
