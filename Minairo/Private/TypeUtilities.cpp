@@ -137,6 +137,10 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 			type_information.type = cast.target_type;
 			type_information.constant = true;
 		}
+		void visit(ConceptDeclaration const& concept_declaration) override
+		{
+			assert(false); // TODO
+		}
 		void visit(Grouping const& grouping) override
 		{
 			type_information.type = deduce_type(*grouping.expr).type;
@@ -278,6 +282,11 @@ std::optional<Value> minairo::get_compile_time_value(Expression const& expressio
 					}, * result);
 				}
 			}
+		}
+		void visit(ConceptDeclaration const& concept_declaration) override
+		{
+			assert(false); // TODO
+			result = std::nullopt;
 		}
 		void visit(Grouping const& grouping) override
 		{

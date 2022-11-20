@@ -116,6 +116,42 @@ export namespace minairo
 		}
 	};
 
+	class ConceptDeclaration final : public Expression
+	{
+	public:
+		TerminalData keyword, closing;
+		std::vector<TerminalData> tuple_names;
+		std::vector<class TupleDeclaration> tuple_declarations;
+		std::vector<TerminalData> function_names;
+		std::vector<class FunctionTypeDeclaration> function_declarations;
+
+		ConceptDeclaration() = default;
+		ConceptDeclaration(ConceptDeclaration&&) = default;
+		ConceptDeclaration& operator=(ConceptDeclaration&&) = default;
+		ConceptDeclaration(ConceptDeclaration const& b);
+		ConceptDeclaration& operator=(ConceptDeclaration const& b);
+
+		std::unique_ptr<Expression> deep_copy() const override
+		{
+			return typed_deep_copy();
+		}
+		std::unique_ptr<ConceptDeclaration> typed_deep_copy() const
+		{
+			return std::make_unique<ConceptDeclaration>(*this);
+		}
+
+		void accept(ExpressionVisitor& visitor) override;
+		void accept(ExpressionConstVisitor& visitor) const override;
+		virtual TerminalData get_first_terminal() const override
+		{
+			return keyword;
+		}
+		virtual TerminalData get_last_terminal() const override
+		{
+			return closing;
+		}
+	};
+
 	class Grouping final : public Expression
 	{
 	public:
@@ -1276,6 +1312,7 @@ export namespace minairo
 		virtual void visit(BuildInTypeDeclaration& build_in_type_declaration) = 0;
 		virtual void visit(Call& call) = 0;
 		virtual void visit(Cast& cast) = 0;
+		virtual void visit(ConceptDeclaration& concept_declaration) = 0;
 		virtual void visit(Grouping& grouping) = 0;
 		virtual void visit(InitializerList& initializer_list) = 0;
 		virtual void visit(Literal& literal) = 0;
@@ -1297,6 +1334,7 @@ export namespace minairo
 		virtual void visit(BuildInTypeDeclaration const& build_in_type_declaration) = 0;
 		virtual void visit(Call const& call) = 0;
 		virtual void visit(Cast const& cast) = 0;
+		virtual void visit(ConceptDeclaration const& concept_declaration) = 0;
 		virtual void visit(Grouping const& grouping) = 0;
 		virtual void visit(InitializerList const& initializer_list) = 0;
 		virtual void visit(Literal const& literal) = 0;
@@ -1357,6 +1395,29 @@ TerminalData FunctionDeclaration::get_last_terminal() const
 	return body->get_last_terminal();
 }
 // ------------------------------------------------------------------------------------------------
+ConceptDeclaration::ConceptDeclaration(ConceptDeclaration const& b)
+	: keyword(b.keyword)
+	, closing(b.closing)
+	, tuple_names(b.tuple_names)
+	, tuple_declarations(b.tuple_declarations)
+	, function_names(b.function_names)
+	, function_declarations(b.function_declarations)
+{
+}
+ConceptDeclaration& ConceptDeclaration::operator=(ConceptDeclaration const& b)
+{
+	if (this != &b)
+	{
+		keyword = b.keyword;
+		closing = b.closing;
+		tuple_names = b.tuple_names;
+		tuple_declarations = b.tuple_declarations;
+		function_names = b.function_names;
+		function_declarations = b.function_declarations;
+	}
+	return *this;
+}
+// ------------------------------------------------------------------------------------------------
 void Binary::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
@@ -1370,6 +1431,10 @@ void Call::accept(ExpressionVisitor& visitor)
 	visitor.visit(*this);
 }
 void Cast::accept(ExpressionVisitor& visitor)
+{
+	visitor.visit(*this);
+}
+void ConceptDeclaration::accept(ExpressionVisitor& visitor)
 {
 	visitor.visit(*this);
 }
@@ -1439,6 +1504,10 @@ void Call::accept(ExpressionConstVisitor& visitor) const
 	visitor.visit(*this);
 }
 void Cast::accept(ExpressionConstVisitor& visitor) const
+{
+	visitor.visit(*this);
+}
+void ConceptDeclaration::accept(ExpressionConstVisitor& visitor) const
 {
 	visitor.visit(*this);
 }

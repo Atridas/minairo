@@ -301,6 +301,11 @@ export namespace minairo
 			}
 		}
 
+		void visit(ConceptDeclaration const& concept_declaration) override
+		{
+			assert(false); // TODO
+		}
+
 		void visit(Grouping const& grouping) override
 		{
 			grouping.expr->accept(*this);

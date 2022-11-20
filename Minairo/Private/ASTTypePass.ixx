@@ -357,6 +357,24 @@ export namespace minairo
 			cast.expr->accept(*this);
 		}
 
+		void visit(ConceptDeclaration& concept_declaration) override
+		{
+			assert(concept_declaration.tuple_names.size() == concept_declaration.tuple_declarations.size());
+			assert(concept_declaration.function_names.size() == concept_declaration.function_declarations.size());
+
+			for (int i = 0; i < concept_declaration.tuple_names.size(); ++i)
+			{
+				concept_declaration.tuple_declarations[i].accept(*this);
+			}
+
+			for (int i = 0; i < concept_declaration.function_names.size(); ++i)
+			{
+				concept_declaration.function_declarations[i].accept(*this);
+			}
+
+			assert(false); // TODO
+		}
+
 		void visit(Grouping& grouping) override
 		{
 			grouping.expr->accept(*this);

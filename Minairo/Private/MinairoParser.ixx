@@ -28,8 +28,10 @@ namespace minairo
 	export StatementPtr generate_AST(Scanner code);
 	export struct ParseException;
 
-	StatementPtr statement(Scanner& scanner);
+	ExpressionPtr function_declaration(Scanner& scanner, bool only_header);
 	bool peek_variable_definition(Scanner& scanner);
+	StatementPtr statement(Scanner& scanner);
+	ExpressionPtr tuple_type_declaration(Scanner& scanner);
 	std::unique_ptr<VariableDefinition> variable_definition(Scanner& scanner, bool consume_semicolon = true);
 	std::unique_ptr<Block> block(Scanner& scanner);
 
@@ -317,6 +319,52 @@ namespace minairo
 		default:
 			throw unexpected_type_exception(result->terminal);
 		}
+		return result;
+	}
+
+	ExpressionPtr concept_declaration(Scanner& scanner)
+	{
+		auto result = std::make_unique<ConceptDeclaration>();
+
+		result->keyword = consume(Terminal::KW_CONCEPT, scanner);
+
+		consume(Terminal::BRACKET_CURLY_OPEN, scanner);
+
+		while (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
+		{
+			TerminalData name = consume(Terminal::IDENTIFIER, scanner);
+			consume(Terminal::OP_COLON, scanner);
+
+			if (scanner.peek_next_symbol().type == Terminal::KW_TUPLE)
+			{
+				auto tuple = tuple_type_declaration(scanner);
+				assert(dynamic_cast<TupleDeclaration*>(tuple.get()));
+
+				result->tuple_names.push_back(name);
+				result->tuple_declarations.push_back(*static_cast<TupleDeclaration*>(tuple.get()));
+			}
+			else
+			{
+				auto function = function_declaration(scanner, true);
+				assert(dynamic_cast<FunctionTypeDeclaration*>(function.get()));
+
+				result->function_names.push_back(name);
+				result->function_declarations.push_back(*static_cast<FunctionTypeDeclaration*>(function.get()));
+			}
+
+			if (scanner.peek_next_symbol().type == Terminal::OP_COMMA)
+			{
+				consume(Terminal::OP_COMMA, scanner);
+			}
+			else
+			{
+				break;
+			}
+
+		}
+
+		result->closing = consume(Terminal::BRACKET_CURLY_CLOSE, scanner);
+
 		return result;
 	}
 
@@ -868,6 +916,10 @@ namespace minairo
 			result->identifier = consume(Terminal::IDENTIFIER, scanner);
 			return result;
 		}
+		else if (scanner.peek_next_symbol().type == Terminal::KW_CONCEPT)
+		{
+			return concept_declaration(scanner);
+		}
 		else if (scanner.peek_next_symbol().type == Terminal::KW_FUNCTION)
 		{
 			return function_declaration(scanner, true);
@@ -931,6 +983,7 @@ namespace minairo
 		pratt_prefixes[(int)Terminal::KW_BOOL] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_TYPEDEF] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_STRING] = &build_in_type_declaration;
+		pratt_prefixes[(int)Terminal::KW_CONCEPT] = &concept_declaration;
 		pratt_prefixes[(int)Terminal::KW_MULTIFUNCTION] = &build_in_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_TABLE] = &table_type_declaration;
 		pratt_prefixes[(int)Terminal::KW_TUPLE] = &tuple_type_declaration;

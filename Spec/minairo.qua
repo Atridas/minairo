@@ -72,6 +72,7 @@ BOOL_LITERAL = "true" | "false";
 // identifiable keywords
 KW_ASC = "asc";
 KW_BY = "by";
+KW_CONCEPT = "concept";
 KW_DESC = "desc";
 KW_EXPORT = "export";
 KW_FUNCTION = "function";
