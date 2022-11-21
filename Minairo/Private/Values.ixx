@@ -276,7 +276,18 @@ export namespace minairo
 
 	Value get_default_value(std::shared_ptr<ComplexType> const& type)
 	{
-		if (TableType const* table_type = dynamic_cast<TableType*>(type.get()))
+		if (ConceptType const* concept_type = dynamic_cast<ConceptType*>(type.get()))
+		{
+			assert(false);
+			return {};
+		}
+		else if (FunctionType const* function_type = dynamic_cast<FunctionType*>(type.get()))
+		{
+			DefaultFunction result;
+			result.type = *function_type;
+			return (std::shared_ptr<ComplexValue>)std::move(result.deep_copy());
+		}
+		else if (TableType const* table_type = dynamic_cast<TableType*>(type.get()))
 		{
 			Table result;
 			result.type = *table_type;
@@ -299,12 +310,6 @@ export namespace minairo
 			}
 
 			return result;
-		}
-		else if(FunctionType const* function_type = dynamic_cast<FunctionType*>(type.get()))
-		{
-			DefaultFunction result;
-			result.type = *function_type;
-			return (std::shared_ptr<ComplexValue>)std::move(result.deep_copy());
 		}
 		else
 		{

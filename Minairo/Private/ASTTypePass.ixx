@@ -119,8 +119,6 @@ export namespace minairo
 		};
 
 	public:
-		explicit TypePass(FunctionMap& _function_map) : function_map(_function_map) {}
-
 		struct GlobalMap
 		{
 			// TODO not a string map please. I'm just lazy rn
@@ -178,8 +176,6 @@ export namespace minairo
 		void visit(WhileStatement& while_statement) override;
 
 	private:
-		FunctionMap& function_map;
-
 		struct VariableBlock
 		{
 			int stack_size_at_beginning;
@@ -189,6 +185,7 @@ export namespace minairo
 		};
 
 		std::vector<VariableBlock> variable_blocks;
+		std::unordered_map<std::string, InterfaceType> current_concept_interfaces;
 
 		GlobalMap globals;
 		bool allow_return = false, in_pure_function_context = false;

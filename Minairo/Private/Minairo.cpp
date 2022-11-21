@@ -26,7 +26,6 @@ namespace minairo
 {
 	struct VMImpl
 	{
-		FunctionMap fm;
 		TypePass::GlobalMap global_types;
 		Interpreter::Globals globals;
 	};
@@ -65,11 +64,11 @@ namespace minairo
 
 		auto expression = generate_AST(code);
 
-		TypePass type_pass(vm.fm);
+		TypePass type_pass;
 		expression->accept(type_pass);
 
 
-		Interpreter interpreter(vm.fm);
+		Interpreter interpreter;
 		expression->accept(interpreter);
 
 	}
@@ -281,13 +280,13 @@ namespace minairo
 			auto expression = generate_AST(code);
 
 			{
-				TypePass type_pass(vm->fm);
+				TypePass type_pass;
 				type_pass.set_globals(vm->global_types);
 				expression->accept(type_pass);
 				vm->global_types = type_pass.get_globals();
 			}
 
-			Interpreter interpreter(vm->fm, (int)vm->global_types.variables.size());
+			Interpreter interpreter((int)vm->global_types.variables.size());
 			interpreter.set_globals(vm->globals);
 			expression->accept(interpreter);
 			vm->globals = interpreter.get_globals();

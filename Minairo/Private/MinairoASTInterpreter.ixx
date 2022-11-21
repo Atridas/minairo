@@ -25,9 +25,8 @@ export namespace minairo
 	class Interpreter final : public ExpressionConstVisitor, public StatementConstVisitor
 	{
 	public:
-		explicit Interpreter(FunctionMap& _function_map, int _number_of_globals = 0, int _number_of_tuples = 0)
-			: function_map(_function_map)
-			, number_of_globals(_number_of_globals)
+		explicit Interpreter(int _number_of_globals = 0, int _number_of_tuples = 0)
+			: number_of_globals(_number_of_globals)
 			, number_of_tuples(_number_of_tuples)
 		{}
 
@@ -86,7 +85,6 @@ export namespace minairo
 		std::vector<Value> variables;
 		Globals globals;
 
-		FunctionMap& function_map;
 		int number_of_globals;
 		int number_of_tuples;
 	};

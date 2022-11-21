@@ -240,20 +240,38 @@ void TypePass::visit(Cast& cast)
 
 void TypePass::visit(ConceptDeclaration& concept_declaration)
 {
+	assert(current_concept_interfaces.size() == 0);
+
 	assert(concept_declaration.tuple_names.size() == concept_declaration.tuple_declarations.size());
 	assert(concept_declaration.function_names.size() == concept_declaration.function_declarations.size());
 
 	for (int i = 0; i < concept_declaration.tuple_names.size(); ++i)
 	{
 		concept_declaration.tuple_declarations[i].accept(*this);
+
+		if (current_concept_interfaces.find((std::string)concept_declaration.tuple_names[i].text) != current_concept_interfaces.end())
+		{
+			throw message_exception("interface name appears more than once!", concept_declaration.tuple_names[i]);
+		}
+
+		InterfaceType interface_type;
+		interface_type.name = (std::string)concept_declaration.tuple_names[i].text;
+		interface_type.base_tuple = *get_compile_time_type_value<TupleType>(concept_declaration.tuple_declarations[i]);
+
+		current_concept_interfaces[(std::string)concept_declaration.tuple_names[i].text] = interface_type;
+		concept_declaration.type.add_interface(concept_declaration.tuple_names[i].text, interface_type);
 	}
 
 	for (int i = 0; i < concept_declaration.function_names.size(); ++i)
 	{
 		concept_declaration.function_declarations[i].accept(*this);
+
+		// TODO add function be found by other functions?
+		concept_declaration.type.add_function(concept_declaration.function_names[i].text, *get_compile_time_type_value<FunctionType>(concept_declaration.function_declarations[i]));
 	}
 
-	assert(false); // TODO
+
+	current_concept_interfaces.clear();
 }
 
 void TypePass::visit(Grouping& grouping)
@@ -1004,21 +1022,19 @@ TypePass::VariableInfo TypePass::find_variable(TerminalData identifier) const
 		return info->second;
 	}
 
-	if (auto f = function_map.get(identifier.text))
-	{
-		assert(f->size() == 1);
-		VariableInfo result;
-		result.constant = true;
-		result.index = -1;
-		result.type = (*f)[0]->get_type();
-		return result;
-	}
-
 	throw unknown_literal_exception(identifier);
 }
 
 std::optional<TypeRepresentation> TypePass::find_typedef(TerminalData identifier) const
 {
+	{
+		auto info = current_concept_interfaces.find((std::string)identifier.text);
+		if (info != current_concept_interfaces.end())
+		{
+			return info->second;
+		}
+	}
+
 	for (int i = (int)(variable_blocks.size() - 1); i >= 0; --i)
 	{
 		auto info = variable_blocks[i].types.find((std::string)identifier.text);

@@ -237,32 +237,4 @@ export namespace minairo
 				return false;
 		}
 	};
-
-	class FunctionMap
-	{
-	public:
-
-		void store(std::string_view name, std::unique_ptr<FunctionRepresentation> function_representation) noexcept;
-		std::vector<std::unique_ptr<FunctionRepresentation>> const* get(std::string_view name) const noexcept;
-
-		FunctionRepresentation const* get(std::string_view name, std::span<TypeRepresentation> parameter_types) const noexcept;
-
-	private:
-		static const size_t intern_block_size = 4 * 1024;
-		static const size_t tree_node_size = 8;
-
-		int tree_depth = 0, root_node = 0;
-
-		// interning
-		std::vector<char> internal_strings;
-		std::vector<std::vector<std::unique_ptr<FunctionRepresentation>>> functions;
-
-		struct BTreeNode
-		{
-			uint8_t str_size[tree_node_size] = {};
-			uint32_t str_begin[tree_node_size];
-			uint32_t children_indices[tree_node_size + 1];
-		};
-		std::vector<BTreeNode> nodes;
-	};
 }

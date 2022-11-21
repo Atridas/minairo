@@ -124,6 +124,7 @@ export namespace minairo
 		std::vector<class TupleDeclaration> tuple_declarations;
 		std::vector<TerminalData> function_names;
 		std::vector<class FunctionTypeDeclaration> function_declarations;
+		ConceptType type;
 
 		ConceptDeclaration() = default;
 		ConceptDeclaration(ConceptDeclaration&&) = default;
@@ -1402,6 +1403,7 @@ ConceptDeclaration::ConceptDeclaration(ConceptDeclaration const& b)
 	, tuple_declarations(b.tuple_declarations)
 	, function_names(b.function_names)
 	, function_declarations(b.function_declarations)
+	, type(b.type)
 {
 }
 ConceptDeclaration& ConceptDeclaration::operator=(ConceptDeclaration const& b)
@@ -1414,6 +1416,7 @@ ConceptDeclaration& ConceptDeclaration::operator=(ConceptDeclaration const& b)
 		tuple_declarations = b.tuple_declarations;
 		function_names = b.function_names;
 		function_declarations = b.function_declarations;
+		type = b.type;
 	}
 	return *this;
 }

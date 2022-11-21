@@ -76,6 +76,7 @@ export namespace minairo
 		void set_name(std::string_view _name) override
 		{
 			// TODO ??
+			assert(false);
 		}
 
 		operator TypeRepresentation() const
@@ -91,7 +92,58 @@ export namespace minairo
 	protected:
 		bool equals(ComplexType const& other) const override
 		{
-			return *this == other;
+			if (auto* as_tuple_reference = dynamic_cast<TupleReferenceType const*>(&other))
+			{
+				assert(false); // TODO
+				return *this == *as_tuple_reference;
+			}
+			else
+			{
+				return false;
+			}
+		}
+	};
+
+	class InterfaceType : public ComplexType
+	{
+	public:
+		std::string name;
+		TupleType base_tuple;
+
+		void set_name(std::string_view _name) override
+		{
+			assert(false); // shouldn't be called
+			name = _name;
+		}
+
+		bool operator==(InterfaceType const& other) const noexcept
+		{
+			if (name.empty() && other.name.empty())
+				return base_tuple == other.base_tuple;
+			else
+				return name == other.name;
+		}
+
+		operator TypeRepresentation() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<InterfaceType>(*this);
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<InterfaceType>(*this);
+		}
+	protected:
+		bool equals(ComplexType const& other) const override
+		{
+			if (auto* as_interface = dynamic_cast<InterfaceType const*>(&other))
+			{
+				return *this == *as_interface;
+			}
+			else
+			{
+				return false;
+			}
 		}
 	};
 
@@ -126,7 +178,14 @@ export namespace minairo
 	protected:
 		bool equals(ComplexType const& other) const override
 		{
-			return *this == other;
+			if (auto* as_table = dynamic_cast<TableType const*>(&other))
+			{
+				return *this == *as_table;
+			}
+			else
+			{
+				return false;
+			}
 		}
 	};
 
@@ -169,6 +228,66 @@ export namespace minairo
 			else
 				return false;
 		}
+	};
+
+	class ConceptType : public ComplexType
+	{
+	public:
+		std::string name;
+
+		void set_name(std::string_view _name) override
+		{
+			name = _name;
+		}
+
+		void add_interface(std::string_view name, InterfaceType const& interface)
+		{
+			assert(interfaces.find((std::string)name) == interfaces.end());
+			assert(functions.find((std::string)name) == functions.end());
+
+			interfaces[(std::string)name] = interface;
+		}
+
+		void add_function(std::string_view name, FunctionType const& function)
+		{
+			assert(interfaces.find((std::string)name) == interfaces.end());
+			assert(functions.find((std::string)name) == functions.end());
+
+			functions[(std::string)name] = function;
+		}
+
+		bool operator==(ConceptType const& other) const noexcept
+		{
+			if (name.empty() && other.name.empty())
+				return interfaces == other.interfaces && functions == other.functions;
+			else
+				return name == other.name;
+		}
+
+		operator TypeRepresentation() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<ConceptType>(*this);
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexType>)std::make_shared<ConceptType>(*this);
+		}
+	protected:
+		bool equals(ComplexType const& other) const override
+		{
+			if (auto* as_concept = dynamic_cast<ConceptType const*>(&other))
+			{
+				return *this == *as_concept;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		std::unordered_map<std::string, InterfaceType> interfaces;
+		std::unordered_map<std::string, FunctionType> functions;
 	};
 
 	class MultifunctionType : public ComplexType

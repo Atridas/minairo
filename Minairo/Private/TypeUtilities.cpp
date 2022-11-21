@@ -139,7 +139,8 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 		}
 		void visit(ConceptDeclaration const& concept_declaration) override
 		{
-			assert(false); // TODO
+			type_information.type = BuildInType::Typedef;
+			type_information.constant = true;
 		}
 		void visit(Grouping const& grouping) override
 		{
@@ -285,8 +286,7 @@ std::optional<Value> minairo::get_compile_time_value(Expression const& expressio
 		}
 		void visit(ConceptDeclaration const& concept_declaration) override
 		{
-			assert(false); // TODO
-			result = std::nullopt;
+			result = concept_declaration.type;
 		}
 		void visit(Grouping const& grouping) override
 		{

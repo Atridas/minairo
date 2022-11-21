@@ -470,17 +470,9 @@ void Interpreter::visit(VariableRead const& variable_read)
 	else if (variable_read.index == -1)
 	{
 		auto global = globals.variables.find((std::string)variable_read.identifier.text);
-		if (global != globals.variables.end())
-		{
-			last_expression_value = globals.variables[(std::string)variable_read.identifier.text];
-		}
-		else
-		{
-			auto f = function_map.get(variable_read.identifier.text);
-			assert(f != nullptr);
-			assert(f->size() == 1);
-			last_expression_value = (Value)((*f)[0]->deep_copy());
-		}
+		assert(global != globals.variables.end());
+		
+		last_expression_value = globals.variables[(std::string)variable_read.identifier.text];
 	}
 	else
 	{
