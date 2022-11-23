@@ -15,6 +15,7 @@ export module Minairo.AST.TypePass;
 export import :TypeUtilities;
 
 import Minairo.AST;
+import Minairo.Concepts;
 import Minairo.Exception;
 import Minairo.Scanner;
 import Minairo.TypesAndValues;
@@ -190,10 +191,14 @@ export namespace minairo
 		GlobalMap globals;
 		bool allow_return = false, in_pure_function_context = false;
 		std::optional<TypeRepresentation> return_type;
+		std::vector<std::string> current_scope;
+
+		std::unordered_map<std::string, Concept> concepts;
 
 		void push_variable_block();
 		void pop_variable_block();
 		VariableInfo find_variable(TerminalData identifier) const;
+		std::optional<Concept> find_concept(TerminalData identifier) const;
 		std::optional<TypeRepresentation> find_typedef(TerminalData identifier) const;
 		bool implicit_cast(TupleType target, InitializerList& origin, bool let_undefined_fields, int* needed_casts = nullptr) const;
 		bool implicit_cast(TypeRepresentation target, std::unique_ptr<Expression>& origin, int* needed_casts = nullptr) const;

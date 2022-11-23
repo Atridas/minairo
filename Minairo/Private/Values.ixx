@@ -278,8 +278,7 @@ export namespace minairo
 	{
 		if (ConceptType const* concept_type = dynamic_cast<ConceptType*>(type.get()))
 		{
-			assert(false);
-			return {};
+			return BuildInType::Void;
 		}
 		else if (FunctionType const* function_type = dynamic_cast<FunctionType*>(type.get()))
 		{

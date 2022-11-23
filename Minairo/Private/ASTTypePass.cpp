@@ -245,6 +245,12 @@ void TypePass::visit(ConceptDeclaration& concept_declaration)
 	assert(concept_declaration.tuple_names.size() == concept_declaration.tuple_declarations.size());
 	assert(concept_declaration.function_names.size() == concept_declaration.function_declarations.size());
 
+	std::string name;
+	for (std::string const& scope : current_scope)
+	{
+		name = name + scope + ".";
+	}
+
 	for (int i = 0; i < concept_declaration.tuple_names.size(); ++i)
 	{
 		concept_declaration.tuple_declarations[i].accept(*this);
@@ -255,7 +261,8 @@ void TypePass::visit(ConceptDeclaration& concept_declaration)
 		}
 
 		InterfaceType interface_type;
-		interface_type.name = (std::string)concept_declaration.tuple_names[i].text;
+
+		interface_type.name = name + (std::string)concept_declaration.tuple_names[i].text;
 		interface_type.base_tuple = *get_compile_time_type_value<TupleType>(concept_declaration.tuple_declarations[i]);
 
 		current_concept_interfaces[(std::string)concept_declaration.tuple_names[i].text] = interface_type;
@@ -266,10 +273,24 @@ void TypePass::visit(ConceptDeclaration& concept_declaration)
 	{
 		concept_declaration.function_declarations[i].accept(*this);
 
-		// TODO add function be found by other functions?
-		concept_declaration.type.add_function(concept_declaration.function_names[i].text, *get_compile_time_type_value<FunctionType>(concept_declaration.function_declarations[i]));
-	}
+		for (int f = 0; f < concept_declaration.function_declarations[i].type.parameters.get_num_fields(); ++f)
+		{
+			TypeRepresentation const& parameter_type = concept_declaration.function_declarations[i].type.parameters.get_field_type(f);
+			if (auto as_interface = get<InterfaceType>(parameter_type))
+			{
+				if (as_interface->name.starts_with(name))
+				{
+					goto INTERFACE_FOUND;
+				}
+			}
+		}
 
+		throw message_exception("functions in a concept must have at least one paramenter with a concept's interface", concept_declaration.function_declarations[i]);
+
+		INTERFACE_FOUND:
+		// TODO add function be found by other functions?
+		concept_declaration.type.add_function(name + (std::string)concept_declaration.function_names[i].text, *get_compile_time_type_value<FunctionType>(concept_declaration.function_declarations[i]));
+	}
 
 	current_concept_interfaces.clear();
 }
@@ -782,6 +803,8 @@ void TypePass::visit(VariableDefinition& variable_definition)
 {
 	assert(variable_definition.type_definition != nullptr || variable_definition.initialization != nullptr);
 
+	current_scope.push_back((std::string)variable_definition.variable.text);
+
 
 	if (variable_definition.type_definition != nullptr)
 	{
@@ -850,6 +873,16 @@ void TypePass::visit(VariableDefinition& variable_definition)
 			variable_blocks.back().types[(std::string)variable_definition.variable.text] = get_compile_time_type_value(*variable_definition.initialization);
 			variable_blocks.back().types[(std::string)variable_definition.variable.text].set_name(variable_definition.variable.text);
 		}
+	}
+	else if (auto as_concept = get<ConceptType>(*variable_definition.type))
+	{
+		if (!variable_blocks.empty())
+		{
+			throw message_exception("concepts can only be declared on the global scope", variable_definition);
+		}
+
+		// TODO
+		assert(false);
 	}
 	else
 	{
@@ -976,6 +1009,7 @@ void TypePass::visit(VariableDefinition& variable_definition)
 		}
 	}
 
+	current_scope.pop_back(); // TODO try finally?
 }
 
 void TypePass::visit(WhileStatement& while_statement)

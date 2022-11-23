@@ -248,6 +248,13 @@ export namespace minairo
 			interfaces[(std::string)name] = interface;
 		}
 
+		InterfaceType const& get_interface(std::string_view name) const
+		{
+			assert(interfaces.find((std::string)name) != interfaces.end());
+
+			return interfaces.find((std::string)name)->second;
+		}
+
 		void add_function(std::string_view name, FunctionType const& function)
 		{
 			assert(interfaces.find((std::string)name) == interfaces.end());
@@ -255,6 +262,15 @@ export namespace minairo
 
 			functions[(std::string)name] = function;
 		}
+
+		FunctionType const& get_function(std::string_view name) const
+		{
+			assert(functions.find((std::string)name) != functions.end());
+
+			return functions.find((std::string)name)->second;
+		}
+
+
 
 		bool operator==(ConceptType const& other) const noexcept
 		{
