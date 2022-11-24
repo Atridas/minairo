@@ -302,6 +302,14 @@ std::optional<Value> minairo::get_compile_time_value(Expression const& expressio
 			{
 				result = cast(std::get<BuildInType>(literal.type_representation), literal.value);
 			}
+			else if (std::holds_alternative<bool>(literal.value))
+			{
+				result = cast(std::get<BuildInType>(literal.type_representation), literal.value);
+			}
+			else if (std::holds_alternative<std::string>(literal.value))
+			{
+				result = cast(std::get<BuildInType>(literal.type_representation), literal.value);
+			}
 			else
 			{
 				assert(false); // TODO

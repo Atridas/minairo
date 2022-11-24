@@ -48,7 +48,7 @@ std::string TypeException::print_error() const
 	return ss.str();
 }
 
-TypeException unknown_literal_exception(TerminalData identifier)
+TypeException unknown_identifier_exception(TerminalData identifier)
 {
 	assert(identifier.type == Terminal::IDENTIFIER);
 	TypeException result;
@@ -416,8 +416,14 @@ void TypePass::visit(FunctionDeclaration& function_declaration)
 {
 	visit(*function_declaration.header);
 
-	std::vector<VariableBlock> old_locals = std::move(variable_blocks);
-	variable_blocks.resize(0);
+	std::vector<VariableBlock> old_locals;
+
+	for (int i = 1; i < variable_blocks.size(); ++i)
+	{
+		old_locals.push_back(std::move(variable_blocks[i]));
+	}
+
+	variable_blocks.resize(1);
 
 	VariableBlock parameter_block = {};
 	parameter_block.stack_size_at_beginning = 0;
@@ -466,8 +472,12 @@ void TypePass::visit(FunctionDeclaration& function_declaration)
 	return_type = outer_return_type;
 	in_pure_function_context = was_in_pure_function_context;
 
-	assert(variable_blocks.size() == 1);
-	variable_blocks = std::move(old_locals);
+	assert(variable_blocks.size() == 2);
+	variable_blocks.pop_back();
+	for (auto& locals : old_locals)
+	{
+		variable_blocks.push_back(std::move(locals));
+	}
 }
 
 void TypePass::visit(FunctionTypeDeclaration& function_type_declaration)
@@ -697,7 +707,7 @@ void TypePass::visit(Block& block)
 
 	if (block.is_global)
 	{
-		assert(variable_blocks.size() == 0);
+		assert(variable_blocks.size() == 1);
 	}
 	else
 	{
@@ -712,7 +722,7 @@ void TypePass::visit(Block& block)
 
 	if (block.is_global)
 	{
-		assert(variable_blocks.size() == 0);
+		assert(variable_blocks.size() == 1);
 	}
 	else
 	{
@@ -802,9 +812,9 @@ void TypePass::visit(ReturnStatement& return_statement)
 void TypePass::visit(VariableDefinition& variable_definition)
 {
 	assert(variable_definition.type_definition != nullptr || variable_definition.initialization != nullptr);
+	assert(variable_blocks.size() > 0);
 
 	current_scope.push_back((std::string)variable_definition.variable.text);
-
 
 	if (variable_definition.type_definition != nullptr)
 	{
@@ -846,168 +856,93 @@ void TypePass::visit(VariableDefinition& variable_definition)
 		}
 	}
 
+	bool global_scope = (variable_blocks.size() == 1);
+	VariableBlock& current_variable_block = variable_blocks.back();
+
+	VariableInfo info;
+	info.type = *variable_definition.type;
+	info.constant = variable_definition.constant;
+
+	if (variable_definition.initialization)
+	{
+		info.compile_time_value = get_compile_time_value(*variable_definition.initialization);
+	}
+
 	if (variable_definition.type == BuildInType::Typedef)
 	{
 		if (variable_definition.type == BuildInType::Typedef && !variable_definition.constant)
 		{
 			throw message_exception("typedefs must be constant", variable_definition);
 		}
-
-		if (variable_blocks.empty())
-		{
-			if (globals.variables.contains((std::string)variable_definition.variable.text) || globals.types.contains((std::string)variable_definition.variable.text))
-			{
-				throw variable_redefinition_exception(variable_definition.variable);
-			}
-
-			globals.types[(std::string)variable_definition.variable.text] = get_compile_time_type_value(*variable_definition.initialization);
-			globals.types[(std::string)variable_definition.variable.text].set_name(variable_definition.variable.text);
-		}
-		else
-		{
-			if (variable_blocks.back().variables.contains((std::string)variable_definition.variable.text) || variable_blocks.back().types.contains((std::string)variable_definition.variable.text))
-			{
-				throw variable_redefinition_exception(variable_definition.variable);
-			}
-
-			variable_blocks.back().types[(std::string)variable_definition.variable.text] = get_compile_time_type_value(*variable_definition.initialization);
-			variable_blocks.back().types[(std::string)variable_definition.variable.text].set_name(variable_definition.variable.text);
-		}
+		assert(info.compile_time_value);
+		get<TypeRepresentation>(*info.compile_time_value)->set_name(variable_definition.variable.text);
 	}
-	else if (auto as_concept = get<ConceptType>(*variable_definition.type))
-	{
-		if (!variable_blocks.empty())
-		{
-			throw message_exception("concepts can only be declared on the global scope", variable_definition);
-		}
 
-		// TODO
-		assert(false);
+	if (info.compile_time_value)
+	{
+		info.index = -1;
+		++current_variable_block.compile_time_constants;
+	}
+	else if (global_scope)
+	{
+		info.index = -1;
 	}
 	else
 	{
-		VariableInfo info;
-		info.type = *variable_definition.type;
-		info.constant = variable_definition.constant;
+		// TODO substract "constants"?
+		variable_definition.index = info.index = current_variable_block.stack_size_at_beginning - current_variable_block.compile_time_constants + (int)current_variable_block.variables.size();
+	}
 
-		auto as_function = get<FunctionType>(info.type);
+	auto as_function = get<FunctionType>(info.type);
+	if (as_function && info.constant)
+	{
+		MultifunctionType multi;
 
-		if (as_function && info.constant)
+		if (current_variable_block.variables.contains((std::string)variable_definition.variable.text))
 		{
-			MultifunctionType multi;
+			VariableInfo stored_info = current_variable_block.variables[(std::string)variable_definition.variable.text];
+			assert(stored_info.constant = true);
+			variable_definition.index = info.index = stored_info.index;
 
-			if (variable_blocks.empty())
+			auto as_multi = get<MultifunctionType>(stored_info.type);
+
+			if (as_multi == nullptr)
 			{
-				info.index = -1;
-				if (globals.variables.contains((std::string)variable_definition.variable.text))
-				{
-					VariableInfo stored_info = globals.variables[(std::string)variable_definition.variable.text];
-					assert(stored_info.index = -1);
-					assert(stored_info.constant = true);
-
-					auto as_multi = get<MultifunctionType>(stored_info.type);
-
-					if (as_multi == nullptr)
-					{
-						throw variable_redefinition_exception(variable_definition.variable);
-					}
-					else if (as_multi->is_pure != as_function->is_pure)
-					{
-						throw message_exception("All function overloads must be all pure or impure", variable_definition);
-					}
-					else
-					{
-						multi = *as_multi;
-					}
-				}
-				else if (globals.types.contains((std::string)variable_definition.variable.text))
-				{
-					throw variable_redefinition_exception(variable_definition.variable);
-				}
-				else
-				{
-					variable_definition.multifunction_first = true;
-					multi.is_pure = as_function->is_pure;
-				}
+				throw variable_redefinition_exception(variable_definition.variable);
+			}
+			else if (as_multi->is_pure != as_function->is_pure)
+			{
+				throw message_exception("All function overloads must be all pure or impure", variable_definition);
 			}
 			else
 			{
-				if (variable_blocks.back().variables.contains((std::string)variable_definition.variable.text))
-				{
-					VariableInfo stored_info = variable_blocks.back().variables[(std::string)variable_definition.variable.text];
-					assert(stored_info.constant = true);
-					variable_definition.index = info.index = stored_info.index;
-
-					auto as_multi = get<MultifunctionType>(stored_info.type);
-
-					if (as_multi == nullptr)
-					{
-						throw variable_redefinition_exception(variable_definition.variable);
-					}
-					else if (as_multi->is_pure != as_function->is_pure)
-					{
-						throw message_exception("All function overloads must be all pure or impure", variable_definition);
-					}
-					else
-					{
-						multi = *as_multi;
-					}
-				}
-				else if (variable_blocks.back().types.contains((std::string)variable_definition.variable.text))
-				{
-					throw variable_redefinition_exception(variable_definition.variable);
-				}
-				else
-				{
-					variable_definition.index = info.index = variable_blocks.back().stack_size_at_beginning + (int)variable_blocks.back().variables.size();
-					variable_definition.multifunction_first = true;
-					multi.is_pure = as_function->is_pure;
-				}
-			}
-
-			for (FunctionType const& old_overload : multi.functions)
-			{
-				if (old_overload == *as_function)
-				{
-					throw message_exception("overload already exists", variable_definition);
-				}
-			}
-			multi.functions.push_back(std::move(*as_function));
-			info.type = multi;
-
-			if (variable_blocks.empty())
-			{
-				globals.variables[(std::string)variable_definition.variable.text] = info;
-			}
-			else
-			{
-				variable_blocks.back().variables[(std::string)variable_definition.variable.text] = info;
+				multi = *as_multi;
 			}
 		}
 		else
 		{
-			if (variable_blocks.empty())
-			{
-				if (globals.variables.contains((std::string)variable_definition.variable.text) || globals.types.contains((std::string)variable_definition.variable.text))
-				{
-					throw variable_redefinition_exception(variable_definition.variable);
-				}
+			variable_definition.multifunction_first = true;
+			multi.is_pure = as_function->is_pure;
+		}
 
-				info.index = -1;
-				globals.variables[(std::string)variable_definition.variable.text] = info;
-			}
-			else
+		for (FunctionType const& old_overload : multi.functions)
+		{
+			if (old_overload == *as_function)
 			{
-				if (variable_blocks.back().variables.contains((std::string)variable_definition.variable.text) || variable_blocks.back().types.contains((std::string)variable_definition.variable.text))
-				{
-					throw variable_redefinition_exception(variable_definition.variable);
-				}
-
-				variable_definition.index = info.index = variable_blocks.back().stack_size_at_beginning + (int)variable_blocks.back().variables.size();
-				variable_blocks.back().variables[(std::string)variable_definition.variable.text] = info;
+				throw message_exception("overload already exists", variable_definition);
 			}
 		}
+		multi.functions.push_back(std::move(*as_function));
+		info.type = multi;
 	}
+	else if (current_variable_block.variables.contains((std::string)variable_definition.variable.text))
+	{
+		throw variable_redefinition_exception(variable_definition.variable);
+	}
+
+
+	current_variable_block.variables[(std::string)variable_definition.variable.text] = info;
+	
 
 	current_scope.pop_back(); // TODO try finally?
 }
@@ -1026,10 +961,10 @@ void TypePass::visit(WhileStatement& while_statement)
 void TypePass::push_variable_block()
 {
 	int stack_size_at_beginning = 0;
-	if (!variable_blocks.empty())
-		stack_size_at_beginning = variable_blocks.back().stack_size_at_beginning + (int)variable_blocks.back().variables.size();
+	if (variable_blocks.size() > 1)
+		stack_size_at_beginning = variable_blocks.back().stack_size_at_beginning - variable_blocks.back().compile_time_constants + (int)variable_blocks.back().variables.size();
 
-	variable_blocks.push_back({ stack_size_at_beginning });
+	variable_blocks.push_back({ stack_size_at_beginning, 0 });
 }
 
 void TypePass::pop_variable_block()
@@ -1044,19 +979,11 @@ TypePass::VariableInfo TypePass::find_variable(TerminalData identifier) const
 		auto info = variable_blocks[i].variables.find((std::string)identifier.text);
 		if (info != variable_blocks[i].variables.end())
 		{
-			assert(info->second.index >= 0);
-			assert(info->second.index < variable_blocks[i].stack_size_at_beginning + variable_blocks[i].variables.size());
 			return info->second;
 		}
 	}
 
-	auto info = globals.variables.find((std::string)identifier.text);
-	if (info != globals.variables.end())
-	{
-		return info->second;
-	}
-
-	throw unknown_literal_exception(identifier);
+	throw unknown_identifier_exception(identifier);
 }
 
 std::optional<TypeRepresentation> TypePass::find_typedef(TerminalData identifier) const
@@ -1071,17 +998,18 @@ std::optional<TypeRepresentation> TypePass::find_typedef(TerminalData identifier
 
 	for (int i = (int)(variable_blocks.size() - 1); i >= 0; --i)
 	{
-		auto info = variable_blocks[i].types.find((std::string)identifier.text);
-		if (info != variable_blocks[i].types.end())
+		auto info = variable_blocks[i].variables.find((std::string)identifier.text);
+		if (info != variable_blocks[i].variables.end())
 		{
-			return info->second;
+			if (info->second.compile_time_value)
+			{
+				return get<TypeRepresentation>(*info->second.compile_time_value);
+			}
+			else
+			{
+				return std::nullopt;
+			}
 		}
-	}
-
-	auto info = globals.types.find((std::string)identifier.text);
-	if (info != globals.types.end())
-	{
-		return info->second;
 	}
 
 	return std::nullopt;

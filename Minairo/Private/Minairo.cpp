@@ -26,7 +26,7 @@ namespace minairo
 {
 	struct VMImpl
 	{
-		TypePass::GlobalMap global_types;
+		TypePass::VariableBlock global_types;
 		Interpreter::Globals globals;
 	};
 

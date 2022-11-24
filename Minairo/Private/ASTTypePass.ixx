@@ -115,32 +115,38 @@ export namespace minairo
 		struct VariableInfo
 		{
 			TypeRepresentation type;
+			std::optional<Value> compile_time_value;
 			int index;
 			bool constant;
 		};
 
 	public:
-		struct GlobalMap
+		struct VariableBlock
 		{
+			int stack_size_at_beginning, compile_time_constants;
 			// TODO not a string map please. I'm just lazy rn
 			std::unordered_map<std::string, VariableInfo> variables;
-			std::unordered_map<std::string, TypeRepresentation> types;
 
 			void add_global(std::string_view name, TypeRepresentation type, bool constant = true)
 			{
 				assert(variables.find((std::string)name) == variables.end());
-				variables[(std::string)name] = { type, -1, constant };
+				variables[(std::string)name] = { type, std::nullopt, -1, constant };
 			}
 		};
 
-		void set_globals(GlobalMap const& global_map)
+		TypePass()
 		{
-			globals = global_map;
+			variable_blocks.push_back({});
 		}
 
-		GlobalMap const& get_globals() const
+		void set_globals(VariableBlock const& global_map)
 		{
-			return globals;
+			variable_blocks[0] = global_map;
+		}
+
+		VariableBlock const& get_globals() const
+		{
+			return variable_blocks[0];
 		}
 
 		// ----------------------------------------------------------------------------------------------
@@ -177,18 +183,10 @@ export namespace minairo
 		void visit(WhileStatement& while_statement) override;
 
 	private:
-		struct VariableBlock
-		{
-			int stack_size_at_beginning;
-			// TODO not a string map please. I'm just lazy rn
-			std::unordered_map<std::string, VariableInfo> variables;
-			std::unordered_map<std::string, TypeRepresentation> types;
-		};
 
 		std::vector<VariableBlock> variable_blocks;
 		std::unordered_map<std::string, InterfaceType> current_concept_interfaces;
 
-		GlobalMap globals;
 		bool allow_return = false, in_pure_function_context = false;
 		std::optional<TypeRepresentation> return_type;
 		std::vector<std::string> current_scope;
