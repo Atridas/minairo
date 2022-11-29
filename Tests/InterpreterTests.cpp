@@ -145,15 +145,21 @@ namespace InterpreterTests
 			RunAndExpect(R"codi-minairo(function pure (a,b: int32) { return a / b; }(a = 10,2);)codi-minairo", "5");
 			RunAndExpect(R"codi-minairo(function pure (a,b: int32) { return a / b; }(b = 2, a = 10);)codi-minairo", "5");
 		}
-	};
 
-	/*TEST_CLASS(Multifunction)
-	{
-		TEST_METHOD(Pure)
+		TEST_METHOD(Multi)
 		{
-			RunAndExpect(R"codi-minairo(m : multifunction;)codi-minairo", "");
+			RunAndExpectPrint(R"codi-minairo(
+								f :: function(a : int32) { print("int32"); };
+								f :: function(a : int8) { print("int8"); };
+								v8 : int8 : 5;
+								v16 : int16 : 5;
+								v32 : int32 : 5;
+								f(v8);
+								f(v16);
+								f(v32);
+								)codi-minairo", "int8int32int32");
 		}
-	};*/
+	};
 
 	TEST_CLASS(Statements)
 	{

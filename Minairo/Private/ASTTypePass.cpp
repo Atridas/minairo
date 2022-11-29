@@ -933,7 +933,7 @@ void TypePass::visit(VariableDefinition& variable_definition)
 			}
 		}
 		multi.functions.push_back(std::move(*as_function));
-		info.type = multi;
+		variable_definition.type = info.type = multi;
 	}
 	else if (current_variable_block.variables.contains((std::string)variable_definition.variable.text))
 	{
@@ -1032,12 +1032,18 @@ bool TypePass::implicit_cast(TupleType target, InitializerList& origin, bool let
 		{
 			if (!target.has_field(origin.names[i]->text))
 			{
-				throw message_exception("tuple doesn't have this field\n", *origin.names[i]);
+				if (needed_casts == nullptr)
+					throw message_exception("tuple doesn't have this field\n", *origin.names[i]);
+				else
+					return false;
 			}
 			index = target.get_field_index(origin.names[i]->text);
 			if (std::find(indexes.begin(), indexes.end(), index) != indexes.end())
 			{
-				throw message_exception("this field has already been initialized", *origin.names[i]);
+				if (needed_casts == nullptr)
+					throw message_exception("this field has already been initialized", *origin.names[i]);
+				else
+					return false;
 			}
 		}
 		else
@@ -1051,13 +1057,19 @@ bool TypePass::implicit_cast(TupleType target, InitializerList& origin, bool let
 
 			if (index >= target.get_num_fields())
 			{
-				throw message_exception("too many initializer values for this tuple", *origin.expressions[i]);
+				if (needed_casts == nullptr)
+					throw message_exception("too many initializer values for this tuple", *origin.expressions[i]);
+				else
+					return false;
 			}
 		}
 
 		if (!implicit_cast(target.get_field_type(index), origin.expressions[i], needed_casts))
 		{
-			throw message_exception("initializer has the wrong type", *origin.expressions[i]);
+			if (needed_casts == nullptr)
+				throw message_exception("initializer has the wrong type", *origin.expressions[i]);
+			else
+				return false;
 		}
 
 		indexes.push_back(index);
@@ -1072,7 +1084,10 @@ bool TypePass::implicit_cast(TupleType target, InitializerList& origin, bool let
 
 			if (!let_undefined_fields && !target.get_field_init_value(i).has_value())
 			{
-				throw message_exception("missing arguments!", origin);
+				if (needed_casts == nullptr)
+					throw message_exception("missing arguments!", origin);
+				else
+					return false;
 			}
 		}
 	}

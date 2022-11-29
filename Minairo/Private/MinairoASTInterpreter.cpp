@@ -260,14 +260,36 @@ void Interpreter::visit(Cast const& cast)
 				case BuildInType::F64:
 					return (double)v;
 				default:
+					assert(false);
 					return {};
 				}
 			}
 			else
 			{
+				assert(false);
 				return {}; // TODO
 			}
 		}, last_expression_value);
+	}
+	else if (auto function_type = get<FunctionType>(cast.target_type))
+	{
+		assert(get<MultifunctionType>(deduce_type(*cast.expr).type));
+		auto multifunction = get<Multifunction>(last_expression_value);
+		bool found = false;
+		for (auto& candidate : multifunction->variants)
+		{
+			if (candidate->get_type() == *function_type)
+			{
+				last_expression_value = (std::shared_ptr<ComplexValue>)candidate;
+				found = true;
+				break;
+			}
+		}
+		assert(found);
+	}
+	else
+	{
+		assert(false);
 	}
 }
 
@@ -564,7 +586,23 @@ void Interpreter::visit(VariableDefinition const& variable_definition)
 	}
 	else if (variable_definition.index == -1)
 	{
-		if (variable_definition.initialization)
+		if (get<MultifunctionType>(*variable_definition.type))
+		{
+			assert(variable_definition.initialization);
+			variable_definition.initialization->accept(*this);
+			auto old_multi = globals.variables.find((std::string)variable_definition.variable.text);
+			if (old_multi == globals.variables.end())
+			{
+				Multifunction multi;
+				multi.variants.push_back(get<FunctionRepresentation>(last_expression_value));
+				globals.variables[(std::string)variable_definition.variable.text] = multi;
+			}
+			else
+			{
+				get<Multifunction>(old_multi->second)->variants.push_back(get<FunctionRepresentation>(last_expression_value));
+			}
+		}
+		else if (variable_definition.initialization)
 		{
 			variable_definition.initialization->accept(*this);
 			globals.variables[(std::string)variable_definition.variable.text] = last_expression_value;
