@@ -4,9 +4,11 @@ import Minairo;
 
 #include <sstream>
 #include <string>
+#include <string_view>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace std::literals::string_literals;
+using namespace std::literals::string_view_literals;
 
 
 namespace InterpreterTests
@@ -15,9 +17,10 @@ namespace InterpreterTests
 	{
 		minairo::VM vm = minairo::create_VM();
 
-		std::stringstream out;
-		minairo::interpret(vm, code, out);
+		std::stringstream out, err;
+		minairo::interpret(vm, code, out, err);
 
+		Assert::AreEqual(""sv, (std::string_view)err.str());
 		Assert::AreEqual(expected_output, (std::string_view)out.str());
 	}
 
@@ -29,6 +32,7 @@ namespace InterpreterTests
 		std::stringstream out, err;
 		minairo::interpret(vm, code, out, err);
 
+		Assert::AreEqual(""sv, (std::string_view)err.str());
 		Assert::AreEqual(expected_output, (std::string_view)print.str());
 	}
 
@@ -119,6 +123,12 @@ namespace InterpreterTests
 			RunAndExpect(R"codi-minairo(a : tuple{ t : tuple { a, b: int32 = 5 }, c := 10 }; a.t;)codi-minairo", "tuple { a: 5, b: 5 }");
 			RunAndExpect(R"codi-minairo(a : tuple{ t : tuple { a, b: int32 = 5 }, c := 10 }; a.t.a;)codi-minairo", "5");
 			RunAndExpect(R"codi-minairo(a : tuple{ t : tuple { a, b: int32 = 5 }, c := 10 }; a.t.a = 100; a;)codi-minairo", "tuple { t: tuple { a: 100, b: 5 }, c: 10 }");
+		}
+
+		TEST_METHOD(InitializerList)
+		{
+			RunAndExpect(R"codi-minairo(t :: tuple{ a, b: int32 = 5 }; v : t = { a = 4 };)codi-minairo", "tuple t{ a: 4, b: 5 }");
+			RunAndExpect(R"codi-minairo(t :: tuple{ a, b: int32 = 5 }; v := t{ a = 4 };)codi-minairo", "tuple t{ a: 4, b: 5 }");
 		}
 	};
 
@@ -248,6 +258,60 @@ namespace InterpreterTests
 				t;
 				)codi-minairo",
 				"table {\n    { a: 1, b: 3 }\n    { a: 3, b: 5 }\n    { a: 5, b: 7 }\n    { a: 7, b: 9 }\n    { a: 9, b: 1 }\n  }");
+		}
+
+	};
+
+	TEST_CLASS(Concepts)
+	{
+	public:
+
+		TEST_METHOD(BasicDefinition)
+		{
+			RunAndExpectPrint("c : concept { t : tuple {}, f : function(p : t) -> int };", "");
+			RunAndExpectPrint("c : concept { t : tuple {i : int}, f : function(p : t) -> int };", "");
+		}
+
+		TEST_METHOD(TupleOverride)
+		{
+			RunAndExpectPrint(R"codi-minairo(
+						c : concept { t : tuple {i : int}, f : function(p : t) -> int };
+						t :: tuple{ i, j: int };
+						c.t += t;
+				)codi-minairo", "");
+		}
+
+		TEST_METHOD(FunctionOverride)
+		{
+			RunAndExpectPrint(R"codi-minairo(
+						c : concept { t : tuple {i : int}, f : function(p : t) -> int };
+						t :: tuple{ i, j: int };
+						c.t += t;
+						c.f += function(p : t) -> int { return 5; };
+				)codi-minairo", "");
+		}
+
+		TEST_METHOD(Interface)
+		{
+			RunAndExpect(R"codi-minairo(
+						c : concept { t : tuple {i : int}, f : function(p : t) -> int };
+						t :: tuple{ i, j: int };
+						c.t += t;
+						v : c.t = t{ 2, 3 };
+						v.i;
+				)codi-minairo", "2");
+		}
+
+		TEST_METHOD(VirtualCall)
+		{
+			RunAndExpect(R"codi-minairo(
+						c : concept { t : tuple {i : int}, f : function(p : t) -> int };
+						t :: tuple{ i, j: int };
+						c.t += t;
+						c.f += function(p : t) -> int { return 5; };
+						v : c.t = t{ 2, 3 };
+						c.f(v);
+				)codi-minairo", "5");
 		}
 
 	};

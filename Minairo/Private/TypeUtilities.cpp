@@ -149,7 +149,14 @@ TypeInformation minairo::deduce_type(Expression const& expression)
 		}
 		void visit(InitializerList const& initializer_list) override
 		{
-			type_information.type = BuildInType::InitializerList;
+			if (initializer_list.explicit_type)
+			{
+				type_information.type = initializer_list.destination_type;
+			}
+			else
+			{
+				type_information.type = BuildInType::InitializerList;
+			}
 			type_information.constant = true;
 		}
 		void visit(Literal const& literal) override

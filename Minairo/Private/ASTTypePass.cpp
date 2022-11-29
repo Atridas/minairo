@@ -306,6 +306,26 @@ void TypePass::visit(InitializerList& initializer_list)
 	{
 		expr->accept(*this);
 	}
+
+	if (initializer_list.explicit_type)
+	{
+		initializer_list.explicit_type->accept(*this);
+		
+		if (auto tuple_type = get_compile_time_type_value<TupleType>(*initializer_list.explicit_type))
+		{
+			initializer_list.destination_type = *tuple_type;
+
+		}
+		else
+		{
+			throw message_exception("expecting a tuple name before initialization list", *initializer_list.explicit_type);
+		}
+
+		if (!implicit_cast(initializer_list.destination_type, initializer_list, true))
+		{
+			assert(false); // the implicit cast should itself throw
+		}
+	}
 }
 
 void TypePass::visit(Literal& literal)
@@ -1017,7 +1037,17 @@ std::optional<TypeRepresentation> TypePass::find_typedef(TerminalData identifier
 
 bool TypePass::implicit_cast(TupleType target, InitializerList& origin, bool let_undefined_fields, int* needed_casts) const
 {
-	if (needed_casts == nullptr)
+	if (origin.explicit_type)
+	{
+		if (origin.destination_type != target)
+		{
+			if (needed_casts == nullptr)
+				throw message_exception("trying to cast a tuple", origin);
+			else
+				return false;
+		}
+	}
+	else if (needed_casts == nullptr)
 	{
 		origin.destination_type = target;
 	}
@@ -1033,7 +1063,7 @@ bool TypePass::implicit_cast(TupleType target, InitializerList& origin, bool let
 			if (!target.has_field(origin.names[i]->text))
 			{
 				if (needed_casts == nullptr)
-					throw message_exception("tuple doesn't have this field\n", *origin.names[i]);
+					throw message_exception("tuple doesn't have this field", *origin.names[i]);
 				else
 					return false;
 			}

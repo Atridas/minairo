@@ -424,7 +424,7 @@ namespace minairo
 		if (scanner.peek_next_symbol().type == Terminal::OP_ARROW || only_header)
 		{
 			consume(Terminal::OP_ARROW, scanner);
-			result->header->return_type = expression(scanner);
+			result->header->return_type = type_declaration(scanner);
 		}
 
 		if (only_header || scanner.peek_next_symbol().type != Terminal::BRACKET_CURLY_OPEN)
@@ -886,6 +886,15 @@ namespace minairo
 		return try_assign(std::move(result), scanner);
 	}
 
+	ExpressionPtr explicit_initializer_list(ExpressionPtr left, Precedence current_precendence, Scanner& scanner)
+	{
+		auto result = initializer_list(scanner);
+		assert(dynamic_cast<InitializerList*>(result.get()));
+		static_cast<InitializerList*>(result.get())->explicit_type = std::move(left);
+
+		return result;
+	}
+
 	ExpressionPtr type_declaration(Scanner& scanner)
 	{
 		if (scanner.peek_next_symbol().type == Terminal::IDENTIFIER)
@@ -999,6 +1008,8 @@ namespace minairo
 		pratt_precedences[(int)Terminal::BRACKET_ROUND_OPEN] = Precedence::Call;
 		pratt_infixes[(int)Terminal::OP_DOT] = &member_read;
 		pratt_precedences[(int)Terminal::OP_DOT] = Precedence::Call;
+		pratt_infixes[(int)Terminal::BRACKET_CURLY_OPEN] = &explicit_initializer_list;
+		pratt_precedences[(int)Terminal::BRACKET_CURLY_OPEN] = Precedence::Call;
 	}
 
 

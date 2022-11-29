@@ -207,6 +207,7 @@ export namespace minairo
 		std::vector<std::unique_ptr<Expression>> expressions;
 		std::vector<int> indexes;
 		std::vector<int> default_initializers;
+		std::shared_ptr<Expression> explicit_type;
 		TupleType destination_type;
 		TerminalData open, close;
 
@@ -217,6 +218,7 @@ export namespace minairo
 			: names(b.names)
 			, indexes(b.indexes)
 			, default_initializers(b.default_initializers)
+			, explicit_type(b.explicit_type ? b.explicit_type->deep_copy() : nullptr)
 			, destination_type(b.destination_type)
 			, open(b.open)
 			, close(b.close)
@@ -233,6 +235,7 @@ export namespace minairo
 			{
 				indexes = b.indexes;
 				default_initializers = b.default_initializers;
+				explicit_type = b.explicit_type ? b.explicit_type->deep_copy() : nullptr;
 				destination_type = b.destination_type;
 				open = b.open;
 				close = b.close;
@@ -259,7 +262,7 @@ export namespace minairo
 		void accept(ExpressionConstVisitor& visitor) const override;
 		virtual TerminalData get_first_terminal() const override
 		{
-			return open;
+			return explicit_type ? explicit_type->get_first_terminal() : open;
 		}
 		virtual TerminalData get_last_terminal() const override
 		{
