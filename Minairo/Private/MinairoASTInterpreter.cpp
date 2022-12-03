@@ -360,12 +360,40 @@ void Interpreter::visit(MemberRead const& member_read)
 
 void Interpreter::visit(MemberWrite const& member_write)
 {
-	member_write.right->accept(*this);
-	Value value = last_expression_value;
+	if (auto concept_type = get<ConceptType>(deduce_type(*member_write.left).type))
+	{
+		Concept &concept_value = globals.concepts[(std::string)concept_type->name];
 
-	member_write.left->accept(*this);
-	Value result = get<TupleReference>(last_expression_value)->get_field(member_write.index) = value;
-	last_expression_value = result;
+		// concept
+		assert(member_write.op.type == Terminal::OP_ASSIGN_ADD);
+		switch (concept_type->get_member_kind(member_write.member.text))
+		{
+		case ConceptType::Kind::Interface:
+		{
+			concept_value.add_interface_implementation(*get_compile_time_type_value<TupleType>(*member_write.right), member_write.member.text);
+			break;
+		}
+		case ConceptType::Kind::Function:
+		{
+			assert(false); // TODO
+			break;
+		}
+		case ConceptType::Kind::None:
+		default:
+			assert(false); // invalid path
+			break;
+		}
+	}
+	else
+	{
+		// tuple
+		member_write.right->accept(*this);
+		Value value = last_expression_value;
+
+		member_write.left->accept(*this);
+		Value result = get<TupleReference>(last_expression_value)->get_field(member_write.index) = value;
+		last_expression_value = result;
+	}
 }
 
 void Interpreter::visit(FunctionDeclaration const& function_declaration)
@@ -601,6 +629,12 @@ void Interpreter::visit(VariableDefinition const& variable_definition)
 			{
 				get<Multifunction>(old_multi->second)->variants.push_back(get<FunctionRepresentation>(last_expression_value));
 			}
+		}
+		else if (auto concept_type = get<ConceptType>(*variable_definition.type))
+		{
+			Concept concept_value;
+			concept_value.type = *concept_type;
+			globals.concepts[(std::string)concept_type->name] = concept_value;
 		}
 		else if (variable_definition.initialization)
 		{

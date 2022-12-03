@@ -87,6 +87,7 @@ export namespace minairo
 			container.actual_function = std::move(override_function);
 			// TODO check for double implementation
 			function_map[virtual_function.name].push_back( std::move(container) );
+			return true;
 		}
 
 

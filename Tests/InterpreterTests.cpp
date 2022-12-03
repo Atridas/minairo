@@ -268,25 +268,25 @@ namespace InterpreterTests
 
 		TEST_METHOD(BasicDefinition)
 		{
-			RunAndExpectPrint("c : concept { t : tuple {}, f : function(p : t) -> int };", "");
-			RunAndExpectPrint("c : concept { t : tuple {i : int}, f : function(p : t) -> int };", "");
+			RunAndExpectPrint("c : concept { interface : tuple {}, f : function(p : interface) -> int };", "");
+			RunAndExpectPrint("c : concept { interface : tuple {i : int}, f : function(p : interface) -> int };", "");
 		}
 
 		TEST_METHOD(TupleOverride)
 		{
 			RunAndExpectPrint(R"codi-minairo(
-						c : concept { t : tuple {i : int}, f : function(p : t) -> int };
+						c : concept { interface : tuple {i : int}, f : function(p : interface) -> int };
 						t :: tuple{ i, j: int };
-						c.t += t;
+						c.interface += t;
 				)codi-minairo", "");
 		}
 
 		TEST_METHOD(FunctionOverride)
 		{
 			RunAndExpectPrint(R"codi-minairo(
-						c : concept { t : tuple {i : int}, f : function(p : t) -> int };
+						c : concept { interface : tuple {i : int}, f : function(p : interface) -> int };
 						t :: tuple{ i, j: int };
-						c.t += t;
+						c.interface += t;
 						c.f += function(p : t) -> int { return 5; };
 				)codi-minairo", "");
 		}
@@ -294,9 +294,9 @@ namespace InterpreterTests
 		TEST_METHOD(Interface)
 		{
 			RunAndExpect(R"codi-minairo(
-						c : concept { t : tuple {i : int}, f : function(p : t) -> int };
+						c : concept { interface : tuple {i : int}, f : function(p : interface) -> int };
 						t :: tuple{ i, j: int };
-						c.t += t;
+						c.interface += t;
 						v : c.t = t{ 2, 3 };
 						v.i;
 				)codi-minairo", "2");
@@ -304,14 +304,19 @@ namespace InterpreterTests
 
 		TEST_METHOD(VirtualCall)
 		{
-			RunAndExpect(R"codi-minairo(
-						c : concept { t : tuple {i : int}, f : function(p : t) -> int };
-						t :: tuple{ i, j: int };
-						c.t += t;
-						c.f += function(p : t) -> int { return 5; };
-						v : c.t = t{ 2, 3 };
-						c.f(v);
-				)codi-minairo", "5");
+			RunAndExpectPrint(R"codi-minairo(
+						c : concept { interface : tuple {i : int}, f : function(p : interface) -> void };
+						t1 :: tuple{ i, j: int };
+						t2 :: tuple{ i, j: int };
+						c.interface += t1;
+						c.interface += t2;
+						c.f += function(p : t1) -> { print("1"); };
+						c.f += function(p : t2) -> { print("2"); };
+						v1 : c.interface = t1{ 2, 3 };
+						v2 : c.interface = t2{ 4, 5 };
+						c.f(v1);
+						c.f(v2);
+				)codi-minairo", "12");
 		}
 
 	};

@@ -400,11 +400,11 @@ void TypePass::visit(MemberWrite& member_write)
 	{
 		if (!tuple_ref->tuple.has_field(member_write.member.text))
 		{
-			throw message_exception("tuple doesn't have a member of this name\n", member_write);
+			throw message_exception("tuple doesn't have a member of this name", member_write);
 		}
 		else if (left_type.constant || tuple_ref->constant)
 		{
-			throw message_exception("can't assign to a member of a constant tuple\n", member_write);
+			throw message_exception("can't assign to a member of a constant tuple", member_write);
 		}
 		else
 		{
@@ -420,9 +420,70 @@ void TypePass::visit(MemberWrite& member_write)
 			}
 		}
 	}
+	else if (auto concept_type = get<ConceptType>(left_type.type))
+	{
+		if (member_write.op.type != Terminal::OP_ASSIGN_ADD)
+		{
+			throw message_exception("Only '+=' allowed to modify concept members", member_write.op);
+		}
+
+		member_write.right->accept(*this);
+		auto right_type = deduce_type(*member_write.right).type;
+
+		switch (concept_type->get_member_kind(member_write.member.text))
+		{
+		case ConceptType::Kind::Interface:
+		{
+			InterfaceType interface_type = concept_type->get_interface(member_write.member.text);
+
+			if (right_type != BuildInType::Typedef)
+			{
+				throw message_exception("Expected a named tuple type to add to an interface", *member_write.right);
+			}
+			else if (std::shared_ptr<TupleType> tuple_to_add = get_compile_time_type_value<TupleType>(*member_write.right))
+			{
+				if (tuple_to_add->get_name().size() == 0)
+				{
+					throw message_exception("Expected a named tuple type to add to an interface", *member_write.right);
+				}
+				else
+				{
+					for (int i = 0; i < interface_type.base_tuple.get_num_fields(); ++i)
+					{
+						auto field_name = interface_type.base_tuple.get_field_name(i);
+						if (!tuple_to_add->has_field(field_name))
+						{
+							// TODO better error messages
+							throw message_exception("Tuple to be added to the interface is missing a field", *member_write.right);
+						}
+						else if (tuple_to_add->get_field_type(field_name) != interface_type.base_tuple.get_field_type(i))
+						{
+							// TODO better error messages
+							throw message_exception("Tuple to be added to the interface has a field of an incorrect type", *member_write.right);
+						}
+					}
+				}
+			}
+			else
+			{
+				throw message_exception("Expected a named tuple type to add to an interface", *member_write.right);
+			}
+			break;
+		}
+		case ConceptType::Kind::Function:
+			assert(false); // TODO
+			break;
+		case ConceptType::Kind::None:
+		default:
+			throw message_exception("concept doesn't have a member of this name", member_write.member);
+			break;
+		}
+
+		return;
+	}
 	else
 	{
-		throw message_exception("Expected a tuple before '.'", *member_write.left);
+		throw message_exception("Expected a tuple or a concept before '.'", *member_write.left);
 	}
 
 	if (member_write.op.type != Terminal::OP_ASSIGN)
@@ -711,6 +772,10 @@ void TypePass::visit(VariableRead& variable_read)
 				}
 			}
 		}
+		else if (auto concept_type = get<ConceptType>(variable.type))
+		{
+			variable_read.static_type = *concept_type;
+		}
 
 		variable_read.type = variable.type;
 		variable_read.index = variable.index;
@@ -842,7 +907,7 @@ void TypePass::visit(VariableDefinition& variable_definition)
 
 		if (deduce_type(*variable_definition.type_definition).type != BuildInType::Typedef)
 		{
-			throw message_exception("Expected a type definition\n", *variable_definition.type_definition);
+			throw message_exception("Expected a type definition", *variable_definition.type_definition);
 		}
 		variable_definition.type = get_compile_time_type_value(*variable_definition.type_definition);
 	}
@@ -896,6 +961,11 @@ void TypePass::visit(VariableDefinition& variable_definition)
 		}
 		assert(info.compile_time_value);
 		get<TypeRepresentation>(*info.compile_time_value)->set_name(variable_definition.variable.text);
+	}
+	else if (auto concept_type = get<ConceptType>(*variable_definition.type))
+	{
+		assert(!info.compile_time_value);
+		concept_type->set_name(variable_definition.variable.text);
 	}
 
 	if (info.compile_time_value)

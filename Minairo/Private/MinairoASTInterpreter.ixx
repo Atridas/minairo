@@ -15,6 +15,7 @@ export module Minairo.AST.Interpreter;
 
 import Minairo.AST;
 import Minairo.AST.TypePass;
+import Minairo.Concepts;
 import Minairo.TypesAndValues;
 
 
@@ -34,6 +35,7 @@ export namespace minairo
 		{
 			// TODO not a string map please. I'm just lazy rn
 			std::unordered_map<std::string, Value> variables;
+			std::unordered_map<std::string, Concept> concepts;
 		};
 
 		void set_globals(Globals const& _globals)

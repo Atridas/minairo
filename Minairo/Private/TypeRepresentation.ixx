@@ -270,6 +270,20 @@ export namespace minairo
 			return functions.find((std::string)name)->second;
 		}
 
+		enum class Kind
+		{
+			Interface, Function, None
+		};
+
+		Kind get_member_kind(std::string_view name) const
+		{
+			if (interfaces.find((std::string)name) != interfaces.end())
+				return Kind::Interface;
+			else if (functions.find((std::string)name) != functions.end())
+				return Kind::Function;
+			else
+				return Kind::None;
+		}
 
 
 		bool operator==(ConceptType const& other) const noexcept
