@@ -26,16 +26,19 @@ export namespace minairo
 	class Interpreter final : public ExpressionConstVisitor, public StatementConstVisitor
 	{
 	public:
-		explicit Interpreter(int _number_of_globals = 0, int _number_of_tuples = 0)
-			: number_of_globals(_number_of_globals)
-			, number_of_tuples(_number_of_tuples)
+		explicit Interpreter(TypePass::Globals &&globals)
+			: number_of_globals(globals.compile_time_constants)
+			, number_of_tuples(0)
+		{}
+		explicit Interpreter(TypePass::Globals const &globals)
+			: number_of_globals(globals.compile_time_constants)
+			, number_of_tuples(0)
 		{}
 
 		struct Globals
 		{
 			// TODO not a string map please. I'm just lazy rn
 			std::unordered_map<std::string, Value> variables;
-			std::unordered_map<std::string, Concept> concepts;
 		};
 
 		void set_globals(Globals const& _globals)

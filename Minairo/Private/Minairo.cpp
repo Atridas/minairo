@@ -26,7 +26,7 @@ namespace minairo
 {
 	struct VMImpl
 	{
-		TypePass::VariableBlock global_types;
+		TypePass::Globals global_types;
 		Interpreter::Globals globals;
 	};
 
@@ -68,7 +68,7 @@ namespace minairo
 		expression->accept(type_pass);
 
 
-		Interpreter interpreter;
+		Interpreter interpreter(std::move(type_pass).get_globals());
 		expression->accept(interpreter);
 
 	}
@@ -281,12 +281,12 @@ namespace minairo
 
 			{
 				TypePass type_pass;
-				type_pass.set_globals(vm->global_types);
+				type_pass.set_globals(std::move(vm->global_types));
 				expression->accept(type_pass);
-				vm->global_types = type_pass.get_globals();
+				vm->global_types = std::move(type_pass).get_globals();
 			}
 
-			Interpreter interpreter((int)vm->global_types.variables.size());
+			Interpreter interpreter(vm->global_types);
 			interpreter.set_globals(vm->globals);
 			expression->accept(interpreter);
 			vm->globals = interpreter.get_globals();

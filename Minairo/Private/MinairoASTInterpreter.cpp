@@ -362,19 +362,18 @@ void Interpreter::visit(MemberWrite const& member_write)
 {
 	if (auto concept_type = get<ConceptType>(deduce_type(*member_write.left).type))
 	{
-		Concept &concept_value = globals.concepts[(std::string)concept_type->name];
-
 		// concept
 		assert(member_write.op.type == Terminal::OP_ASSIGN_ADD);
 		switch (concept_type->get_member_kind(member_write.member.text))
 		{
 		case ConceptType::Kind::Interface:
 		{
-			concept_value.add_interface_implementation(*get_compile_time_type_value<TupleType>(*member_write.right), member_write.member.text);
+			// NOOP
 			break;
 		}
 		case ConceptType::Kind::Function:
 		{
+			//Concept& concep = globals.concepts[(std::string)concept_type->name];
 			assert(false); // TODO
 			break;
 		}
@@ -632,9 +631,7 @@ void Interpreter::visit(VariableDefinition const& variable_definition)
 		}
 		else if (auto concept_type = get<ConceptType>(*variable_definition.type))
 		{
-			Concept concept_value;
-			concept_value.type = *concept_type;
-			globals.concepts[(std::string)concept_type->name] = concept_value;
+			// NOOP
 		}
 		else if (variable_definition.initialization)
 		{

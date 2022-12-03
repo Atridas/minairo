@@ -427,6 +427,9 @@ void TypePass::visit(MemberWrite& member_write)
 			throw message_exception("Only '+=' allowed to modify concept members", member_write.op);
 		}
 
+		assert(concepts.find(concept_type->name) != concepts.end());
+		Concept& concep = concepts[concept_type->name];
+
 		member_write.right->accept(*this);
 		auto right_type = deduce_type(*member_write.right).type;
 
@@ -462,6 +465,8 @@ void TypePass::visit(MemberWrite& member_write)
 							throw message_exception("Tuple to be added to the interface has a field of an incorrect type", *member_write.right);
 						}
 					}
+
+					concep.add_interface_implementation(*tuple_to_add, member_write.member.text);
 				}
 			}
 			else
@@ -966,6 +971,10 @@ void TypePass::visit(VariableDefinition& variable_definition)
 	{
 		assert(!info.compile_time_value);
 		concept_type->set_name(variable_definition.variable.text);
+
+		Concept concept_value;
+		concept_value.type = *concept_type;
+		concepts[(std::string)variable_definition.variable.text] = concept_value;
 	}
 
 	if (info.compile_time_value)

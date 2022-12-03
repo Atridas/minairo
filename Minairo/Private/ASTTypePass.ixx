@@ -120,12 +120,22 @@ export namespace minairo
 			bool constant;
 		};
 
-	public:
 		struct VariableBlock
 		{
 			int stack_size_at_beginning, compile_time_constants;
 			// TODO not a string map please. I'm just lazy rn
 			std::unordered_map<std::string, VariableInfo> variables;
+		};
+
+	public:
+
+		struct Globals
+		{
+			int compile_time_constants;
+
+			// TODO not a string map please. I'm just lazy rn
+			std::unordered_map<std::string, VariableInfo> variables;
+			std::unordered_map<std::string, Concept> concepts;
 
 			void add_global(std::string_view name, TypeRepresentation type, bool constant = true)
 			{
@@ -139,14 +149,22 @@ export namespace minairo
 			variable_blocks.push_back({});
 		}
 
-		void set_globals(VariableBlock const& global_map)
+		void set_globals(Globals global_map)
 		{
-			variable_blocks[0] = global_map;
+			variable_blocks[0].stack_size_at_beginning = 0;
+			variable_blocks[0].compile_time_constants = global_map.compile_time_constants;
+			variable_blocks[0].variables = std::move(global_map.variables);
+			concepts = std::move(global_map.concepts);
 		}
 
-		VariableBlock const& get_globals() const
+		Globals get_globals() const &
 		{
-			return variable_blocks[0];
+			return Globals{ variable_blocks[0].compile_time_constants , variable_blocks[0].variables , concepts };
+		}
+
+		Globals get_globals() &&
+		{
+			return Globals { variable_blocks[0].compile_time_constants , std::move(variable_blocks[0].variables) , std::move(concepts) };
 		}
 
 		// ----------------------------------------------------------------------------------------------
@@ -196,7 +214,6 @@ export namespace minairo
 		void push_variable_block();
 		void pop_variable_block();
 		VariableInfo find_variable(TerminalData identifier) const;
-		std::optional<Concept> find_concept(TerminalData identifier) const;
 		std::optional<TypeRepresentation> find_typedef(TerminalData identifier) const;
 		bool implicit_cast(TupleType target, InitializerList& origin, bool let_undefined_fields, int* needed_casts = nullptr) const;
 		bool implicit_cast(TypeRepresentation target, std::unique_ptr<Expression>& origin, int* needed_casts = nullptr) const;
