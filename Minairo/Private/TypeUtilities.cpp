@@ -13,6 +13,7 @@ module;
 module Minairo.AST.TypePass:TypeUtilities;
 
 import Minairo.AST;
+import Minairo.AST.TypePass;
 import Minairo.TypesAndValues;
 
 using namespace minairo;
@@ -332,7 +333,7 @@ std::optional<Value> minairo::get_compile_time_value(Expression const& expressio
 		}
 		void visit(FunctionDeclaration const& function_declaration) override
 		{
-			result = std::nullopt;
+			result = (std::shared_ptr<ComplexValue>)std::make_shared<Function>(function_declaration.header->type, function_declaration.body->deep_copy());
 		}
 		void visit(FunctionTypeDeclaration const& function_type_declaration) override
 		{

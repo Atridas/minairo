@@ -373,8 +373,7 @@ void Interpreter::visit(MemberWrite const& member_write)
 		}
 		case ConceptType::Kind::Function:
 		{
-			//Concept& concep = globals.concepts[(std::string)concept_type->name];
-			assert(false); // TODO
+			// NOOP
 			break;
 		}
 		case ConceptType::Kind::None:

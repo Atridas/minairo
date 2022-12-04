@@ -289,7 +289,7 @@ void TypePass::visit(ConceptDeclaration& concept_declaration)
 
 		INTERFACE_FOUND:
 		// TODO add function be found by other functions?
-		concept_declaration.type.add_function(name + (std::string)concept_declaration.function_names[i].text, *get_compile_time_type_value<FunctionType>(concept_declaration.function_declarations[i]));
+		concept_declaration.type.add_function(concept_declaration.function_names[i].text, *get_compile_time_type_value<FunctionType>(concept_declaration.function_declarations[i]));
 	}
 
 	current_concept_interfaces.clear();
@@ -476,8 +476,74 @@ void TypePass::visit(MemberWrite& member_write)
 			break;
 		}
 		case ConceptType::Kind::Function:
-			assert(false); // TODO
+		{
+			if (std::optional<Value> compile_time_value = get_compile_time_value(*member_write.right))
+			{
+				if (auto function = get<Function>(*compile_time_value))
+				{
+					FunctionType const& function_type = concept_type->get_function(member_write.member.text);
+
+					if (function_type.is_pure && !function->type.is_pure)
+					{
+						throw message_exception("Expecting a pure function", *member_write.right);
+					}
+
+					if (function_type.return_type != function->type.return_type)
+					{
+						throw message_exception("virtual function must have the same return value as the overriden function", *member_write.right);
+					}
+
+					if (function_type.parameters.get_num_fields() != function->type.parameters.get_num_fields())
+					{
+						throw message_exception("virtual function must have the number of parameters as the overriden function", *member_write.right);
+					}
+
+					for (int i = 0; i < function_type.parameters.get_num_fields(); ++i)
+					{
+						if (function->type.parameters.get_field_name(i) != function_type.parameters.get_field_name(i))
+						{
+							// TODO better error messages
+							throw message_exception("Virtual function added is missing parameters", *member_write.right);
+						}
+						else if (function->type.parameters.get_field_type(i) != function_type.parameters.get_field_type(i))
+						{
+							if (auto interface_type = get<InterfaceType>(function_type.parameters.get_field_type(i)))
+							{
+								if (auto tuple_type = get<TupleType>(function->type.parameters.get_field_type(i)))
+								{
+									if (!concep.is_interface_implementation(*tuple_type, *interface_type))
+									{
+										// TODO better error messages
+										throw message_exception("Virtual function added has a tuple parameter that does not override the interface", *member_write.right);
+									}
+								}
+								else
+								{
+									// TODO better error messages
+									throw message_exception("Virtual function added has a parameter that is not a tuple overriding an interface", *member_write.right);
+								}
+							}
+							else
+							{
+								// TODO better error messages
+								throw message_exception("Virtual function added has a parameter of an incorrect type", *member_write.right);
+							}
+						}
+					}
+
+					concep.add_function_override(function, member_write.member.text);
+				}
+				else
+				{
+					throw message_exception("Virtual function has to be overriden with a function", *member_write.right);
+				}
+			}
+			else
+			{
+				throw message_exception("Virtual function has to be overriden with a compile time constant", *member_write.right);
+			}
 			break;
+		}
 		case ConceptType::Kind::None:
 		default:
 			throw message_exception("concept doesn't have a member of this name", member_write.member);

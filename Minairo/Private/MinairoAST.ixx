@@ -593,6 +593,7 @@ export namespace minairo
 			, parenthesis(b.parenthesis)
 			, parameter_tuple(b.parameter_tuple->typed_deep_copy())
 			, return_type(b.return_type->deep_copy())
+			, is_pure(b.is_pure)
 			, type(b.type)
 		{
 		}
@@ -604,6 +605,7 @@ export namespace minairo
 				parenthesis = b.parenthesis;
 				parameter_tuple = b.parameter_tuple->typed_deep_copy();
 				return_type = b.return_type->deep_copy();
+				is_pure = b.is_pure;
 				type = b.type;
 			}
 			return *this;

@@ -90,6 +90,17 @@ export namespace minairo
 			return true;
 		}
 
+		bool is_interface_implementation(TupleType const &tuple, InterfaceType const& interface)
+		{
+			std::unordered_set<std::string>& implementations = implementation_map[interface.name];
+
+			return (implementations.find((std::string)tuple.get_name()) != implementations.end());
+		}
+
+		bool is_interface_implementation(TupleType const& tuple, std::string_view interface_name)
+		{
+			return is_interface_implementation(tuple, type.get_interface(interface_name));
+		}
 
 	private:
 

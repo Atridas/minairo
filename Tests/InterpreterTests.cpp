@@ -287,7 +287,8 @@ namespace InterpreterTests
 						c : concept { interface : tuple {i : int}, f : function(p : interface) -> int };
 						t :: tuple{ i, j: int };
 						c.interface += t;
-						c.f += function(p : t) -> int { return 5; };
+						f :: function(p : t) -> int { return 5; };
+						c.f += f;
 				)codi-minairo", "");
 		}
 
