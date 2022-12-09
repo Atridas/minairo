@@ -325,7 +325,7 @@ std::optional<Value> minairo::get_compile_time_value(Expression const& expressio
 		}
 		void visit(MemberRead const& member_read) override
 		{
-			result = std::nullopt;
+			result = member_read.compile_time_value;
 		}
 		void visit(MemberWrite const& member_write) override
 		{

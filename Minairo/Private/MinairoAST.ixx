@@ -398,6 +398,7 @@ export namespace minairo
 		int index = -1;
 		bool constant;
 		std::optional<TypeRepresentation> type;
+		std::optional<Value> compile_time_value;
 
 		MemberRead() = default;
 		MemberRead(MemberRead&&) = default;
@@ -408,6 +409,7 @@ export namespace minairo
 			, index(b.index)
 			, constant(b.constant)
 			, type(b.type)
+			, compile_time_value(b.compile_time_value)
 		{
 		}
 		MemberRead& operator=(MemberRead const& b)
@@ -419,6 +421,7 @@ export namespace minairo
 				index = b.index;
 				constant = b.constant;
 				type = b.type;
+				compile_time_value = b.compile_time_value;
 			}
 			return *this;
 		}

@@ -287,20 +287,35 @@ namespace InterpreterTests
 						c : concept { interface : tuple {i : int}, f : function(p : interface) -> int };
 						t :: tuple{ i, j: int };
 						c.interface += t;
-						f :: function(p : t) -> int { return 5; };
-						c.f += f;
+						c.f += function(p : t) -> int { return 5; };
 				)codi-minairo", "");
 		}
 
-		TEST_METHOD(Interface)
+		TEST_METHOD(Interface_Read)
 		{
+			// c: concept { interface : tuple { i: int }, f : function(p : interface) -> int }; t::tuple{ i, j: int }; c.interface += t; c.f += function(p : t) -> int { return 5; };
 			RunAndExpect(R"codi-minairo(
 						c : concept { interface : tuple {i : int}, f : function(p : interface) -> int };
 						t :: tuple{ i, j: int };
 						c.interface += t;
-						v : c.t = t{ 2, 3 };
+						c.f += function(p : t) -> int { return 5; };
+						v : c.interface = t{ 2, 3 };
 						v.i;
 				)codi-minairo", "2");
+		}
+
+		TEST_METHOD(Interface_Write)
+		{
+			// c: concept { interface : tuple { i: int }, f : function(p : interface) -> int }; t::tuple{ i, j: int }; c.interface += t; c.f += function(p : t) -> int { return 5; };
+			RunAndExpect(R"codi-minairo(
+						c : concept { interface : tuple {i : int}, f : function(p : interface) -> int };
+						t :: tuple{ i, j: int };
+						c.interface += t;
+						c.f += function(p : t) -> int { return 5; };
+						v : c.interface = t{ 2, 3 };
+						v.i = 7;
+						v.i;
+				)codi-minairo", "7");
 		}
 
 		TEST_METHOD(VirtualCall)
@@ -311,8 +326,8 @@ namespace InterpreterTests
 						t2 :: tuple{ i, j: int };
 						c.interface += t1;
 						c.interface += t2;
-						c.f += function(p : t1) -> { print("1"); };
-						c.f += function(p : t2) -> { print("2"); };
+						c.f += function(p : t1) -> void { print("1"); };
+						c.f += function(p : t2) -> void { print("2"); };
 						v1 : c.interface = t1{ 2, 3 };
 						v2 : c.interface = t2{ 4, 5 };
 						c.f(v1);

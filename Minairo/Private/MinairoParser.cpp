@@ -869,14 +869,30 @@ namespace minairo
 		return result;
 	}
 
-	ExpressionPtr member_read(ExpressionPtr left, Precedence current_precendence, Scanner& scanner)
+	ExpressionPtr member_read(ExpressionPtr left, Scanner& scanner, bool can_be_followed_by_assign)
 	{
 		auto result = std::make_unique<MemberRead>();
 		result->left = std::move(left);
 		consume(Terminal::OP_DOT, scanner);
 		result->member = consume(Terminal::IDENTIFIER, scanner);
 
-		return try_assign(std::move(result), scanner);
+		if (scanner.peek_next_symbol().type == Terminal::OP_DOT)
+		{
+			return member_read(std::move(result), scanner, can_be_followed_by_assign);
+		}
+		else if(can_be_followed_by_assign)
+		{
+			return try_assign(std::move(result), scanner);
+		}
+		else
+		{
+			return result;
+		}
+	}
+
+	ExpressionPtr member_read(ExpressionPtr left, Precedence current_precendence, Scanner& scanner)
+	{
+		return member_read(std::move(left), scanner, true);
 	}
 
 	ExpressionPtr explicit_initializer_list(ExpressionPtr left, Precedence current_precendence, Scanner& scanner)
@@ -894,7 +910,14 @@ namespace minairo
 		{
 			auto result = std::make_unique<VariableRead>();
 			result->identifier = consume(Terminal::IDENTIFIER, scanner);
-			return result;
+			if (scanner.peek_next_symbol().type == Terminal::OP_DOT)
+			{
+				return member_read(std::move(result), scanner, false);
+			}
+			else
+			{
+				return result;
+			}
 		}
 		else if (scanner.peek_next_symbol().type == Terminal::KW_FUNCTION)
 		{

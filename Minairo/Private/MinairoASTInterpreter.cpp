@@ -287,6 +287,22 @@ void Interpreter::visit(Cast const& cast)
 		}
 		assert(found);
 	}
+	else if (auto interface_type = get<InterfaceType>(cast.target_type))
+	{
+		auto tuple_type = get<TupleType>(deduce_type(*cast.expr).type);
+		assert(tuple_type);
+
+		std::string_view concept_name(interface_type->name.c_str(), interface_type->name.find_last_of('.'));
+		Concept const& concept_impl = type_globals.concepts.find((std::string)concept_name)->second;
+
+		Interface interface;
+		interface.type = *interface_type;
+		interface.virtual_table = concept_impl.get_virtual_table(*tuple_type, *interface_type);
+		interface.tuple = *get<Tuple>(last_expression_value);
+		assert(interface.tuple.type == *tuple_type);
+
+		last_expression_value = interface;
+	}
 	else
 	{
 		assert(false);
@@ -344,6 +360,12 @@ void Interpreter::visit(Literal const& literal)
 
 void Interpreter::visit(MemberRead const& member_read)
 {
+	if (member_read.compile_time_value)
+	{
+		last_expression_value = *member_read.compile_time_value;
+		return;
+	}
+
 	member_read.left->accept(*this);
 	if (get<TupleType>(*member_read.type))
 	{
@@ -495,6 +517,11 @@ void Interpreter::visit(VariableAssign const& variable_assign)
 void Interpreter::visit(VariableRead const& variable_read)
 {
 	if (*variable_read.type == BuildInType::Typedef)
+	{
+		assert(variable_read.index == -1);
+		last_expression_value = *variable_read.static_type;
+	}
+	else if (*variable_read.type == BuildInType::Typedef)
 	{
 		assert(variable_read.index == -1);
 		last_expression_value = *variable_read.static_type;

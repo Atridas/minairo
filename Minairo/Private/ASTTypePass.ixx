@@ -159,11 +159,19 @@ export namespace minairo
 
 		Globals get_globals() const &
 		{
-			return Globals{ variable_blocks[0].compile_time_constants , variable_blocks[0].variables , concepts };
+			std::unordered_map<std::string, Concept> concepts_copy = concepts;
+
+			for (auto& concept_impl : concepts_copy)
+				concept_impl.second.prepare_virtual_tables();
+
+			return Globals{ variable_blocks[0].compile_time_constants , variable_blocks[0].variables , std::move(concepts_copy) };
 		}
 
 		Globals get_globals() &&
 		{
+			for (auto& concept_impl : concepts)
+				concept_impl.second.prepare_virtual_tables();
+
 			return Globals { variable_blocks[0].compile_time_constants , std::move(variable_blocks[0].variables) , std::move(concepts) };
 		}
 
@@ -214,7 +222,9 @@ export namespace minairo
 		void push_variable_block();
 		void pop_variable_block();
 		VariableInfo find_variable(TerminalData identifier) const;
+		VariableInfo find_variable(std::string_view identifier) const;
 		std::optional<TypeRepresentation> find_typedef(TerminalData identifier) const;
+		std::optional<TypeRepresentation> find_typedef(std::string_view identifier) const;
 		bool implicit_cast(TupleType target, InitializerList& origin, bool let_undefined_fields, int* needed_casts = nullptr) const;
 		bool implicit_cast(TypeRepresentation target, std::unique_ptr<Expression>& origin, int* needed_casts = nullptr) const;
 

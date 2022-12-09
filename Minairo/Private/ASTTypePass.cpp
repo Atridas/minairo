@@ -273,23 +273,29 @@ void TypePass::visit(ConceptDeclaration& concept_declaration)
 	{
 		concept_declaration.function_declarations[i].accept(*this);
 
+		std::vector<int> interface_paramenters;
+
 		for (int f = 0; f < concept_declaration.function_declarations[i].type.parameters.get_num_fields(); ++f)
 		{
 			TypeRepresentation const& parameter_type = concept_declaration.function_declarations[i].type.parameters.get_field_type(f);
 			if (auto as_interface = get<InterfaceType>(parameter_type))
 			{
-				if (as_interface->name.starts_with(name))
+				if (as_interface->name.starts_with(name) && as_interface->name.substr(name.size()).find(".") == std::string::npos)
 				{
-					goto INTERFACE_FOUND;
+					interface_paramenters.push_back(f);
 				}
 			}
 		}
 
-		throw message_exception("functions in a concept must have at least one paramenter with a concept's interface", concept_declaration.function_declarations[i]);
-
-		INTERFACE_FOUND:
-		// TODO add function be found by other functions?
-		concept_declaration.type.add_function(concept_declaration.function_names[i].text, *get_compile_time_type_value<FunctionType>(concept_declaration.function_declarations[i]));
+		if (interface_paramenters.size() == 0)
+		{
+			throw message_exception("functions in a concept must have at least one paramenter with a concept's interface", concept_declaration.function_declarations[i]);
+		}
+		else
+		{
+			// TODO add function be found by other functions?
+			concept_declaration.type.add_function(concept_declaration.function_names[i].text, *get_compile_time_type_value<FunctionType>(concept_declaration.function_declarations[i]), std::move(interface_paramenters));
+		}
 	}
 
 	current_concept_interfaces.clear();
@@ -363,6 +369,41 @@ void TypePass::visit(MemberRead& member_read)
 			throw message_exception("tuple doesn't have a member of this name", member_read);
 		}
 	}
+	else if (auto interface_type = get<InterfaceType>(left_type.type))
+	{
+		if (interface_type->base_tuple.has_field(member_read.member.text))
+		{
+			member_read.index = interface_type->base_tuple.get_field_index(member_read.member.text);
+			member_read.type = interface_type->base_tuple.get_field_type(member_read.member.text);
+			member_read.constant = left_type.constant;
+		}
+		else
+		{
+			throw message_exception("interface doesn't have a member of this name", member_read);
+		}
+	}
+	else if (auto concept_type = get<ConceptType>(left_type.type))
+	{
+		switch (concept_type->get_member_kind(member_read.member.text))
+		{
+		case ConceptType::Kind::Interface:
+		{
+			member_read.compile_time_value = concept_type->get_interface(member_read.member.text);
+			member_read.index = -1;
+			member_read.type = BuildInType::Typedef;
+			member_read.constant = true;
+			break;
+		}
+		case ConceptType::Kind::Function:
+		{
+			// TODO
+			throw message_exception("virtual function call not yet implemented", member_read.member);
+			break;
+		}
+		default:
+			throw message_exception("unrecognized member of concept", member_read.member);
+		}
+	}
 	else
 	{
 		throw message_exception("Expected a tuple before '.'", *member_read.left);
@@ -412,6 +453,30 @@ void TypePass::visit(MemberWrite& member_write)
 
 			member_write.index = tuple_ref->tuple.get_field_index(member_write.member.text);
 			member_write.type = tuple_ref->tuple.get_field_type(member_write.member.text);
+
+
+			if (*member_write.type != deduce_type(*member_write.right).type)
+			{
+				throw message_exception("Assignment of different types", member_write);
+			}
+		}
+	}
+	else if (auto interface_ref = get<InterfaceType>(left_type.type))
+	{
+		if (!interface_ref->base_tuple.has_field(member_write.member.text))
+		{
+			throw message_exception("interface doesn't have a member of this name", member_write);
+		}
+		else if (left_type.constant)
+		{
+			throw message_exception("can't assign to a member of a constant interface", member_write);
+		}
+		else
+		{
+			member_write.right->accept(*this);
+
+			member_write.index = interface_ref->base_tuple.get_field_index(member_write.member.text);
+			member_write.type = interface_ref->base_tuple.get_field_type(member_write.member.text);
 
 
 			if (*member_write.type != deduce_type(*member_write.right).type)
@@ -481,53 +546,57 @@ void TypePass::visit(MemberWrite& member_write)
 			{
 				if (auto function = get<Function>(*compile_time_value))
 				{
-					FunctionType const& function_type = concept_type->get_function(member_write.member.text);
+					ConceptType::VirtualFunction const& function_type = concept_type->get_function(member_write.member.text);
 
-					if (function_type.is_pure && !function->type.is_pure)
+					if (function_type.type.is_pure && !function->type.is_pure)
 					{
 						throw message_exception("Expecting a pure function", *member_write.right);
 					}
 
-					if (function_type.return_type != function->type.return_type)
+					if (function_type.type.return_type != function->type.return_type)
 					{
 						throw message_exception("virtual function must have the same return value as the overriden function", *member_write.right);
 					}
 
-					if (function_type.parameters.get_num_fields() != function->type.parameters.get_num_fields())
+					if (function_type.type.parameters.get_num_fields() != function->type.parameters.get_num_fields())
 					{
 						throw message_exception("virtual function must have the number of parameters as the overriden function", *member_write.right);
 					}
 
-					for (int i = 0; i < function_type.parameters.get_num_fields(); ++i)
+					int next_interface_index = 0;
+					for (int i = 0; i < function_type.type.parameters.get_num_fields(); ++i)
 					{
-						if (function->type.parameters.get_field_name(i) != function_type.parameters.get_field_name(i))
+						if (next_interface_index == function_type.interface_paramenters.size() || i < function_type.interface_paramenters[next_interface_index])
 						{
-							// TODO better error messages
-							throw message_exception("Virtual function added is missing parameters", *member_write.right);
-						}
-						else if (function->type.parameters.get_field_type(i) != function_type.parameters.get_field_type(i))
-						{
-							if (auto interface_type = get<InterfaceType>(function_type.parameters.get_field_type(i)))
+							if (function->type.parameters.get_field_name(i) != function_type.type.parameters.get_field_name(i))
 							{
-								if (auto tuple_type = get<TupleType>(function->type.parameters.get_field_type(i)))
-								{
-									if (!concep.is_interface_implementation(*tuple_type, *interface_type))
-									{
-										// TODO better error messages
-										throw message_exception("Virtual function added has a tuple parameter that does not override the interface", *member_write.right);
-									}
-								}
-								else
+								// TODO better error messages
+								throw message_exception("Virtual function added is missing parameters", *member_write.right);
+							}
+							else if (function->type.parameters.get_field_type(i) != function_type.type.parameters.get_field_type(i))
+							{
+								// TODO better error messages
+								throw message_exception("Virtual function added has a parameter of an incorrect type", *member_write.right);
+							}
+						}
+						else
+						{
+							if (auto tuple_type = get<TupleType>(function->type.parameters.get_field_type(i)))
+							{
+								auto interface_type = get<InterfaceType>(function_type.type.parameters.get_field_type(i));
+								assert(interface_type);
+								if (!concep.is_interface_implementation(*tuple_type, *interface_type))
 								{
 									// TODO better error messages
-									throw message_exception("Virtual function added has a parameter that is not a tuple overriding an interface", *member_write.right);
+									throw message_exception("Virtual function added has a tuple parameter that does not override the interface", *member_write.right);
 								}
 							}
 							else
 							{
 								// TODO better error messages
-								throw message_exception("Virtual function added has a parameter of an incorrect type", *member_write.right);
+								throw message_exception("Virtual function added has a parameter that is not a tuple overriding an interface", *member_write.right);
 							}
+							++next_interface_index;
 						}
 					}
 
@@ -976,11 +1045,20 @@ void TypePass::visit(VariableDefinition& variable_definition)
 	{
 		variable_definition.type_definition->accept(*this);
 
-		if (deduce_type(*variable_definition.type_definition).type != BuildInType::Typedef)
+		auto deduced_type = deduce_type(*variable_definition.type_definition);
+
+		if (deduced_type.type == BuildInType::Typedef)
+		{
+			variable_definition.type = get_compile_time_type_value(*variable_definition.type_definition);
+		}
+		else if(auto interface_type = get<InterfaceType>(deduced_type.type))
+		{
+			variable_definition.type = *interface_type;
+		}
+		else
 		{
 			throw message_exception("Expected a type definition", *variable_definition.type_definition);
 		}
-		variable_definition.type = get_compile_time_type_value(*variable_definition.type_definition);
 	}
 
 	if (variable_definition.initialization != nullptr)
@@ -1137,6 +1215,21 @@ void TypePass::pop_variable_block()
 	variable_blocks.pop_back();
 }
 
+TypePass::VariableInfo TypePass::find_variable(std::string_view identifier) const
+{
+	for (int i = (int)(variable_blocks.size() - 1); i >= 0; --i)
+	{
+		auto info = variable_blocks[i].variables.find((std::string)identifier);
+		if (info != variable_blocks[i].variables.end())
+		{
+			return info->second;
+		}
+	}
+
+	assert(false);
+	return {};
+}
+
 TypePass::VariableInfo TypePass::find_variable(TerminalData identifier) const
 {
 	for (int i = (int)(variable_blocks.size() - 1); i >= 0; --i)
@@ -1153,8 +1246,13 @@ TypePass::VariableInfo TypePass::find_variable(TerminalData identifier) const
 
 std::optional<TypeRepresentation> TypePass::find_typedef(TerminalData identifier) const
 {
+	return find_typedef(identifier.text);
+}
+
+std::optional<TypeRepresentation> TypePass::find_typedef(std::string_view identifier) const
+{
 	{
-		auto info = current_concept_interfaces.find((std::string)identifier.text);
+		auto info = current_concept_interfaces.find((std::string)identifier);
 		if (info != current_concept_interfaces.end())
 		{
 			return info->second;
@@ -1163,7 +1261,7 @@ std::optional<TypeRepresentation> TypePass::find_typedef(TerminalData identifier
 
 	for (int i = (int)(variable_blocks.size() - 1); i >= 0; --i)
 	{
-		auto info = variable_blocks[i].variables.find((std::string)identifier.text);
+		auto info = variable_blocks[i].variables.find((std::string)identifier);
 		if (info != variable_blocks[i].variables.end())
 		{
 			if (info->second.compile_time_value)
@@ -1305,6 +1403,34 @@ bool TypePass::implicit_cast(TypeRepresentation target, std::unique_ptr<Expressi
 	{
 		assert(dynamic_cast<InitializerList*>(origin.get()));
 		return implicit_cast(*get<TupleType>(target), *static_cast<InitializerList*>(origin.get()), true, needed_casts);
+	}
+	else if (get<InterfaceType>(target) && get<TupleType>(original_type))
+	{
+		auto interface_type = get<InterfaceType>(target);
+		auto tuple_type = get<TupleType>(original_type);
+
+		std::string_view concept_name(interface_type->name.c_str(), interface_type->name.find_last_of('.'));
+		Concept const& concept_impl = concepts.find((std::string)concept_name)->second;
+
+		if (!concept_impl.is_complete_interface_implementation(*tuple_type, *interface_type))
+		{
+			return false;
+		}
+
+		if (needed_casts == nullptr)
+		{
+			auto cast = std::make_unique<Cast>();
+			cast->expr = std::move(origin);
+			cast->target_type = target;
+
+			origin = std::move(cast);
+		}
+		else
+		{
+			++*needed_casts;
+		}
+
+		return true;
 	}
 	else if ((target.is_integral() || target.is_float()) && (original_type.is_integral() || original_type.is_float()))
 	{

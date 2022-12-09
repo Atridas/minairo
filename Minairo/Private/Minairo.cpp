@@ -76,6 +76,7 @@ namespace minairo
 	std::string print_type(TypeRepresentation const& type);
 	std::string print_table(Table const& table);
 	std::string print_tuple(Tuple const& tuple);
+	std::string print_interface(Interface const& interface);
 	std::string print_function(FunctionType const& function);
 	std::string print_function(FunctionRepresentation const& function);
 
@@ -132,6 +133,10 @@ namespace minairo
 				else if (auto tuple = get<Tuple>(value))
 				{
 					return print_tuple(*tuple);
+				}
+				else if (auto interface = get<Interface>(value))
+				{
+					return print_interface(*interface);
 				}
 				else if (auto function_representation = get<FunctionRepresentation>(value))
 				{
@@ -243,6 +248,28 @@ namespace minairo
 		for (int i = 0; i < tuple.type.get_num_fields(); ++i)
 		{
 			ss << comma << tuple.type.get_field_name(i) << ": " << print_value(tuple.fields[i]);
+			comma = ", ";
+		}
+		ss << " }";
+		return ss.str();
+	}
+
+	std::string print_interface(Interface const& interf)
+	{
+		std::stringstream ss;
+		ss << "interface " << interf.type.name << "{ ";
+		const char* comma = "";
+		for (int i = 0; i < interf.tuple.type.get_num_fields(); ++i)
+		{
+			bool is_interface_field = (interf.type.base_tuple.has_field(interf.tuple.type.get_field_name(i)));
+
+			ss << comma;
+
+			if (!is_interface_field)
+				ss << "[ ";
+			ss << interf.tuple.type.get_field_name(i) << ": " << print_value(interf.tuple.fields[i]);
+			if (!is_interface_field)
+				ss << " ]";
 			comma = ", ";
 		}
 		ss << " }";

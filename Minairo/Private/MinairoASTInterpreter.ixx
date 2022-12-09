@@ -27,11 +27,11 @@ export namespace minairo
 	{
 	public:
 		explicit Interpreter(TypePass::Globals &&globals)
-			: number_of_globals(globals.compile_time_constants)
+			: type_globals(std::move(globals))
 			, number_of_tuples(0)
 		{}
 		explicit Interpreter(TypePass::Globals const &globals)
-			: number_of_globals(globals.compile_time_constants)
+			: type_globals(globals)
 			, number_of_tuples(0)
 		{}
 
@@ -87,10 +87,10 @@ export namespace minairo
 	private:
 		Value last_expression_value;
 
+		TypePass::Globals type_globals;
 		std::vector<Value> variables;
 		Globals globals;
 
-		int number_of_globals;
 		int number_of_tuples;
 	};
 }

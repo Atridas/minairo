@@ -29,7 +29,7 @@ export namespace minairo
 		TypeRepresentation const& get_field_type(std::string_view name) const;
 		int get_field_index(std::string_view name) const;
 
-		int get_num_fields() const { return (int)sorded_fields.size(); }
+		int get_num_fields() const { return (int)sorted_fields.size(); }
 		std::string_view get_field_name(int index) const { return field_names[index]; }
 		TypeRepresentation const& get_field_type(int index) const { return types[index]; }
 		std::optional<Value> get_field_init_value(int index) const { return init_values[index]; }
@@ -60,7 +60,7 @@ export namespace minairo
 
 
 		std::string name;
-		std::vector<std::string> sorded_fields;
+		std::vector<std::string> sorted_fields;
 		std::vector<std::string> field_names;
 		std::vector<int> indexes;
 		std::vector<TypeRepresentation> types;
@@ -234,6 +234,22 @@ export namespace minairo
 	{
 	public:
 		std::string name;
+		struct VirtualFunction
+		{
+			FunctionType type;
+			std::vector<int> interface_paramenters;
+			int index;
+
+			bool operator==(VirtualFunction const& other) const
+			{
+				if (index != other.index)
+					return false;
+				if (type != other.type)
+					return false;
+				assert(interface_paramenters == other.interface_paramenters);
+				return true;
+			}
+		};
 
 		void set_name(std::string_view _name) override
 		{
@@ -255,19 +271,36 @@ export namespace minairo
 			return interfaces.find((std::string)name)->second;
 		}
 
-		void add_function(std::string_view name, FunctionType const& function)
+		void add_function(std::string_view name, FunctionType const& function, std::vector<int> &&interface_paramenters)
 		{
 			assert(interfaces.find((std::string)name) == interfaces.end());
 			assert(functions.find((std::string)name) == functions.end());
 
-			functions[(std::string)name] = function;
+			// TODO index only cares if function overrides a given interface(?)
+			int index;
+			if (interface_paramenters.size() == 1)
+			{
+				index = single_dispatch_functions++;
+			}
+			else
+			{
+				assert(interface_paramenters.size() > 1);
+				index = multi_dispatch_functions++;
+			}
+
+			functions[(std::string)name] = VirtualFunction{ function, std::move(interface_paramenters), index };
 		}
 
-		FunctionType const& get_function(std::string_view name) const
+		VirtualFunction const& get_function(std::string_view name) const
 		{
 			assert(functions.find((std::string)name) != functions.end());
 
 			return functions.find((std::string)name)->second;
+		}
+
+		int get_num_functions() const
+		{
+			return (int)functions.size();
 		}
 
 		enum class Kind
@@ -317,7 +350,9 @@ export namespace minairo
 		}
 
 		std::unordered_map<std::string, InterfaceType> interfaces;
-		std::unordered_map<std::string, FunctionType> functions;
+		std::unordered_map<std::string, VirtualFunction> functions;
+		int single_dispatch_functions = 0;
+		int multi_dispatch_functions = 0;
 	};
 
 	class MultifunctionType : public ComplexType
@@ -362,7 +397,7 @@ export namespace minairo
 
 	bool TupleType::has_field(std::string_view name) const noexcept
 	{
-		return std::binary_search(sorded_fields.begin(), sorded_fields.end(), name);
+		return std::binary_search(sorted_fields.begin(), sorted_fields.end(), name);
 	}
 
 	TypeRepresentation const& TupleType::get_field_type(std::string_view name) const
@@ -373,14 +408,14 @@ export namespace minairo
 	int TupleType::get_field_index(std::string_view name) const
 	{
 		assert(has_field(name));
-		return indexes[(int)(std::lower_bound(sorded_fields.begin(), sorded_fields.end(), name) - sorded_fields.begin())];
+		return indexes[(int)(std::lower_bound(sorted_fields.begin(), sorted_fields.end(), name) - sorted_fields.begin())];
 	}
 
 	void TupleType::add_field(std::string_view name, TypeRepresentation const& type, std::optional<Value> init_value)
 	{
 		assert(!has_field(name));
-		auto it = sorded_fields.insert(std::upper_bound(sorded_fields.begin(), sorded_fields.end(), name), (std::string)name);
-		indexes.insert(indexes.begin() + (it - sorded_fields.begin()), (int)indexes.size());
+		auto it = sorted_fields.insert(std::upper_bound(sorted_fields.begin(), sorted_fields.end(), name), (std::string)name);
+		indexes.insert(indexes.begin() + (it - sorted_fields.begin()), (int)indexes.size());
 		field_names.push_back((std::string)name);
 		types.push_back(type);
 		init_values.push_back(init_value);
@@ -390,11 +425,11 @@ export namespace minairo
 	{
 		if (name.empty() && other.name.empty())
 		{
-			if (sorded_fields.size() != other.sorded_fields.size())
+			if (sorted_fields.size() != other.sorted_fields.size())
 			{
 				return false;
 			}
-			for (int i = 0; i < sorded_fields.size(); ++i)
+			for (int i = 0; i < sorted_fields.size(); ++i)
 			{
 				if (field_names[i] != other.field_names[i])
 				{
