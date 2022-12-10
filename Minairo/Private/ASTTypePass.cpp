@@ -396,8 +396,10 @@ void TypePass::visit(MemberRead& member_read)
 		}
 		case ConceptType::Kind::Function:
 		{
-			// TODO
-			throw message_exception("virtual function call not yet implemented", member_read.member);
+			auto virtual_function = concept_type->get_function(member_read.member.text);
+			member_read.type = virtual_function;
+			member_read.index = virtual_function.index;
+			member_read.constant = true;
 			break;
 		}
 		default:
@@ -546,34 +548,34 @@ void TypePass::visit(MemberWrite& member_write)
 			{
 				if (auto function = get<Function>(*compile_time_value))
 				{
-					ConceptType::VirtualFunction const& function_type = concept_type->get_function(member_write.member.text);
+					ConceptType::VirtualFunctionType const& function_type = concept_type->get_function(member_write.member.text);
 
-					if (function_type.type.is_pure && !function->type.is_pure)
+					if (function_type.is_pure && !function->type.is_pure)
 					{
 						throw message_exception("Expecting a pure function", *member_write.right);
 					}
 
-					if (function_type.type.return_type != function->type.return_type)
+					if (function_type.return_type != function->type.return_type)
 					{
 						throw message_exception("virtual function must have the same return value as the overriden function", *member_write.right);
 					}
 
-					if (function_type.type.parameters.get_num_fields() != function->type.parameters.get_num_fields())
+					if (function_type.parameters.get_num_fields() != function->type.parameters.get_num_fields())
 					{
 						throw message_exception("virtual function must have the number of parameters as the overriden function", *member_write.right);
 					}
 
 					int next_interface_index = 0;
-					for (int i = 0; i < function_type.type.parameters.get_num_fields(); ++i)
+					for (int i = 0; i < function_type.parameters.get_num_fields(); ++i)
 					{
 						if (next_interface_index == function_type.interface_paramenters.size() || i < function_type.interface_paramenters[next_interface_index])
 						{
-							if (function->type.parameters.get_field_name(i) != function_type.type.parameters.get_field_name(i))
+							if (function->type.parameters.get_field_name(i) != function_type.parameters.get_field_name(i))
 							{
 								// TODO better error messages
 								throw message_exception("Virtual function added is missing parameters", *member_write.right);
 							}
-							else if (function->type.parameters.get_field_type(i) != function_type.type.parameters.get_field_type(i))
+							else if (function->type.parameters.get_field_type(i) != function_type.parameters.get_field_type(i))
 							{
 								// TODO better error messages
 								throw message_exception("Virtual function added has a parameter of an incorrect type", *member_write.right);
@@ -583,7 +585,7 @@ void TypePass::visit(MemberWrite& member_write)
 						{
 							if (auto tuple_type = get<TupleType>(function->type.parameters.get_field_type(i)))
 							{
-								auto interface_type = get<InterfaceType>(function_type.type.parameters.get_field_type(i));
+								auto interface_type = get<InterfaceType>(function_type.parameters.get_field_type(i));
 								assert(interface_type);
 								if (!concep.is_interface_implementation(*tuple_type, *interface_type))
 								{

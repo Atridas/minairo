@@ -234,20 +234,44 @@ export namespace minairo
 	{
 	public:
 		std::string name;
-		struct VirtualFunction
+		struct VirtualFunctionType : public FunctionType
 		{
-			FunctionType type;
 			std::vector<int> interface_paramenters;
 			int index;
 
-			bool operator==(VirtualFunction const& other) const
+			VirtualFunctionType() = default;
+			VirtualFunctionType(FunctionType const& _function_type, std::vector<int>&& _interface_paramenters, int _index)
+				: FunctionType(_function_type)
+				, interface_paramenters(std::move(_interface_paramenters))
+				, index(_index)
+			{}
+
+			bool operator==(VirtualFunctionType const& other) const
 			{
 				if (index != other.index)
 					return false;
-				if (type != other.type)
+				if ((FunctionType)*this != (FunctionType)other)
 					return false;
 				assert(interface_paramenters == other.interface_paramenters);
 				return true;
+			}
+
+			operator TypeRepresentation() const
+			{
+				return (std::shared_ptr<ComplexType>)std::make_shared<VirtualFunctionType>(*this);
+			}
+
+			operator Value() const
+			{
+				return (std::shared_ptr<ComplexType>)std::make_shared<VirtualFunctionType>(*this);
+			}
+		protected:
+			bool equals(ComplexType const& other) const override
+			{
+				if (VirtualFunctionType const* as_function_type = dynamic_cast<VirtualFunctionType const*>(&other))
+					return *this == *as_function_type;
+				else
+					return false;
 			}
 		};
 
@@ -288,10 +312,10 @@ export namespace minairo
 				index = multi_dispatch_functions++;
 			}
 
-			functions[(std::string)name] = VirtualFunction{ function, std::move(interface_paramenters), index };
+			functions[(std::string)name] = VirtualFunctionType{ function, std::move(interface_paramenters), index };
 		}
 
-		VirtualFunction const& get_function(std::string_view name) const
+		VirtualFunctionType const& get_function(std::string_view name) const
 		{
 			assert(functions.find((std::string)name) != functions.end());
 
@@ -350,7 +374,7 @@ export namespace minairo
 		}
 
 		std::unordered_map<std::string, InterfaceType> interfaces;
-		std::unordered_map<std::string, VirtualFunction> functions;
+		std::unordered_map<std::string, VirtualFunctionType> functions;
 		int single_dispatch_functions = 0;
 		int multi_dispatch_functions = 0;
 	};

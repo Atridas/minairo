@@ -61,14 +61,14 @@ export namespace minairo
 
 		bool add_function_override(std::shared_ptr<FunctionRepresentation> override_function, std::string_view virtual_function_name)
 		{
-			ConceptType::VirtualFunction const& virtual_function = type.get_function(virtual_function_name);
+			ConceptType::VirtualFunctionType const& virtual_function = type.get_function(virtual_function_name);
 
-			assert(virtual_function.type.parameters.get_num_fields() == override_function->get_type().parameters.get_num_fields());
+			assert(virtual_function.parameters.get_num_fields() == override_function->get_type().parameters.get_num_fields());
 
 			FunctionContainer container;
 			for (int parameter_index : virtual_function.interface_paramenters)
 			{
-				auto as_interface = get<InterfaceType>(virtual_function.type.parameters.get_field_type(parameter_index));
+				auto as_interface = get<InterfaceType>(virtual_function.parameters.get_field_type(parameter_index));
 				auto as_tuple = get<TupleType>(override_function->get_type().parameters.get_field_type(parameter_index));
 				assert(as_interface);
 				assert(as_tuple);
@@ -165,7 +165,7 @@ export namespace minairo
 
 					for (auto const& function_implementations : function_map)
 					{
-						ConceptType::VirtualFunction const& virtual_function = type.get_function(function_implementations.first);
+						ConceptType::VirtualFunctionType const& virtual_function = type.get_function(function_implementations.first);
 						for (FunctionContainer const& function_container : function_implementations.second)
 						{
 							if (function_container.override_paramenters.size() == 1)
@@ -227,7 +227,9 @@ export namespace minairo
 	struct InterfaceReference : public ComplexValue
 	{
 		virtual Value& get_field(int index) = 0;
+		virtual Concept::VirtualTable const& get_virtual_table() const = 0;
 		virtual Interface as_interface() const = 0;
+		virtual Value as_tuple_reference() = 0;
 	};
 
 	struct InterfaceReferenceOnStack final : public InterfaceReference
@@ -240,9 +242,49 @@ export namespace minairo
 			return interface->tuple.fields[interface->virtual_table.field_mapping[index]];
 		}
 
+		virtual Concept::VirtualTable const& get_virtual_table() const override
+		{
+			return interface->virtual_table;
+		}
+
 		virtual Interface as_interface() const override
 		{
 			return *interface;
+		}
+
+		virtual Value as_tuple_reference() override
+		{
+			struct InnerTupleReference : public TupleReference
+			{
+				Tuple& tuple;
+				InnerTupleReference(Tuple& _tuple) : tuple(_tuple) {}
+
+				virtual Value& get_field(int index) override
+				{
+					return tuple.fields[index];
+				}
+
+				virtual Tuple as_tuple() const override
+				{
+					return tuple;
+				}
+
+				bool operator==(InnerTupleReference const& other) const noexcept
+				{
+					return tuple == other.tuple;
+				}
+
+			protected:
+				bool equals(ComplexValue const& other) const override
+				{
+					if (auto t = dynamic_cast<InnerTupleReference const*>(&other))
+						return *this == *t;
+					else
+						return false;
+				}
+			};
+
+			return (std::shared_ptr<ComplexValue>)std::make_shared<InnerTupleReference>(interface->tuple);
 		}
 
 		operator Value() const
@@ -255,6 +297,37 @@ export namespace minairo
 		{
 			if (auto t = dynamic_cast<InterfaceReferenceOnStack const*>(&other))
 				return this->interface == t->interface;
+			else
+				return false;
+		}
+	};
+
+	struct VirtualFunction final : public ComplexValue
+	{
+		Concept& concept_impl;
+		int virtual_index;
+
+		VirtualFunction() = default;
+		VirtualFunction(Concept& _concept_impl, int _virtual_index)
+			: concept_impl(_concept_impl)
+			, virtual_index(_virtual_index)
+		{}
+
+		bool operator==(VirtualFunction const& other) const noexcept
+		{
+			return concept_impl.type == other.concept_impl.type && virtual_index == other.virtual_index;
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexValue>)std::make_shared<VirtualFunction>(*this);
+		}
+
+	protected:
+		bool equals(ComplexValue const& other) const override
+		{
+			if (auto vf = dynamic_cast<VirtualFunction const*>(&other))
+				return *this == *vf;
 			else
 				return false;
 		}

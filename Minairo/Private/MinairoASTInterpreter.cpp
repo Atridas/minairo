@@ -187,11 +187,34 @@ void Interpreter::visit(BuildInTypeDeclaration const& build_tn_type_declaration)
 void Interpreter::visit(Call const& call)
 {
 	call.callee->accept(*this);
-	std::shared_ptr<FunctionRepresentation> callee = get<FunctionRepresentation>(last_expression_value);
-	assert(callee != nullptr);
-
+	Value callee_value = last_expression_value;
 	call.arguments.accept(*this);
 	std::shared_ptr<Tuple> arguments = get<Tuple>(last_expression_value);
+
+	std::shared_ptr<FunctionRepresentation> callee;
+	if (auto virtual_function_type = get<ConceptType::VirtualFunctionType>(deduce_type(*call.callee).type))
+	{
+		auto virtual_function = get<VirtualFunction>(callee_value);
+		if (virtual_function_type->interface_paramenters.size() == 1)
+		{
+			Value& field = arguments->fields[virtual_function_type->interface_paramenters[0]];
+			std::shared_ptr<InterfaceReference> interface = get<InterfaceReference>(field);
+			Concept::VirtualTable const& virtual_table = interface->get_virtual_table();
+			callee = virtual_table.single_dispatch_functions[virtual_function_type->index];
+
+			field = interface->as_tuple_reference();
+		}
+		else
+		{
+			assert(false); // TODO multi dispatch
+		}
+	}
+	else
+	{
+		callee = get<FunctionRepresentation>(callee_value);
+		assert(callee != nullptr);
+	}
+
 
 	if (Function* function = dynamic_cast<Function*>(callee.get()))
 	{
@@ -368,9 +391,16 @@ void Interpreter::visit(MemberRead const& member_read)
 
 	member_read.left->accept(*this);
 
-	Value* field;
+	Value* field = nullptr;
 	auto left_type = deduce_type(*member_read.left).type;
-	if (get<InterfaceType>(left_type)/* || get<InterfaceReference>(left_type)*/)
+	if (auto concept_type = get<ConceptType>(left_type))
+	{
+		auto concept_impl = type_globals.concepts.find(concept_type->name);
+		assert(concept_impl != type_globals.concepts.end());
+		last_expression_value = VirtualFunction{ concept_impl->second, member_read.index };
+		return;
+	}
+	else if (get<InterfaceType>(left_type)/* || get<InterfaceReference>(left_type)*/)
 	{
 		field = &get<InterfaceReference>(last_expression_value)->get_field(member_read.index);
 	}
@@ -587,6 +617,10 @@ void Interpreter::visit(VariableRead const& variable_read)
 		}
 		assert(interface_ref.interface != nullptr);
 		last_expression_value = interface_ref;
+	}
+	else if (auto concept_type = get<ConceptType>(*variable_read.type))
+	{
+		// -------
 	}
 	else if (variable_read.index == -1)
 	{
