@@ -367,16 +367,36 @@ void Interpreter::visit(MemberRead const& member_read)
 	}
 
 	member_read.left->accept(*this);
-	if (get<TupleType>(*member_read.type))
+
+	Value* field;
+	auto left_type = deduce_type(*member_read.left).type;
+	if (get<InterfaceType>(left_type)/* || get<InterfaceReference>(left_type)*/)
 	{
-		TupleReferenceOnStack tuple_ref;
-		tuple_ref.tuple = get<Tuple>(get<TupleReference>(last_expression_value)->get_field(member_read.index));
-		assert(tuple_ref.tuple != nullptr);
-		last_expression_value = tuple_ref;
+		field = &get<InterfaceReference>(last_expression_value)->get_field(member_read.index);
 	}
 	else
 	{
-		last_expression_value = get<TupleReference>(last_expression_value)->get_field(member_read.index);
+		assert(get<TupleType>(left_type) || get<TupleReferenceType>(left_type));
+		field = &get<TupleReference>(last_expression_value)->get_field(member_read.index);
+	}
+
+	if (get<TupleType>(*member_read.type))
+	{
+		TupleReferenceOnStack tuple_ref;
+		tuple_ref.tuple = get<Tuple>(*field);
+		assert(tuple_ref.tuple != nullptr);
+		last_expression_value = tuple_ref;
+	}
+	else if (get<InterfaceType>(*member_read.type))
+	{
+		InterfaceReferenceOnStack interface_ref;
+		interface_ref.interface = get<Interface>(*field);
+		assert(interface_ref.interface != nullptr);
+		last_expression_value = interface_ref;
+	}
+	else
+	{
+		last_expression_value = *field;
 	}
 }
 
@@ -411,7 +431,17 @@ void Interpreter::visit(MemberWrite const& member_write)
 		Value value = last_expression_value;
 
 		member_write.left->accept(*this);
-		Value result = get<TupleReference>(last_expression_value)->get_field(member_write.index) = value;
+		Value result;
+		auto left_type = deduce_type(*member_write.left).type;
+		if (get<InterfaceType>(left_type)/* || get<InterfaceReference>(left_type)*/)
+		{
+			result = get<InterfaceReference>(last_expression_value)->get_field(member_write.index) = value;
+		}
+		else
+		{
+			assert(get<TupleType>(left_type) || get<TupleReferenceType>(left_type));
+			result = get<TupleReference>(last_expression_value)->get_field(member_write.index) = value;
+		}
 		last_expression_value = result;
 	}
 }
@@ -542,6 +572,22 @@ void Interpreter::visit(VariableRead const& variable_read)
 		assert(tuple_ref.tuple != nullptr);
 		last_expression_value = tuple_ref;
 	}
+	else if (get<InterfaceType>(*variable_read.type))
+	{
+		InterfaceReferenceOnStack interface_ref;
+		if (variable_read.index == -1)
+		{
+			assert(globals.variables.find((std::string)variable_read.identifier.text) != globals.variables.end());
+			interface_ref.interface = get<Interface>(globals.variables[(std::string)variable_read.identifier.text]);
+		}
+		else
+		{
+			assert(variable_read.index >= 0 && variable_read.index < variables.size());
+			interface_ref.interface = get<Interface>(variables[variable_read.index]);
+		}
+		assert(interface_ref.interface != nullptr);
+		last_expression_value = interface_ref;
+	}
 	else if (variable_read.index == -1)
 	{
 		auto global = globals.variables.find((std::string)variable_read.identifier.text);
@@ -579,6 +625,10 @@ void Interpreter::visit(ExpressionStatement const& expression_statement)
 	if (auto tuple_reference = get<TupleReference>(last_expression_value))
 	{
 		last_expression_value = tuple_reference->as_tuple();
+	}
+	else if (auto interface_reference = get<InterfaceReference>(last_expression_value))
+	{
+		last_expression_value = interface_reference->as_interface();
 	}
 }
 

@@ -198,23 +198,11 @@ export namespace minairo
 		std::unordered_map<std::string, std::vector<FunctionContainer>> function_map;
 	};
 
-	struct Interface final : public TupleReference
+	struct Interface final : public ComplexValue
 	{
 		InterfaceType type;
 		Concept::VirtualTable virtual_table;
 		Tuple tuple;
-
-
-		virtual Value& get_field(int index)
-		{
-			return tuple.fields[virtual_table.field_mapping[index]];
-		}
-
-		virtual Tuple as_tuple() const
-		{
-			assert(false);
-			return tuple;
-		}
 
 		bool operator==(Interface const& other) const noexcept
 		{
@@ -231,6 +219,42 @@ export namespace minairo
 		{
 			if (auto t = dynamic_cast<Interface const*>(&other))
 				return *this == *t;
+			else
+				return false;
+		}
+	};
+
+	struct InterfaceReference : public ComplexValue
+	{
+		virtual Value& get_field(int index) = 0;
+		virtual Interface as_interface() const = 0;
+	};
+
+	struct InterfaceReferenceOnStack final : public InterfaceReference
+	{
+		std::shared_ptr<Interface> interface;
+
+
+		virtual Value& get_field(int index) override
+		{
+			return interface->tuple.fields[interface->virtual_table.field_mapping[index]];
+		}
+
+		virtual Interface as_interface() const override
+		{
+			return *interface;
+		}
+
+		operator Value() const
+		{
+			return (std::shared_ptr<ComplexValue>)std::make_shared<InterfaceReferenceOnStack>(*this);
+		}
+
+	protected:
+		bool equals(ComplexValue const& other) const override
+		{
+			if (auto t = dynamic_cast<InterfaceReferenceOnStack const*>(&other))
+				return this->interface == t->interface;
 			else
 				return false;
 		}

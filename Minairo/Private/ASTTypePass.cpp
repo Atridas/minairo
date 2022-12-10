@@ -455,7 +455,7 @@ void TypePass::visit(MemberWrite& member_write)
 			member_write.type = tuple_ref->tuple.get_field_type(member_write.member.text);
 
 
-			if (*member_write.type != deduce_type(*member_write.right).type)
+			if (!implicit_cast(*member_write.type, member_write.right))
 			{
 				throw message_exception("Assignment of different types", member_write);
 			}
@@ -479,7 +479,7 @@ void TypePass::visit(MemberWrite& member_write)
 			member_write.type = interface_ref->base_tuple.get_field_type(member_write.member.text);
 
 
-			if (*member_write.type != deduce_type(*member_write.right).type)
+			if (!implicit_cast(*member_write.type, member_write.right))
 			{
 				throw message_exception("Assignment of different types", member_write);
 			}
