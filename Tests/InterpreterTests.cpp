@@ -321,18 +321,19 @@ namespace InterpreterTests
 		TEST_METHOD(VirtualCall)
 		{
 			RunAndExpectPrint(R"codi-minairo(
-						c : concept { interface : tuple {i : int}, f : function(p : interface) -> void };
-						t1 :: tuple{ i, j: int };
-						t2 :: tuple{ i, j: int };
-						c.interface += t1;
-						c.interface += t2;
-						c.f += function(p : t1) -> void { print("1"); };
-						c.f += function(p : t2) -> void { print("2"); };
-						v1 : c.interface = t1{ 2, 3 };
-						v2 : c.interface = t2{ 4, 5 };
-						c.f(v1);
-						c.f(v2);
-				)codi-minairo", "12");
+						Geometry : concept { shape : tuple {x, y : int}, print : function(p : shape) -> void };
+						Box :: tuple{ x, y, sx, sz : int };
+						Circle :: tuple{ x, y, r: int };
+						Geometry.shape += Box;
+						Geometry.shape += Circle;
+						Geometry.print += function(p : Box) -> void { print("box"); };
+						Geometry.print += function(p : Circle) -> void { print("circle"); };
+						shape1 : Geometry.shape = Box{ 2, 3, 4, 5 };
+						shape2 : Geometry.shape = Circle{ 6, 7, 8 };
+						Geometry.print(shape1);
+						print(" ");
+						Geometry.print(shape2);
+				)codi-minairo", "box circle");
 		}
 
 	};
