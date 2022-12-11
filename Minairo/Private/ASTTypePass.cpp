@@ -245,11 +245,12 @@ void TypePass::visit(ConceptDeclaration& concept_declaration)
 	assert(concept_declaration.tuple_names.size() == concept_declaration.tuple_declarations.size());
 	assert(concept_declaration.function_names.size() == concept_declaration.function_declarations.size());
 
-	std::string name;
+	std::string concept_name;
 	for (std::string const& scope : current_scope)
 	{
-		name = name + scope + ".";
+		concept_name = concept_name + scope;
 	}
+	concept_declaration.type.set_name(concept_name);
 
 	for (int i = 0; i < concept_declaration.tuple_names.size(); ++i)
 	{
@@ -262,7 +263,7 @@ void TypePass::visit(ConceptDeclaration& concept_declaration)
 
 		InterfaceType interface_type;
 
-		interface_type.name = name + (std::string)concept_declaration.tuple_names[i].text;
+		interface_type.set_name(concept_name + "." + (std::string)concept_declaration.tuple_names[i].text);
 		interface_type.base_tuple = *get_compile_time_type_value<TupleType>(concept_declaration.tuple_declarations[i]);
 
 		current_concept_interfaces[(std::string)concept_declaration.tuple_names[i].text] = interface_type;
@@ -280,7 +281,7 @@ void TypePass::visit(ConceptDeclaration& concept_declaration)
 			TypeRepresentation const& parameter_type = concept_declaration.function_declarations[i].type.parameters.get_field_type(f);
 			if (auto as_interface = get<InterfaceType>(parameter_type))
 			{
-				if (as_interface->name.starts_with(name) && as_interface->name.substr(name.size()).find(".") == std::string::npos)
+				if (as_interface->get_concept_name() == concept_name)
 				{
 					interface_paramenters.push_back(f);
 				}
@@ -1411,8 +1412,7 @@ bool TypePass::implicit_cast(TypeRepresentation target, std::unique_ptr<Expressi
 		auto interface_type = get<InterfaceType>(target);
 		auto tuple_type = get<TupleType>(original_type);
 
-		std::string_view concept_name(interface_type->name.c_str(), interface_type->name.find_last_of('.'));
-		Concept const& concept_impl = concepts.find((std::string)concept_name)->second;
+		Concept const& concept_impl = concepts.find((std::string)interface_type->get_concept_name())->second;
 
 		if (!concept_impl.is_complete_interface_implementation(*tuple_type, *interface_type))
 		{

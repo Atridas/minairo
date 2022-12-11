@@ -23,6 +23,7 @@
     <ClCompile Include="Private\Concepts.ixx" />
     <ClCompile Include="Private\MinairoASTInterpreter.cpp" />
     <ClCompile Include="Private\MinairoParser.cpp" />
+    <ClCompile Include="Private\TypeRepresentation.cpp" />
     <ClCompile Include="Private\TypeUtilities.cpp" />
     <ClCompile Include="Private\FunctionRepresentation.cpp" />
     <ClCompile Include="Private\MinairoAST.ixx" />

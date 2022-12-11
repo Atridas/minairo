@@ -526,7 +526,7 @@ export namespace minairo
 						state = 58;
 						break;
 					default:
-						if ( ( character >= ' ' && character <= ' ' ) || ( character >= '0' && character <= '9' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= 'a' && character <= 'z' ) )
+						if ( ( character >= ' ' && character != '\"' && character != '\\' && character <= '~' ) )
 						{
 							// state = 3;
 							break;
@@ -584,7 +584,7 @@ export namespace minairo
 						state = 65;
 						break;
 					default:
-						if ( ( character >= ' ' && character <= ' ' ) || ( character >= 'A' && character <= 'Z' ) || ( character >= 'a' && character <= 'z' ) )
+						if ( ( character >= ' ' && character != '\"' && character != '\\' && character <= '~' ) )
 						{
 							state = 61;
 							break;

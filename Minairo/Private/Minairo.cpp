@@ -257,7 +257,7 @@ namespace minairo
 	std::string print_interface(Interface const& interf)
 	{
 		std::stringstream ss;
-		ss << "interface " << interf.type.name << "{ ";
+		ss << "interface " << interf.type.get_name() << "{ ";
 		const char* comma = "";
 		for (int i = 0; i < interf.tuple.type.get_num_fields(); ++i)
 		{

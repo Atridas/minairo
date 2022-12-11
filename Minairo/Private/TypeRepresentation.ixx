@@ -106,14 +106,57 @@ export namespace minairo
 
 	class InterfaceType : public ComplexType
 	{
-	public:
 		std::string name;
+		std::string_view concept_name, interface_name;
+	public:
+		int index;
 		TupleType base_tuple;
+
+		InterfaceType() = default;
+		InterfaceType(InterfaceType const& other)
+			: name(other.name)
+			, concept_name(name.c_str(), other.concept_name.size())
+			, interface_name(name.c_str() + other.concept_name.size() + 1)
+			, index(other.index)
+			, base_tuple(other.base_tuple)
+		{
+		}
+		InterfaceType(InterfaceType&&) = default;
+		InterfaceType& operator=(InterfaceType const& other)
+		{
+			if (this != &other)
+			{
+				name = other.name;
+				size_t dot = other.concept_name.size();
+				concept_name = std::string_view(name.c_str(), dot);
+				interface_name = std::string_view(name.c_str() + dot + 1);
+				index = other.index;
+				base_tuple = other.base_tuple;
+			}
+			return *this;
+		}
+		InterfaceType& operator=(InterfaceType&&) = default;
 
 		void set_name(std::string_view _name) override
 		{
-			assert(false); // shouldn't be called
 			name = _name;
+			size_t dot = name.find_last_of('.');
+			concept_name = std::string_view(name.c_str(), dot);
+			interface_name = std::string_view(name.c_str() + dot + 1);
+		}
+
+		std::string_view get_name() const
+		{
+			return name;
+		}
+
+		std::string_view get_concept_name() const
+		{
+			return concept_name;
+		}
+		std::string_view get_interface_name() const
+		{
+			return interface_name;
 		}
 
 		bool operator==(InterfaceType const& other) const noexcept
@@ -246,6 +289,8 @@ export namespace minairo
 				, index(_index)
 			{}
 
+			std::shared_ptr<InterfaceType> get_indexed_overriden_parameter(int index) const;
+
 			bool operator==(VirtualFunctionType const& other) const
 			{
 				if (index != other.index)
@@ -284,47 +329,60 @@ export namespace minairo
 		{
 			assert(interfaces.find((std::string)name) == interfaces.end());
 			assert(functions.find((std::string)name) == functions.end());
+			assert(single_dispatch_functions.find((std::string)name) == single_dispatch_functions.end());
+			assert(multi_dispatch_functions.find((std::string)name) == multi_dispatch_functions.end());
 
-			interfaces[(std::string)name] = interface;
+			int index = (int)interfaces.size();
+			InterfaceType& saved = interfaces[(std::string)name] = interface;
+			saved.index = index;
+			single_dispatch_functions[(std::string)name] = 0;
+			multi_dispatch_functions[(std::string)name] = 0;
 		}
 
-		InterfaceType const& get_interface(std::string_view name) const
+		InterfaceType const& get_interface(std::string_view interface_name) const
 		{
-			assert(interfaces.find((std::string)name) != interfaces.end());
-
-			return interfaces.find((std::string)name)->second;
-		}
-
-		void add_function(std::string_view name, FunctionType const& function, std::vector<int> &&interface_paramenters)
-		{
-			assert(interfaces.find((std::string)name) == interfaces.end());
-			assert(functions.find((std::string)name) == functions.end());
-
-			// TODO index only cares if function overrides a given interface(?)
-			int index;
-			if (interface_paramenters.size() == 1)
+			if (interface_name.starts_with(name) && interface_name.size() > name.size() && interface_name[name.size()] == '.')
 			{
-				index = single_dispatch_functions++;
+				interface_name = interface_name.substr(name.size() + 1);
 			}
-			else
+			assert(interfaces.find((std::string)interface_name) != interfaces.end());
+
+			return interfaces.find((std::string)interface_name)->second;
+		}
+
+		void add_function(std::string_view name, FunctionType const& function, std::vector<int>&& interface_paramenters);
+
+		VirtualFunctionType const& get_function(std::string_view function_name) const
+		{
+			if (function_name.starts_with(name) && function_name.size() > name.size() && function_name[name.size()] == '.')
 			{
-				assert(interface_paramenters.size() > 1);
-				index = multi_dispatch_functions++;
+				function_name = function_name.substr(name.size() + 1);
 			}
+			assert(functions.find((std::string)function_name) != functions.end());
 
-			functions[(std::string)name] = VirtualFunctionType{ function, std::move(interface_paramenters), index };
+			return functions.find((std::string)function_name)->second;
 		}
 
-		VirtualFunctionType const& get_function(std::string_view name) const
+		int get_num_single_dispatch_functions(std::string_view interface_name) const
 		{
-			assert(functions.find((std::string)name) != functions.end());
+			if (interface_name.starts_with(name) && interface_name.size() > name.size() && interface_name[name.size()] == '.')
+			{
+				interface_name = interface_name.substr(name.size() + 1);
+			}
+			assert(single_dispatch_functions.find((std::string)interface_name) != single_dispatch_functions.end());
 
-			return functions.find((std::string)name)->second;
+			return single_dispatch_functions.find((std::string)interface_name)->second;
 		}
 
-		int get_num_functions() const
+		int get_num_multi_dispatch_functions(std::string_view interface_name) const
 		{
-			return (int)functions.size();
+			if (interface_name.starts_with(name) && interface_name.size() > name.size() && interface_name[name.size()] == '.')
+			{
+				interface_name = interface_name.substr(name.size() + 1);
+			}
+			assert(multi_dispatch_functions.find((std::string)interface_name) != multi_dispatch_functions.end());
+
+			return multi_dispatch_functions.find((std::string)interface_name)->second;
 		}
 
 		enum class Kind
@@ -375,8 +433,8 @@ export namespace minairo
 
 		std::unordered_map<std::string, InterfaceType> interfaces;
 		std::unordered_map<std::string, VirtualFunctionType> functions;
-		int single_dispatch_functions = 0;
-		int multi_dispatch_functions = 0;
+		std::unordered_map<std::string, int>  single_dispatch_functions;
+		std::unordered_map<std::string, int>  multi_dispatch_functions;
 	};
 
 	class MultifunctionType : public ComplexType

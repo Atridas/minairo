@@ -315,8 +315,7 @@ void Interpreter::visit(Cast const& cast)
 		auto tuple_type = get<TupleType>(deduce_type(*cast.expr).type);
 		assert(tuple_type);
 
-		std::string_view concept_name(interface_type->name.c_str(), interface_type->name.find_last_of('.'));
-		Concept const& concept_impl = type_globals.concepts.find((std::string)concept_name)->second;
+		Concept const& concept_impl = type_globals.concepts.find((std::string)interface_type->get_concept_name())->second;
 
 		Interface interface;
 		interface.type = *interface_type;

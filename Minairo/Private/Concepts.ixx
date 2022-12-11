@@ -29,11 +29,14 @@ export namespace minairo
 			std::vector<int> field_mapping;
 			std::vector<std::shared_ptr<FunctionRepresentation>> single_dispatch_functions;
 			std::vector<std::vector<FunctionContainer>> multi_dispatch_functions;
+
+			int implementation_index;
+			std::vector<int> implementation_numbers;
 		};
 
 		bool add_interface_implementation(TupleType tuple, std::string_view interface_name)
 		{
-			InterfaceType const &interface = type.get_interface(interface_name);
+			InterfaceType const& interface = type.get_interface(interface_name);
 
 			// TODO better errors for this
 			for (int i = 0; i < interface.base_tuple.get_num_fields(); ++i)
@@ -50,9 +53,9 @@ export namespace minairo
 			}
 
 			assert(tuple.get_name() != "");
-			assert(interface.name != "");
+			assert(interface.get_name() != "");
 
-			std::unordered_map<std::string, TupleType>& implementations = implementation_map[interface.name];
+			std::unordered_map<std::string, TupleType>& implementations = implementation_map[(std::string)interface.get_name()];
 
 			implementations[(std::string)tuple.get_name()] = tuple;
 
@@ -72,8 +75,8 @@ export namespace minairo
 				auto as_tuple = get<TupleType>(override_function->get_type().parameters.get_field_type(parameter_index));
 				assert(as_interface);
 				assert(as_tuple);
-				auto implementations = implementation_map.find(as_interface->name);
-				assert (implementations != implementation_map.end());
+				auto implementations = implementation_map.find((std::string)as_interface->get_name());
+				assert(implementations != implementation_map.end());
 				assert(implementations->second.contains((std::string)as_tuple->get_name()));
 
 				container.override_paramenters.push_back((std::string)as_tuple->get_name());
@@ -81,13 +84,13 @@ export namespace minairo
 
 			container.actual_function = std::move(override_function);
 			// TODO check for double implementation
-			function_map[(std::string)virtual_function_name].push_back( std::move(container) );
+			function_map[(std::string)virtual_function_name].push_back(std::move(container));
 			return true;
 		}
 
-		bool is_interface_implementation(TupleType const &tuple, InterfaceType const& interface) const
+		bool is_interface_implementation(TupleType const& tuple, InterfaceType const& interface) const
 		{
-			std::unordered_map<std::string, TupleType> const& implementations = implementation_map.find(interface.name)->second;
+			std::unordered_map<std::string, TupleType> const& implementations = implementation_map.find((std::string)interface.get_name())->second;
 
 			return (implementations.find((std::string)tuple.get_name()) != implementations.end());
 		}
@@ -97,19 +100,20 @@ export namespace minairo
 			return is_interface_implementation(tuple, type.get_interface(interface_name));
 		}
 
-		bool is_complete_interface_implementation(TupleType const &tuple, InterfaceType const& interface) const
+		bool is_complete_interface_implementation(TupleType const& tuple, InterfaceType const& interface) const
 		{
-			std::unordered_map<std::string, TupleType> const& implementations = implementation_map.find(interface.name)->second;
+			std::unordered_map<std::string, TupleType> const& implementations = implementation_map.find((std::string)interface.get_name())->second;
 
 			if (implementations.find((std::string)tuple.get_name()) == implementations.end())
 			{
 				return false;
 			}
-			
-			if (function_map.size() < type.get_num_functions())
+
+			// TODO
+			/*if (function_map.size() < type.get_num_functions())
 			{
 				return false;
-			}
+			}*/
 
 			for (auto const& function_data : function_map)
 			{
@@ -139,7 +143,7 @@ export namespace minairo
 
 		VirtualTable get_virtual_table(TupleType const& tuple, InterfaceType const& interface) const
 		{
-			auto it = virtual_tables.find(interface.name);
+			auto it = virtual_tables.find((std::string)interface.get_name());
 			assert(it != virtual_tables.end());
 			auto it2 = it->second.find((std::string)tuple.get_name());
 			assert(it2 != it->second.end());
@@ -149,11 +153,21 @@ export namespace minairo
 		void prepare_virtual_tables()
 		{
 			virtual_tables.clear();
+			std::vector<int> implementation_numbers;
+			implementation_numbers.resize(implementation_map.size());
 			for (auto const& interfaces : implementation_map)
 			{
+				implementation_numbers[type.get_interface(interfaces.first).index] = (int)interfaces.second.size();
+			}
+
+			for (auto const& interfaces : implementation_map)
+			{
+				int current_implementation_index = 0;
 				for (auto const& tuple_type : interfaces.second)
 				{
-					VirtualTable &virtual_table = virtual_tables[interfaces.first][(std::string)tuple_type.second.get_name()];
+					VirtualTable& virtual_table = virtual_tables[interfaces.first][(std::string)tuple_type.second.get_name()];
+					virtual_table.implementation_index = current_implementation_index++;
+					virtual_table.implementation_numbers = implementation_numbers;
 
 					std::string_view interface_name(interfaces.first.c_str() + interfaces.first.find_last_of('.') + 1);
 					InterfaceType const& interface_type = type.get_interface(interface_name);
@@ -163,28 +177,32 @@ export namespace minairo
 						virtual_table.field_mapping.push_back(tuple_field_index);
 					}
 
-					for (auto const& function_implementations : function_map)
+					virtual_table.single_dispatch_functions.resize(type.get_num_single_dispatch_functions(interface_name));
+					virtual_table.multi_dispatch_functions.resize(type.get_num_multi_dispatch_functions(interface_name));
+				}
+			}
+
+
+			for (auto const& function_implementations : function_map)
+			{
+				ConceptType::VirtualFunctionType const& virtual_function = type.get_function(function_implementations.first);
+				for (FunctionContainer const& function_container : function_implementations.second)
+				{
+					assert(function_container.override_paramenters.size() > 0);
+
+					auto interface_type = virtual_function.get_indexed_overriden_parameter(0);
+					assert(virtual_tables.find((std::string)interface_type->get_name()) != virtual_tables.end());
+					assert(virtual_tables[(std::string)interface_type->get_name()].find(function_container.override_paramenters[0]) != virtual_tables[(std::string)interface_type->get_name()].end());
+
+					VirtualTable& virtual_table = virtual_tables[(std::string)interface_type->get_name()][function_container.override_paramenters[0]];
+
+					if (function_container.override_paramenters.size() == 1)
 					{
-						ConceptType::VirtualFunctionType const& virtual_function = type.get_function(function_implementations.first);
-						for (FunctionContainer const& function_container : function_implementations.second)
-						{
-							if (function_container.override_paramenters.size() == 1)
-							{
-								if (function_container.override_paramenters[0] == tuple_type.second.get_name())
-								{
-									if (virtual_function.index >= virtual_table.single_dispatch_functions.size())
-									{
-										virtual_table.single_dispatch_functions.resize(virtual_function.index + 1);
-									}
-									virtual_table.single_dispatch_functions[virtual_function.index] = function_container.actual_function;
-								}
-							}
-							else
-							{
-								assert(function_container.override_paramenters.size() > 1);
-								assert(false); // TODO
-							}
-						}
+						virtual_table.single_dispatch_functions[virtual_function.index] = function_container.actual_function;
+					}
+					else
+					{
+						assert(false); // TODO
 					}
 				}
 			}

@@ -69,5 +69,8 @@
     <ClCompile Include="Private\Concepts.ixx">
       <Filter>Private</Filter>
     </ClCompile>
+    <ClCompile Include="Private\TypeRepresentation.cpp">
+      <Filter>Private</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
