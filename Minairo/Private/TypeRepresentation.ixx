@@ -90,18 +90,7 @@ export namespace minairo
 		}
 
 	protected:
-		bool equals(ComplexType const& other) const override
-		{
-			if (auto* as_tuple_reference = dynamic_cast<TupleReferenceType const*>(&other))
-			{
-				assert(false); // TODO
-				return *this == *as_tuple_reference;
-			}
-			else
-			{
-				return false;
-			}
-		}
+		bool equals(ComplexType const& other) const override;
 	};
 
 	class InterfaceType : public ComplexType
@@ -113,59 +102,17 @@ export namespace minairo
 		TupleType base_tuple;
 
 		InterfaceType() = default;
-		InterfaceType(InterfaceType const& other)
-			: name(other.name)
-			, concept_name(name.c_str(), other.concept_name.size())
-			, interface_name(name.c_str() + other.concept_name.size() + 1)
-			, index(other.index)
-			, base_tuple(other.base_tuple)
-		{
-		}
+		InterfaceType(InterfaceType const& other);
 		InterfaceType(InterfaceType&&) = default;
-		InterfaceType& operator=(InterfaceType const& other)
-		{
-			if (this != &other)
-			{
-				name = other.name;
-				size_t dot = other.concept_name.size();
-				concept_name = std::string_view(name.c_str(), dot);
-				interface_name = std::string_view(name.c_str() + dot + 1);
-				index = other.index;
-				base_tuple = other.base_tuple;
-			}
-			return *this;
-		}
+		InterfaceType& operator=(InterfaceType const& other);
 		InterfaceType& operator=(InterfaceType&&) = default;
 
-		void set_name(std::string_view _name) override
-		{
-			name = _name;
-			size_t dot = name.find_last_of('.');
-			concept_name = std::string_view(name.c_str(), dot);
-			interface_name = std::string_view(name.c_str() + dot + 1);
-		}
+		void set_name(std::string_view _name) override;
+		std::string_view get_name() const { return name; }
+		std::string_view get_concept_name() const { return concept_name; }
+		std::string_view get_interface_name() const { return interface_name; }
 
-		std::string_view get_name() const
-		{
-			return name;
-		}
-
-		std::string_view get_concept_name() const
-		{
-			return concept_name;
-		}
-		std::string_view get_interface_name() const
-		{
-			return interface_name;
-		}
-
-		bool operator==(InterfaceType const& other) const noexcept
-		{
-			if (name.empty() && other.name.empty())
-				return base_tuple == other.base_tuple;
-			else
-				return name == other.name;
-		}
+		bool operator==(InterfaceType const& other) const noexcept;
 
 		operator TypeRepresentation() const
 		{
@@ -177,17 +124,7 @@ export namespace minairo
 			return (std::shared_ptr<ComplexType>)std::make_shared<InterfaceType>(*this);
 		}
 	protected:
-		bool equals(ComplexType const& other) const override
-		{
-			if (auto* as_interface = dynamic_cast<InterfaceType const*>(&other))
-			{
-				return *this == *as_interface;
-			}
-			else
-			{
-				return false;
-			}
-		}
+		bool equals(ComplexType const& other) const override;
 	};
 
 	class TableType : public ComplexType
@@ -201,13 +138,7 @@ export namespace minairo
 			name = _name;
 		}
 
-		bool operator==(TableType const& other) const noexcept
-		{
-			if (name.empty() && other.name.empty())
-				return base_tuple == other.base_tuple;
-			else
-				return name == other.name;
-		}
+		bool operator==(TableType const& other) const noexcept;
 
 		operator TypeRepresentation() const
 		{
@@ -219,17 +150,7 @@ export namespace minairo
 			return (std::shared_ptr<ComplexType>)std::make_shared<TableType>(*this);
 		}
 	protected:
-		bool equals(ComplexType const& other) const override
-		{
-			if (auto* as_table = dynamic_cast<TableType const*>(&other))
-			{
-				return *this == *as_table;
-			}
-			else
-			{
-				return false;
-			}
-		}
+		bool equals(ComplexType const& other) const override;
 	};
 
 	class FunctionType : public ComplexType
@@ -246,13 +167,7 @@ export namespace minairo
 			name = _name;
 		}
 
-		bool operator==(FunctionType const& other) const noexcept
-		{
-			if (name.empty() && other.name.empty())
-				return parameters == other.parameters;
-			else
-				return name == other.name;
-		}
+		bool operator==(FunctionType const& other) const noexcept;
 
 		operator TypeRepresentation() const
 		{
@@ -264,177 +179,7 @@ export namespace minairo
 			return (std::shared_ptr<ComplexType>)std::make_shared<FunctionType>(*this);
 		}
 	protected:
-		bool equals(ComplexType const& other) const override
-		{
-			if (FunctionType const* as_function_type = dynamic_cast<FunctionType const*>(&other))
-				return *this == *as_function_type;
-			else
-				return false;
-		}
-	};
-
-	class ConceptType : public ComplexType
-	{
-	public:
-		std::string name;
-		struct VirtualFunctionType : public FunctionType
-		{
-			std::vector<int> interface_paramenters;
-			int index;
-
-			VirtualFunctionType() = default;
-			VirtualFunctionType(FunctionType const& _function_type, std::vector<int>&& _interface_paramenters, int _index)
-				: FunctionType(_function_type)
-				, interface_paramenters(std::move(_interface_paramenters))
-				, index(_index)
-			{}
-
-			std::shared_ptr<InterfaceType> get_indexed_overriden_parameter(int index) const;
-
-			bool operator==(VirtualFunctionType const& other) const
-			{
-				if (index != other.index)
-					return false;
-				if ((FunctionType)*this != (FunctionType)other)
-					return false;
-				assert(interface_paramenters == other.interface_paramenters);
-				return true;
-			}
-
-			operator TypeRepresentation() const
-			{
-				return (std::shared_ptr<ComplexType>)std::make_shared<VirtualFunctionType>(*this);
-			}
-
-			operator Value() const
-			{
-				return (std::shared_ptr<ComplexType>)std::make_shared<VirtualFunctionType>(*this);
-			}
-		protected:
-			bool equals(ComplexType const& other) const override
-			{
-				if (VirtualFunctionType const* as_function_type = dynamic_cast<VirtualFunctionType const*>(&other))
-					return *this == *as_function_type;
-				else
-					return false;
-			}
-		};
-
-		void set_name(std::string_view _name) override
-		{
-			name = _name;
-		}
-
-		void add_interface(std::string_view name, InterfaceType const& interface)
-		{
-			assert(interfaces.find((std::string)name) == interfaces.end());
-			assert(functions.find((std::string)name) == functions.end());
-			assert(single_dispatch_functions.find((std::string)name) == single_dispatch_functions.end());
-			assert(multi_dispatch_functions.find((std::string)name) == multi_dispatch_functions.end());
-
-			int index = (int)interfaces.size();
-			InterfaceType& saved = interfaces[(std::string)name] = interface;
-			saved.index = index;
-			single_dispatch_functions[(std::string)name] = 0;
-			multi_dispatch_functions[(std::string)name] = 0;
-		}
-
-		InterfaceType const& get_interface(std::string_view interface_name) const
-		{
-			if (interface_name.starts_with(name) && interface_name.size() > name.size() && interface_name[name.size()] == '.')
-			{
-				interface_name = interface_name.substr(name.size() + 1);
-			}
-			assert(interfaces.find((std::string)interface_name) != interfaces.end());
-
-			return interfaces.find((std::string)interface_name)->second;
-		}
-
-		void add_function(std::string_view name, FunctionType const& function, std::vector<int>&& interface_paramenters);
-
-		VirtualFunctionType const& get_function(std::string_view function_name) const
-		{
-			if (function_name.starts_with(name) && function_name.size() > name.size() && function_name[name.size()] == '.')
-			{
-				function_name = function_name.substr(name.size() + 1);
-			}
-			assert(functions.find((std::string)function_name) != functions.end());
-
-			return functions.find((std::string)function_name)->second;
-		}
-
-		int get_num_single_dispatch_functions(std::string_view interface_name) const
-		{
-			if (interface_name.starts_with(name) && interface_name.size() > name.size() && interface_name[name.size()] == '.')
-			{
-				interface_name = interface_name.substr(name.size() + 1);
-			}
-			assert(single_dispatch_functions.find((std::string)interface_name) != single_dispatch_functions.end());
-
-			return single_dispatch_functions.find((std::string)interface_name)->second;
-		}
-
-		int get_num_multi_dispatch_functions(std::string_view interface_name) const
-		{
-			if (interface_name.starts_with(name) && interface_name.size() > name.size() && interface_name[name.size()] == '.')
-			{
-				interface_name = interface_name.substr(name.size() + 1);
-			}
-			assert(multi_dispatch_functions.find((std::string)interface_name) != multi_dispatch_functions.end());
-
-			return multi_dispatch_functions.find((std::string)interface_name)->second;
-		}
-
-		enum class Kind
-		{
-			Interface, Function, None
-		};
-
-		Kind get_member_kind(std::string_view name) const
-		{
-			if (interfaces.find((std::string)name) != interfaces.end())
-				return Kind::Interface;
-			else if (functions.find((std::string)name) != functions.end())
-				return Kind::Function;
-			else
-				return Kind::None;
-		}
-
-
-		bool operator==(ConceptType const& other) const noexcept
-		{
-			if (name.empty() && other.name.empty())
-				return interfaces == other.interfaces && functions == other.functions;
-			else
-				return name == other.name;
-		}
-
-		operator TypeRepresentation() const
-		{
-			return (std::shared_ptr<ComplexType>)std::make_shared<ConceptType>(*this);
-		}
-
-		operator Value() const
-		{
-			return (std::shared_ptr<ComplexType>)std::make_shared<ConceptType>(*this);
-		}
-	protected:
-		bool equals(ComplexType const& other) const override
-		{
-			if (auto* as_concept = dynamic_cast<ConceptType const*>(&other))
-			{
-				return *this == *as_concept;
-			}
-			else
-			{
-				return false;
-			}
-		}
-
-		std::unordered_map<std::string, InterfaceType> interfaces;
-		std::unordered_map<std::string, VirtualFunctionType> functions;
-		std::unordered_map<std::string, int>  single_dispatch_functions;
-		std::unordered_map<std::string, int>  multi_dispatch_functions;
+		bool equals(ComplexType const& other) const override;
 	};
 
 	class MultifunctionType : public ComplexType
@@ -477,100 +222,75 @@ export namespace minairo
 		}
 	};
 
-	bool TupleType::has_field(std::string_view name) const noexcept
+	class ConceptType : public ComplexType
 	{
-		return std::binary_search(sorted_fields.begin(), sorted_fields.end(), name);
-	}
-
-	TypeRepresentation const& TupleType::get_field_type(std::string_view name) const
-	{
-		return types[get_field_index(name)];
-	}
-
-	int TupleType::get_field_index(std::string_view name) const
-	{
-		assert(has_field(name));
-		return indexes[(int)(std::lower_bound(sorted_fields.begin(), sorted_fields.end(), name) - sorted_fields.begin())];
-	}
-
-	void TupleType::add_field(std::string_view name, TypeRepresentation const& type, std::optional<Value> init_value)
-	{
-		assert(!has_field(name));
-		auto it = sorted_fields.insert(std::upper_bound(sorted_fields.begin(), sorted_fields.end(), name), (std::string)name);
-		indexes.insert(indexes.begin() + (it - sorted_fields.begin()), (int)indexes.size());
-		field_names.push_back((std::string)name);
-		types.push_back(type);
-		init_values.push_back(init_value);
-	}
-
-	bool TupleType::operator==(TupleType const& other) const noexcept
-	{
-		if (name.empty() && other.name.empty())
+	public:
+		std::string name;
+		struct VirtualFunctionType : public FunctionType
 		{
-			if (sorted_fields.size() != other.sorted_fields.size())
+			std::vector<int> interface_paramenters;
+			int index;
+
+			VirtualFunctionType() = default;
+			VirtualFunctionType(FunctionType const& _function_type, std::vector<int>&& _interface_paramenters, int _index);
+
+			std::shared_ptr<InterfaceType> get_indexed_overriden_parameter(int index) const;
+
+			bool operator==(VirtualFunctionType const& other) const;
+
+			operator TypeRepresentation() const
 			{
-				return false;
+				return (std::shared_ptr<ComplexType>)std::make_shared<VirtualFunctionType>(*this);
 			}
-			for (int i = 0; i < sorted_fields.size(); ++i)
-			{
-				if (field_names[i] != other.field_names[i])
-				{
-					return false;
-				}
-				else if (types[i] != other.types[i])
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-		else
-			return name == other.name;
-	}
 
+			operator Value() const
+			{
+				return (std::shared_ptr<ComplexType>)std::make_shared<VirtualFunctionType>(*this);
+			}
+		protected:
+			bool equals(ComplexType const& other) const override;
+		};
 
-	bool TypeRepresentation::is_integral() const
-	{
-		if (std::holds_alternative<BuildInType>(*this))
+		void set_name(std::string_view _name) override { name = _name; }
+
+		void add_interface(std::string_view name, InterfaceType const& interface);
+		InterfaceType const& get_interface(std::string_view interface_name) const;
+
+		void add_function(std::string_view name, FunctionType const& function, std::vector<int>&& interface_paramenters);
+		VirtualFunctionType const& get_function(std::string_view function_name) const;
+
+		int get_num_single_dispatch_functions(std::string_view interface_name) const;
+		int get_num_multi_dispatch_functions(std::string_view interface_name) const;
+
+		enum class Kind
 		{
-			switch (std::get<BuildInType>(*this))
-			{
-			case BuildInType::I8:
-			case BuildInType::I16:
-			case BuildInType::I32:
-			case BuildInType::I64:
-			case BuildInType::U8:
-			case BuildInType::U16:
-			case BuildInType::U32:
-			case BuildInType::U64:
-				return true;
-			default:
-				return false;
-			}
-		}
-		else
+			Interface, Function, None
+		};
+		Kind get_member_kind(std::string_view name) const;
+
+		bool operator==(ConceptType const& other) const noexcept;
+
+		operator TypeRepresentation() const
 		{
-			return false;
+			return (std::shared_ptr<ComplexType>)std::make_shared<ConceptType>(*this);
 		}
-	}
-	bool TypeRepresentation::is_float() const
-	{
-		if (std::holds_alternative<BuildInType>(*this))
+
+		operator Value() const
 		{
-			switch (std::get<BuildInType>(*this))
-			{
-			case BuildInType::F32:
-			case BuildInType::F64:
-				return true;
-			default:
-				return false;
-			}
+			return (std::shared_ptr<ComplexType>)std::make_shared<ConceptType>(*this);
 		}
-		else
-		{
-			return false;
-		}
-	}
+	protected:
+		bool equals(ComplexType const& other) const override;
+
+		std::unordered_map<std::string, InterfaceType> interfaces;
+		std::unordered_map<std::string, VirtualFunctionType> functions;
+		std::unordered_map<std::string, int>  single_dispatch_functions;
+		std::unordered_map<std::string, int>  multi_dispatch_functions;
+	};
+
+	// -----------------------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------------------
+	// -----------------------------------------------------------------------------------------------
 
 	template<typename T>
 	TypeRepresentation get_type_representation()

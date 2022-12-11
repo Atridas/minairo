@@ -109,12 +109,6 @@ export namespace minairo
 				return false;
 			}
 
-			// TODO
-			/*if (function_map.size() < type.get_num_functions())
-			{
-				return false;
-			}*/
-
 			for (auto const& function_data : function_map)
 			{
 				bool implementation_found = false;
