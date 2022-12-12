@@ -1110,12 +1110,12 @@ void TypePass::visit(VariableDefinition& variable_definition)
 			throw message_exception("typedefs must be constant", variable_definition);
 		}
 		assert(info.compile_time_value);
-		get<TypeRepresentation>(*info.compile_time_value)->set_name(TypeFullName{ old_scope, (TypeShortName)variable_definition.variable.text });
+		get<TypeRepresentation>(*info.compile_time_value)->set_name((TypeFullName)current_scope);
 	}
 	else if (auto concept_type = get<ConceptType>(*variable_definition.type))
 	{
 		assert(!info.compile_time_value);
-		//assert(concept_type->name == TypeFullName{ old_scope, (TypeShortName)variable_definition.variable.text });
+		assert(concept_type->name == (TypeFullName)current_scope);
 
 		Concept concept_value;
 		concept_value.type = *concept_type;
