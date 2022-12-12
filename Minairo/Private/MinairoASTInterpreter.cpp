@@ -315,7 +315,7 @@ void Interpreter::visit(Cast const& cast)
 		auto tuple_type = get<TupleType>(deduce_type(*cast.expr).type);
 		assert(tuple_type);
 
-		Concept const& concept_impl = type_globals.concepts.find((std::string)interface_type->get_concept_name())->second;
+		Concept const& concept_impl = type_globals.concepts.find(interface_type->get_concept_name())->second;
 
 		Interface interface;
 		interface.type = *interface_type;
@@ -435,7 +435,7 @@ void Interpreter::visit(MemberWrite const& member_write)
 	{
 		// concept
 		assert(member_write.op.type == Terminal::OP_ASSIGN_ADD);
-		switch (concept_type->get_member_kind(member_write.member.text))
+		switch (concept_type->get_member_kind((TypeShortName)member_write.member.text))
 		{
 		case ConceptType::Kind::Interface:
 		{

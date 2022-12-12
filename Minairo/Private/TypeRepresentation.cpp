@@ -48,7 +48,7 @@ void TupleType::add_field(std::string_view name, TypeRepresentation const& type,
 
 bool TupleType::operator==(TupleType const& other) const noexcept
 {
-	if (name.empty() && other.name.empty())
+	if (name.is_empty() && other.name.is_empty())
 	{
 		if (sorted_fields.size() != other.sorted_fields.size())
 		{
@@ -92,40 +92,15 @@ bool TupleReferenceType::equals(ComplexType const& other) const
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
 
-InterfaceType::InterfaceType(InterfaceType const& other)
-	: name(other.name)
-	, concept_name(name.c_str(), other.concept_name.size())
-	, interface_name(name.c_str() + other.concept_name.size() + 1)
-	, index(other.index)
-	, base_tuple(other.base_tuple)
+void InterfaceType::set_name(TypeFullName _name)
 {
-}
-
-InterfaceType& InterfaceType::operator=(InterfaceType const& other)
-{
-	if (this != &other)
-	{
-		name = other.name;
-		size_t dot = other.concept_name.size();
-		concept_name = std::string_view(name.c_str(), dot);
-		interface_name = std::string_view(name.c_str() + dot + 1);
-		index = other.index;
-		base_tuple = other.base_tuple;
-	}
-	return *this;
-}
-
-void InterfaceType::set_name(std::string_view _name)
-{
-	name = _name;
-	size_t dot = name.find_last_of('.');
-	concept_name = std::string_view(name.c_str(), dot);
-	interface_name = std::string_view(name.c_str() + dot + 1);
+	name = std::move(_name);
+	concept_name = TypeFullName(name.get_path());
 }
 
 bool InterfaceType::operator==(InterfaceType const& other) const noexcept
 {
-	if (name.empty() && other.name.empty())
+	if (name.is_empty() && other.name.is_empty())
 		return base_tuple == other.base_tuple;
 	else
 		return name == other.name;
@@ -149,7 +124,7 @@ bool InterfaceType::equals(ComplexType const& other) const
 
 bool TableType::operator==(TableType const& other) const noexcept
 {
-	if (name.empty() && other.name.empty())
+	if (name.is_empty() && other.name.is_empty())
 		return base_tuple == other.base_tuple;
 	else
 		return name == other.name;
@@ -173,7 +148,7 @@ bool TableType::equals(ComplexType const& other) const
 
 bool FunctionType::operator==(FunctionType const& other) const noexcept
 {
-	if (name.empty() && other.name.empty())
+	if (name.is_empty() && other.name.is_empty())
 		return parameters == other.parameters;
 	else
 		return name == other.name;
@@ -193,7 +168,7 @@ bool FunctionType::equals(ComplexType const& other) const
 
 bool MultifunctionType::operator==(MultifunctionType const& other) const noexcept
 {
-	if (name.empty() && other.name.empty())
+	if (name.is_empty() && other.name.is_empty())
 		return functions == other.functions;
 	else
 		return name == other.name;
@@ -242,42 +217,38 @@ bool ConceptType::VirtualFunctionType::equals(ComplexType const& other) const
 
 // ------------------------------------------------------------------------------------------------
 
-void ConceptType::add_interface(std::string_view name, InterfaceType const& interface)
+void ConceptType::add_interface(InterfaceType const& interface)
 {
-	assert(interfaces.find((std::string)name) == interfaces.end());
-	assert(functions.find((std::string)name) == functions.end());
-	assert(single_dispatch_functions.find((std::string)name) == single_dispatch_functions.end());
-	assert(multi_dispatch_functions.find((std::string)name) == multi_dispatch_functions.end());
+	assert(interfaces.find(interface.get_short_name()) == interfaces.end());
+	assert(functions.find(interface.get_short_name()) == functions.end());
+	assert(single_dispatch_functions.find(interface.get_short_name()) == single_dispatch_functions.end());
+	assert(multi_dispatch_functions.find(interface.get_short_name()) == multi_dispatch_functions.end());
 
 	int index = (int)interfaces.size();
-	InterfaceType& saved = interfaces[(std::string)name] = interface;
+	InterfaceType& saved = interfaces[interface.get_short_name()] = interface;
 	saved.index = index;
-	single_dispatch_functions[(std::string)name] = 0;
-	multi_dispatch_functions[(std::string)name] = 0;
+	single_dispatch_functions[interface.get_short_name()] = 0;
+	multi_dispatch_functions[interface.get_short_name()] = 0;
 }
 
-InterfaceType const& ConceptType::get_interface(std::string_view interface_name) const
+InterfaceType const& ConceptType::get_interface(TypeShortName const& interface_name) const
 {
-	if (interface_name.starts_with(name) && interface_name.size() > name.size() && interface_name[name.size()] == '.')
-	{
-		interface_name = interface_name.substr(name.size() + 1);
-	}
-	assert(interfaces.find((std::string)interface_name) != interfaces.end());
+	assert(interfaces.find(interface_name) != interfaces.end());
 
-	return interfaces.find((std::string)interface_name)->second;
+	return interfaces.find(interface_name)->second;
 }
 
-void ConceptType::add_function(std::string_view function_name, FunctionType const& function, std::vector<int>&& interface_paramenters)
+void ConceptType::add_function(FunctionType const& function, std::vector<int>&& interface_paramenters)
 {
-	assert(interfaces.find((std::string)function_name) == interfaces.end());
-	assert(functions.find((std::string)function_name) == functions.end());
+	assert(interfaces.find(function.name.get_short_name()) == interfaces.end());
+	assert(functions.find(function.name.get_short_name()) == functions.end());
 	assert(interface_paramenters.size() > 0);
 
 	std::shared_ptr<InterfaceType> interface_parameter = get<InterfaceType>(function.parameters.get_field_type(interface_paramenters[0]));
 	assert(interface_parameter);
 
 	assert(interface_parameter->get_concept_name() == name);
-	std::string interface_name = (std::string)interface_parameter->get_interface_name();
+	TypeShortName interface_name = interface_parameter->get_short_name();
 	
 	assert(single_dispatch_functions.find(interface_name) != single_dispatch_functions.end());
 	assert(multi_dispatch_functions.find(interface_name) != multi_dispatch_functions.end());
@@ -293,47 +264,55 @@ void ConceptType::add_function(std::string_view function_name, FunctionType cons
 		index = multi_dispatch_functions[interface_name]++;
 	}
 
-	functions[(std::string)function_name] = VirtualFunctionType{ function, std::move(interface_paramenters), index };
+	functions[function.name.get_short_name()] = VirtualFunctionType{ function, std::move(interface_paramenters), index };
 }
 
-ConceptType::VirtualFunctionType const& ConceptType::get_function(std::string_view function_name) const
+ConceptType::VirtualFunctionType const& ConceptType::get_function(TypeShortName const& function_name) const
 {
-	if (function_name.starts_with(name) && function_name.size() > name.size() && function_name[name.size()] == '.')
+	assert(functions.find(function_name) != functions.end());
+
+	return functions.find(function_name)->second;
+}
+
+//ConceptType::VirtualFunctionType const& ConceptType::get_single_dispatch_function(std::string_view interface_name, int index) const
+//{
+//	assert(false); // TODO
+//}
+
+ConceptType::VirtualFunctionType const& ConceptType::get_multi_dispatch_function(TypeShortName const& interface_name, int index) const
+{
+	for (auto const& function : functions)
 	{
-		function_name = function_name.substr(name.size() + 1);
+		std::shared_ptr<InterfaceType> interface_parameter = function.second.get_indexed_overriden_parameter(0);
+		TypeShortName parameter_name = interface_parameter->get_short_name();
+		
+		if(function.second.index == index && interface_name == parameter_name)
+			return function.second;
 	}
-	assert(functions.find((std::string)function_name) != functions.end());
 
-	return functions.find((std::string)function_name)->second;
+	assert(false); // TODO
+	throw 0;
 }
 
-int ConceptType::get_num_single_dispatch_functions(std::string_view interface_name) const
+int ConceptType::get_num_single_dispatch_functions(TypeShortName const& interface_name) const
 {
-	if (interface_name.starts_with(name) && interface_name.size() > name.size() && interface_name[name.size()] == '.')
-	{
-		interface_name = interface_name.substr(name.size() + 1);
-	}
-	assert(single_dispatch_functions.find((std::string)interface_name) != single_dispatch_functions.end());
+	assert(single_dispatch_functions.find(interface_name) != single_dispatch_functions.end());
 
-	return single_dispatch_functions.find((std::string)interface_name)->second;
+	return single_dispatch_functions.find(interface_name)->second;
 }
 
-int ConceptType::get_num_multi_dispatch_functions(std::string_view interface_name) const
+int ConceptType::get_num_multi_dispatch_functions(TypeShortName const& interface_name) const
 {
-	if (interface_name.starts_with(name) && interface_name.size() > name.size() && interface_name[name.size()] == '.')
-	{
-		interface_name = interface_name.substr(name.size() + 1);
-	}
-	assert(multi_dispatch_functions.find((std::string)interface_name) != multi_dispatch_functions.end());
+	assert(multi_dispatch_functions.find(interface_name) != multi_dispatch_functions.end());
 
-	return multi_dispatch_functions.find((std::string)interface_name)->second;
+	return multi_dispatch_functions.find(interface_name)->second;
 }
 
-ConceptType::Kind ConceptType::get_member_kind(std::string_view name) const
+ConceptType::Kind ConceptType::get_member_kind(TypeShortName const& name) const
 {
-	if (interfaces.find((std::string)name) != interfaces.end())
+	if (interfaces.find(name) != interfaces.end())
 		return Kind::Interface;
-	else if (functions.find((std::string)name) != functions.end())
+	else if (functions.find(name) != functions.end())
 		return Kind::Function;
 	else
 		return Kind::None;
@@ -341,7 +320,7 @@ ConceptType::Kind ConceptType::get_member_kind(std::string_view name) const
 
 bool ConceptType::operator==(ConceptType const& other) const noexcept
 {
-	if (name.empty() && other.name.empty())
+	if (name.is_empty() && other.name.is_empty())
 		return interfaces == other.interfaces && functions == other.functions;
 	else
 		return name == other.name;

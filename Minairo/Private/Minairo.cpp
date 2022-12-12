@@ -243,7 +243,7 @@ namespace minairo
 	std::string print_tuple(Tuple const& tuple)
 	{
 		std::stringstream ss;
-		ss << "tuple " << tuple.type.get_name() << "{ ";
+		ss << "tuple " << tuple.type.get_name().print() << "{ ";
 		const char* comma = "";
 		for (int i = 0; i < tuple.type.get_num_fields(); ++i)
 		{
@@ -257,7 +257,7 @@ namespace minairo
 	std::string print_interface(Interface const& interf)
 	{
 		std::stringstream ss;
-		ss << "interface " << interf.type.get_name() << "{ ";
+		ss << "interface " << interf.type.get_name().print() << "{ ";
 		const char* comma = "";
 		for (int i = 0; i < interf.tuple.type.get_num_fields(); ++i)
 		{
@@ -281,7 +281,7 @@ namespace minairo
 		std::stringstream ss;
 		if (function_type.is_pure)
 			ss << "pure ";
-		ss << "function " << function_type.name << " ( ";
+		ss << "function " << function_type.name.print() << " ( ";
 
 		const char* comma = "";
 		for (int i = 0; i < function_type.parameters.get_num_fields(); ++i)

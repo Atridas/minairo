@@ -336,9 +336,9 @@ namespace InterpreterTests
 				)codi-minairo", "box circle");
 		}
 
-		/*TEST_METHOD(Multidispatch_VirtualCall)
+		TEST_METHOD(Multidispatch_VirtualCall)
 		{
-			RunAndExpectPrint(R"codi-minairo(
+			/*RunAndExpectPrint(R"codi-minairo(
 						Geometry : concept { shape : tuple {x, y : int}, collide : function(p1 : shape, p2 : shape) -> void };
 						Box :: tuple{ x, y, sx, sz : int };
 						Circle :: tuple{ x, y, r: int };
@@ -357,8 +357,8 @@ namespace InterpreterTests
 						Geometry.collide(shape2, shape1);
 						print("---");
 						Geometry.collide(shape2, shape2);
-				)codi-minairo", "box vs box---box vs circle---circle vs box---circle vs circle");
-		}*/
+				)codi-minairo", "box vs box---box vs circle---circle vs box---circle vs circle");*/
+		}
 
 	};
 }

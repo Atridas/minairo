@@ -21,8 +21,8 @@ export namespace minairo
 	class TupleType final : public ComplexType
 	{
 	public:
-		void set_name(std::string_view _name) noexcept override { name = (std::string)_name; }
-		std::string_view get_name() const noexcept { return name; }
+		void set_name(TypeFullName _name) noexcept override { name = std::move(_name); }
+		TypeFullName const& get_name() const noexcept { return name; }
 
 		bool has_field(std::string_view name) const noexcept;
 
@@ -59,7 +59,7 @@ export namespace minairo
 	private:
 
 
-		std::string name;
+		TypeFullName name;
 		std::vector<std::string> sorted_fields;
 		std::vector<std::string> field_names;
 		std::vector<int> indexes;
@@ -73,7 +73,7 @@ export namespace minairo
 		TupleType tuple;
 		bool constant;
 
-		void set_name(std::string_view _name) override
+		void set_name(TypeFullName _name) override
 		{
 			// TODO ??
 			assert(false);
@@ -95,22 +95,16 @@ export namespace minairo
 
 	class InterfaceType : public ComplexType
 	{
-		std::string name;
-		std::string_view concept_name, interface_name;
+		TypeFullName name;
+		TypeFullName concept_name;
 	public:
 		int index;
 		TupleType base_tuple;
 
-		InterfaceType() = default;
-		InterfaceType(InterfaceType const& other);
-		InterfaceType(InterfaceType&&) = default;
-		InterfaceType& operator=(InterfaceType const& other);
-		InterfaceType& operator=(InterfaceType&&) = default;
-
-		void set_name(std::string_view _name) override;
-		std::string_view get_name() const { return name; }
-		std::string_view get_concept_name() const { return concept_name; }
-		std::string_view get_interface_name() const { return interface_name; }
+		void set_name(TypeFullName _name) override;
+		TypeFullName const& get_name() const { return name; }
+		TypeFullName const& get_concept_name() const { return concept_name; }
+		TypeShortName const& get_short_name() const { return name.get_short_name(); }
 
 		bool operator==(InterfaceType const& other) const noexcept;
 
@@ -130,12 +124,12 @@ export namespace minairo
 	class TableType : public ComplexType
 	{
 	public:
-		std::string name;
+		TypeFullName name;
 		TupleType base_tuple;
 
-		void set_name(std::string_view _name) override
+		void set_name(TypeFullName _name) override
 		{
-			name = _name;
+			name = std::move(_name);
 		}
 
 		bool operator==(TableType const& other) const noexcept;
@@ -156,15 +150,15 @@ export namespace minairo
 	class FunctionType : public ComplexType
 	{
 	public:
-		std::string name;
+		TypeFullName name;
 		TupleType parameters;
 
 		TypeRepresentation return_type;
 		bool is_pure;
 
-		void set_name(std::string_view _name) override
+		void set_name(TypeFullName _name) override
 		{
-			name = _name;
+			name = std::move(_name);
 		}
 
 		bool operator==(FunctionType const& other) const noexcept;
@@ -185,18 +179,18 @@ export namespace minairo
 	class MultifunctionType : public ComplexType
 	{
 	public:
-		std::string name;
+		TypeFullName name;
 		std::vector<FunctionType> functions;
 		bool is_pure;
 
-		void set_name(std::string_view _name) override
+		void set_name(TypeFullName _name) override
 		{
-			name = _name;
+			name = std::move(_name);
 		}
 
 		bool operator==(MultifunctionType const& other) const noexcept
 		{
-			if (name.empty() && other.name.empty())
+			if (name.is_empty() && other.name.is_empty())
 				return functions == other.functions;
 			else
 				return name == other.name;
@@ -225,7 +219,7 @@ export namespace minairo
 	class ConceptType : public ComplexType
 	{
 	public:
-		std::string name;
+		TypeFullName name;
 		struct VirtualFunctionType : public FunctionType
 		{
 			std::vector<int> interface_paramenters;
@@ -251,22 +245,29 @@ export namespace minairo
 			bool equals(ComplexType const& other) const override;
 		};
 
-		void set_name(std::string_view _name) override { name = _name; }
+		void set_name(TypeFullName _name) override { name = std::move(_name); }
 
-		void add_interface(std::string_view name, InterfaceType const& interface);
-		InterfaceType const& get_interface(std::string_view interface_name) const;
+		void add_interface(InterfaceType const& interface);
+		InterfaceType const& get_interface(TypeShortName const& interface_name) const;
+		InterfaceType const& get_interface(int interface_index) const;
 
-		void add_function(std::string_view name, FunctionType const& function, std::vector<int>&& interface_paramenters);
-		VirtualFunctionType const& get_function(std::string_view function_name) const;
+		void add_function(FunctionType const& function, std::vector<int>&& interface_paramenters);
+		VirtualFunctionType const& get_function(TypeShortName const& function_name) const;
 
-		int get_num_single_dispatch_functions(std::string_view interface_name) const;
-		int get_num_multi_dispatch_functions(std::string_view interface_name) const;
+		VirtualFunctionType const& get_single_dispatch_function(TypeShortName const& interface_name, int index) const;
+		VirtualFunctionType const& get_multi_dispatch_function(TypeShortName const& interface_name, int index) const;
+
+		VirtualFunctionType const& get_single_dispatch_function(int interface_index, int index) const;
+		VirtualFunctionType const& get_multi_dispatch_function(int interface_index, int index) const;
+
+		int get_num_single_dispatch_functions(TypeShortName const& interface_name) const;
+		int get_num_multi_dispatch_functions(TypeShortName const& interface_name) const;
 
 		enum class Kind
 		{
 			Interface, Function, None
 		};
-		Kind get_member_kind(std::string_view name) const;
+		Kind get_member_kind(TypeShortName const& name) const;
 
 		bool operator==(ConceptType const& other) const noexcept;
 
@@ -282,10 +283,10 @@ export namespace minairo
 	protected:
 		bool equals(ComplexType const& other) const override;
 
-		std::unordered_map<std::string, InterfaceType> interfaces;
-		std::unordered_map<std::string, VirtualFunctionType> functions;
-		std::unordered_map<std::string, int>  single_dispatch_functions;
-		std::unordered_map<std::string, int>  multi_dispatch_functions;
+		TypeShortNameMap<InterfaceType> interfaces;
+		TypeShortNameMap<VirtualFunctionType> functions;
+		TypeShortNameMap<int>  single_dispatch_functions;
+		TypeShortNameMap<int>  multi_dispatch_functions;
 	};
 
 	// -----------------------------------------------------------------------------------------------

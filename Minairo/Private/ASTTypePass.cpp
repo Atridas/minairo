@@ -245,11 +245,7 @@ void TypePass::visit(ConceptDeclaration& concept_declaration)
 	assert(concept_declaration.tuple_names.size() == concept_declaration.tuple_declarations.size());
 	assert(concept_declaration.function_names.size() == concept_declaration.function_declarations.size());
 
-	std::string concept_name;
-	for (std::string const& scope : current_scope)
-	{
-		concept_name = concept_name + scope;
-	}
+	TypeFullName concept_name(current_scope);
 	concept_declaration.type.set_name(concept_name);
 
 	for (int i = 0; i < concept_declaration.tuple_names.size(); ++i)
@@ -262,12 +258,11 @@ void TypePass::visit(ConceptDeclaration& concept_declaration)
 		}
 
 		InterfaceType interface_type;
-
-		interface_type.set_name(concept_name + "." + (std::string)concept_declaration.tuple_names[i].text);
+		interface_type.set_name(TypeFullName{ current_scope, TypeShortName{ concept_declaration.tuple_names[i].text } });
 		interface_type.base_tuple = *get_compile_time_type_value<TupleType>(concept_declaration.tuple_declarations[i]);
 
 		current_concept_interfaces[(std::string)concept_declaration.tuple_names[i].text] = interface_type;
-		concept_declaration.type.add_interface(concept_declaration.tuple_names[i].text, interface_type);
+		concept_declaration.type.add_interface(interface_type);
 	}
 
 	for (int i = 0; i < concept_declaration.function_names.size(); ++i)
@@ -295,7 +290,9 @@ void TypePass::visit(ConceptDeclaration& concept_declaration)
 		else
 		{
 			// TODO add function be found by other functions?
-			concept_declaration.type.add_function(concept_declaration.function_names[i].text, *get_compile_time_type_value<FunctionType>(concept_declaration.function_declarations[i]), std::move(interface_paramenters));
+			std::shared_ptr<FunctionType> virtual_function_signature = get_compile_time_type_value<FunctionType>(concept_declaration.function_declarations[i]);
+			virtual_function_signature->set_name(TypeFullName{ current_scope, TypeShortName{ concept_declaration.function_names[i].text } });
+			concept_declaration.type.add_function(*virtual_function_signature, std::move(interface_paramenters));
 		}
 	}
 
@@ -385,11 +382,11 @@ void TypePass::visit(MemberRead& member_read)
 	}
 	else if (auto concept_type = get<ConceptType>(left_type.type))
 	{
-		switch (concept_type->get_member_kind(member_read.member.text))
+		switch (concept_type->get_member_kind((TypeShortName)member_read.member.text))
 		{
 		case ConceptType::Kind::Interface:
 		{
-			member_read.compile_time_value = concept_type->get_interface(member_read.member.text);
+			member_read.compile_time_value = concept_type->get_interface((TypeShortName)member_read.member.text);
 			member_read.index = -1;
 			member_read.type = BuildInType::Typedef;
 			member_read.constant = true;
@@ -397,7 +394,7 @@ void TypePass::visit(MemberRead& member_read)
 		}
 		case ConceptType::Kind::Function:
 		{
-			auto virtual_function = concept_type->get_function(member_read.member.text);
+			auto virtual_function = concept_type->get_function((TypeShortName)member_read.member.text);
 			member_read.type = virtual_function;
 			member_read.index = virtual_function.index;
 			member_read.constant = true;
@@ -501,11 +498,11 @@ void TypePass::visit(MemberWrite& member_write)
 		member_write.right->accept(*this);
 		auto right_type = deduce_type(*member_write.right).type;
 
-		switch (concept_type->get_member_kind(member_write.member.text))
+		switch (concept_type->get_member_kind((TypeShortName)member_write.member.text))
 		{
 		case ConceptType::Kind::Interface:
 		{
-			InterfaceType interface_type = concept_type->get_interface(member_write.member.text);
+			InterfaceType interface_type = concept_type->get_interface((TypeShortName)member_write.member.text);
 
 			if (right_type != BuildInType::Typedef)
 			{
@@ -513,7 +510,7 @@ void TypePass::visit(MemberWrite& member_write)
 			}
 			else if (std::shared_ptr<TupleType> tuple_to_add = get_compile_time_type_value<TupleType>(*member_write.right))
 			{
-				if (tuple_to_add->get_name().size() == 0)
+				if (tuple_to_add->get_name().is_empty())
 				{
 					throw message_exception("Expected a named tuple type to add to an interface", *member_write.right);
 				}
@@ -534,7 +531,7 @@ void TypePass::visit(MemberWrite& member_write)
 						}
 					}
 
-					concep.add_interface_implementation(*tuple_to_add, member_write.member.text);
+					concep.add_interface_implementation(*tuple_to_add, (TypeShortName)member_write.member.text);
 				}
 			}
 			else
@@ -549,7 +546,7 @@ void TypePass::visit(MemberWrite& member_write)
 			{
 				if (auto function = get<Function>(*compile_time_value))
 				{
-					ConceptType::VirtualFunctionType const& function_type = concept_type->get_function(member_write.member.text);
+					ConceptType::VirtualFunctionType const& function_type = concept_type->get_function((TypeShortName)member_write.member.text);
 
 					if (function_type.is_pure && !function->type.is_pure)
 					{
@@ -603,7 +600,7 @@ void TypePass::visit(MemberWrite& member_write)
 						}
 					}
 
-					concep.add_function_override(function, member_write.member.text);
+					concep.add_function_override(function, (TypeShortName)member_write.member.text);
 				}
 				else
 				{
@@ -1042,7 +1039,10 @@ void TypePass::visit(VariableDefinition& variable_definition)
 	assert(variable_definition.type_definition != nullptr || variable_definition.initialization != nullptr);
 	assert(variable_blocks.size() > 0);
 
-	current_scope.push_back((std::string)variable_definition.variable.text);
+	TypePath old_scope = current_scope;
+
+	TypeFullName variable_name = { current_scope, (TypeShortName)variable_definition.variable.text };
+	current_scope = TypePath(current_scope, variable_definition.variable.text);
 
 	if (variable_definition.type_definition != nullptr)
 	{
@@ -1112,16 +1112,16 @@ void TypePass::visit(VariableDefinition& variable_definition)
 			throw message_exception("typedefs must be constant", variable_definition);
 		}
 		assert(info.compile_time_value);
-		get<TypeRepresentation>(*info.compile_time_value)->set_name(variable_definition.variable.text);
+		get<TypeRepresentation>(*info.compile_time_value)->set_name(variable_name);
 	}
 	else if (auto concept_type = get<ConceptType>(*variable_definition.type))
 	{
 		assert(!info.compile_time_value);
-		concept_type->set_name(variable_definition.variable.text);
+		assert(concept_type->name == variable_name);
 
 		Concept concept_value;
 		concept_value.type = *concept_type;
-		concepts[(std::string)variable_definition.variable.text] = concept_value;
+		concepts[concept_type->name] = concept_value;
 	}
 
 	if (info.compile_time_value)
@@ -1190,7 +1190,7 @@ void TypePass::visit(VariableDefinition& variable_definition)
 	current_variable_block.variables[(std::string)variable_definition.variable.text] = info;
 	
 
-	current_scope.pop_back(); // TODO try finally?
+	current_scope = old_scope; // TODO try finally?
 }
 
 void TypePass::visit(WhileStatement& while_statement)
@@ -1412,7 +1412,7 @@ bool TypePass::implicit_cast(TypeRepresentation target, std::unique_ptr<Expressi
 		auto interface_type = get<InterfaceType>(target);
 		auto tuple_type = get<TupleType>(original_type);
 
-		Concept const& concept_impl = concepts.find((std::string)interface_type->get_concept_name())->second;
+		Concept const& concept_impl = concepts.find(interface_type->get_concept_name())->second;
 
 		if (!concept_impl.is_complete_interface_implementation(*tuple_type, *interface_type))
 		{

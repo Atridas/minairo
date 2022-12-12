@@ -135,7 +135,7 @@ export namespace minairo
 
 			// TODO not a string map please. I'm just lazy rn
 			std::unordered_map<std::string, VariableInfo> variables;
-			std::unordered_map<std::string, Concept> concepts;
+			TypeFullNameMap<Concept> concepts;
 
 			void add_global(std::string_view name, TypeRepresentation type, bool constant = true)
 			{
@@ -159,7 +159,7 @@ export namespace minairo
 
 		Globals get_globals() const &
 		{
-			std::unordered_map<std::string, Concept> concepts_copy = concepts;
+			TypeFullNameMap<Concept> concepts_copy = concepts;
 
 			for (auto& concept_impl : concepts_copy)
 				concept_impl.second.prepare_virtual_tables();
@@ -215,9 +215,9 @@ export namespace minairo
 
 		bool allow_return = false, in_pure_function_context = false;
 		std::optional<TypeRepresentation> return_type;
-		std::vector<std::string> current_scope;
+		TypePath current_scope;
 
-		std::unordered_map<std::string, Concept> concepts;
+		TypeFullNameMap<Concept> concepts;
 
 		void push_variable_block();
 		void pop_variable_block();
