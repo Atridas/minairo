@@ -1040,8 +1040,6 @@ void TypePass::visit(VariableDefinition& variable_definition)
 	assert(variable_blocks.size() > 0);
 
 	TypePath old_scope = current_scope;
-
-	TypeFullName variable_name = { current_scope, (TypeShortName)variable_definition.variable.text };
 	current_scope = TypePath(current_scope, variable_definition.variable.text);
 
 	if (variable_definition.type_definition != nullptr)
@@ -1112,12 +1110,12 @@ void TypePass::visit(VariableDefinition& variable_definition)
 			throw message_exception("typedefs must be constant", variable_definition);
 		}
 		assert(info.compile_time_value);
-		get<TypeRepresentation>(*info.compile_time_value)->set_name(variable_name);
+		get<TypeRepresentation>(*info.compile_time_value)->set_name(TypeFullName{ old_scope, (TypeShortName)variable_definition.variable.text });
 	}
 	else if (auto concept_type = get<ConceptType>(*variable_definition.type))
 	{
 		assert(!info.compile_time_value);
-		assert(concept_type->name == variable_name);
+		//assert(concept_type->name == TypeFullName{ old_scope, (TypeShortName)variable_definition.variable.text });
 
 		Concept concept_value;
 		concept_value.type = *concept_type;
