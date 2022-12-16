@@ -197,16 +197,35 @@ void Interpreter::visit(Call const& call)
 		auto virtual_function = get<VirtualFunction>(callee_value);
 		if (virtual_function_type->interface_paramenters.size() == 1)
 		{
-			Value& field = arguments->fields[virtual_function_type->interface_paramenters[0]];
-			std::shared_ptr<InterfaceReference> interface = get<InterfaceReference>(field);
-			Concept::VirtualTable const& virtual_table = interface->get_virtual_table();
+			Value& argument = arguments->fields[virtual_function_type->interface_paramenters[0]];
+			std::shared_ptr<InterfaceReference> argument_as_interface = get<InterfaceReference>(argument);
+			Concept::VirtualTable const& virtual_table = argument_as_interface->get_virtual_table();
 			callee = virtual_table.single_dispatch_functions[virtual_function_type->index];
 
-			field = interface->as_tuple_reference();
+			argument = argument_as_interface->as_tuple_reference();
 		}
 		else
 		{
-			assert(false); // TODO multi dispatch
+			Value& first_argument = arguments->fields[virtual_function_type->interface_paramenters[0]];
+			std::shared_ptr<InterfaceReference> first_argument_as_interface = get<InterfaceReference>(first_argument);
+			Concept::VirtualTable const& virtual_table = first_argument_as_interface->get_virtual_table();
+
+			int index = 0;
+			for (int p = 1; p < (int)virtual_function_type->interface_paramenters.size(); ++p)
+			{
+				Value& current_argument = arguments->fields[virtual_function_type->interface_paramenters[p]];
+				std::shared_ptr<InterfaceReference> argument_as_interface = get<InterfaceReference>(current_argument);
+
+				std::shared_ptr<InterfaceType> interface_type = get<InterfaceType>(virtual_function_type->parameters.get_field_type(virtual_function_type->interface_paramenters[p - 1]));
+
+				index *= virtual_table.implementation_numbers[interface_type->index];
+				index += argument_as_interface->get_virtual_table().implementation_index;
+
+				current_argument = argument_as_interface->as_tuple_reference();
+			}
+			callee = virtual_table.multi_dispatch_functions[virtual_function_type->index][index];
+
+			first_argument = first_argument_as_interface->as_tuple_reference();
 		}
 	}
 	else

@@ -28,7 +28,7 @@ export namespace minairo
 		{
 			std::vector<int> field_mapping;
 			std::vector<std::shared_ptr<FunctionRepresentation>> single_dispatch_functions;
-			std::vector<std::vector<FunctionContainer>> multi_dispatch_functions;
+			std::vector<std::vector<std::shared_ptr<FunctionRepresentation>>> multi_dispatch_functions;
 
 			int implementation_index;
 			std::vector<int> implementation_numbers;
@@ -220,8 +220,15 @@ export namespace minairo
 					}
 					else
 					{
-						throw 0;
-						assert(false); // TODO
+						int index = 0;
+
+						for (int p = 1; p < (int)function_container.override_paramenters.size(); ++p)
+						{
+							index *= implementation_numbers[interface_parameters[p - 1]->index];
+							index += parameters_virtual_tables[p]->implementation_index;
+						}
+
+						parameters_virtual_tables[0]->multi_dispatch_functions[virtual_function.index][index] = function_container.actual_function;
 					}
 				}
 			}
